@@ -1,0 +1,229 @@
+/* CONTENEDOR GENERAL */
+.clientes-container {
+  width: 100%;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+/* TITULO */
+.clientes-title {
+  margin-bottom: 20px;
+  font-size: 28px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+/* TOOLBAR */
+.clientes-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+/* BUSCADOR */
+.clientes-search {
+  width: 350px;
+}
+
+.clientes-search .input-group {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.input-group-text {
+  background: #f9fafb;
+  border: none;
+}
+
+.form-control {
+  border: none;
+  outline: none;
+}
+
+/* BOTÓN ACCIÓN CENTRADO */
+.clientes-accion-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* BOTONES */
+.btn {
+  border: none !important;
+  border-radius: 12px !important;
+  font-weight: 700 !important;
+  padding: 10px 16px !important;
+  transition: all 0.2s ease !important;
+}
+
+/* BOTÓN PRIMARY */
+.btn-primary {
+  background: #6d28d9 !important;
+  color: #fff !important;
+}
+
+.btn-primary:hover {
+  background: #5b21b6 !important;
+  transform: translateY(-1px);
+}
+
+/* BOTÓN SECONDARY */
+.btn-secondary {
+  background: #f3f4f6 !important;
+  color: #374151 !important;
+}
+
+.btn-secondary:hover {
+  background: #e5e7eb !important;
+}
+
+/* TABLA */
+.clientes-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #ffffff;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+}
+
+/* HEADER TABLA */
+.clientes-table thead {
+  background: #f9fafb;
+}
+
+.clientes-table th {
+  padding: 14px 16px;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 700;
+  color: #374151;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* CELDAS TABLA */
+.clientes-table td {
+  padding: 14px 16px;
+  font-size: 14px;
+  color: #111827;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+/* HOVER FILAS */
+.clientes-table tbody tr:hover {
+  background: #f8fafc;
+  cursor: pointer;
+}
+
+/* FILA SELECCIONADA */
+.clientes-row-selected {
+  background-color: #ede9fe !important;
+}
+
+/* BADGES */
+.badge {
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* MODAL OVERLAY */
+.clientes-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+/* MODAL */
+.clientes-modal {
+  width: 100%;
+  max-width: 520px;
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 25px 60px rgba(15, 23, 42, 0.22);
+}
+
+/* HEADER MODAL */
+.clientes-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.clientes-modal-header h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.clientes-modal-header button {
+  font-size: 22px;
+  color: #6b7280;
+}
+
+/* BODY MODAL */
+.clientes-modal-body label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.clientes-modal-body input {
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid #d1d5db;
+  padding: 0 14px;
+  margin-top: 4px;
+}
+
+/* FOOTER MODAL */
+.clientes-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+/* ANIMACIÓN */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .clientes-container {
+    padding: 16px;
+  }
+
+  .clientes-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btn {
+    width: 100%;
+  }
+
+  .clientes-search {
+    width: 100%;
+  }
+}
