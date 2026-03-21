@@ -35,9 +35,9 @@ function Sidebar() {
         </div>
 
         <nav className="tm-sidebar__nav">
+
           <button
             className={`tm-sidebar__item ${isActive('/home') ? 'tm-sidebar__item--active' : ''}`}
-            type="button"
             onClick={() => goTo('/home')}
           >
             Home
@@ -45,7 +45,6 @@ function Sidebar() {
 
           <button
             className={`tm-sidebar__item ${isActive('/home/clientes') ? 'tm-sidebar__item--active' : ''}`}
-            type="button"
             onClick={() => goTo('/home/clientes')}
           >
             Clientes
@@ -53,7 +52,6 @@ function Sidebar() {
 
           <button
             className={`tm-sidebar__item ${isActive('/home/cotizaciones') ? 'tm-sidebar__item--active' : ''}`}
-            type="button"
             onClick={() => goTo('/home/cotizaciones')}
           >
             Cotizaciones
@@ -61,16 +59,15 @@ function Sidebar() {
 
           <button
             className={`tm-sidebar__item ${isActive('/home/pedidos') ? 'tm-sidebar__item--active' : ''}`}
-            type="button"
             onClick={() => goTo('/home/pedidos')}
           >
             Pedidos
           </button>
 
+          {/* CONFIGURACIÓN */}
           <div className="tm-sidebar__group">
             <button
               className={`tm-sidebar__item tm-sidebar__item--with-arrow ${isConfigActive ? 'tm-sidebar__item--active' : ''}`}
-              type="button"
               onClick={() => setConfigOpen(!configOpen)}
             >
               <span>Configuración</span>
@@ -81,19 +78,48 @@ function Sidebar() {
 
             {configOpen && (
               <div className="tm-sidebar__submenu">
+
                 <button
-                  className={`tm-sidebar__subitem ${isActive('/home/configuracion/usuarios') ? 'tm-sidebar__subitem--active' : ''}`}
-                  type="button"
+                  className={`tm-sidebar__subitem ${
+                    isActive('/home/configuracion/usuarios')
+                      ? 'tm-sidebar__subitem--active'
+                      : ''
+                  }`}
                   onClick={() => goTo('/home/configuracion/usuarios')}
                 >
                   Usuarios
                 </button>
+
+                <button
+                  className={`tm-sidebar__subitem ${
+                    isActive('/home/configuracion/unidades')
+                      ? 'tm-sidebar__subitem--active'
+                      : ''
+                  }`}
+                  onClick={() => goTo('/home/configuracion/unidades')}
+                >
+                  Unidades de medida
+                </button>
+
+                <button
+                  className={`tm-sidebar__subitem ${
+                    isActive('/home/configuracion/tipo-medidas')
+                      ? 'tm-sidebar__subitem--active'
+                      : ''
+                  }`}
+                  onClick={() => goTo('/home/configuracion/tipo-medidas')}
+                >
+                  Tipos de medida
+                </button>
+
               </div>
             )}
           </div>
+
         </nav>
       </div>
 
+      {/* FOOTER */}
       <div className="tm-sidebar__footer">
         <div className="tm-sidebar__user-box">
           <div className="tm-sidebar__avatar">{inicial}</div>
@@ -105,7 +131,6 @@ function Sidebar() {
 
           <button
             className="tm-sidebar__logout"
-            type="button"
             onClick={handleLogout}
           >
             Salir
