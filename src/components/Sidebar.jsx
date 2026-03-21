@@ -7,12 +7,10 @@ function Sidebar() {
   const location = useLocation()
   const usuario = JSON.parse(localStorage.getItem('usuario')) || {}
 
-  const [configOpen, setConfigOpen] = useState(
-    location.pathname.startsWith('/home/configuracion')
-  )
-
   const nombreUsuario = usuario.nombre || usuario.usuario || 'Usuario'
   const inicial = nombreUsuario.charAt(0).toUpperCase()
+
+  const [openMenus, setOpenMenus] = useState({})
 
   const handleLogout = () => {
     localStorage.removeItem('token')
@@ -24,8 +22,18 @@ function Sidebar() {
     navigate(path)
   }
 
+  const toggleMenu = (menu) => {
+    setOpenMenus(prev => ({
+      ...prev,
+      [menu]: !prev[menu]
+    }))
+  }
+
   const isActive = (path) => location.pathname === path
-  const isConfigActive = location.pathname.startsWith('/home/configuracion')
+  const isGroupActive = (base) => location.pathname.startsWith(base)
+
+  // 🔥 CORRECCIÓN (AQUÍ ESTABA EL ERROR)
+  const isMaterialesActive = isGroupActive('/home/materiales')
 
   return (
     <aside className="tm-sidebar">
@@ -36,54 +44,76 @@ function Sidebar() {
 
         <nav className="tm-sidebar__nav">
 
+          {/* HOME */}
           <button
             className={`tm-sidebar__item ${isActive('/home') ? 'tm-sidebar__item--active' : ''}`}
+            type="button"
             onClick={() => goTo('/home')}
           >
             Home
           </button>
 
+          {/* CLIENTES */}
           <button
             className={`tm-sidebar__item ${isActive('/home/clientes') ? 'tm-sidebar__item--active' : ''}`}
+            type="button"
             onClick={() => goTo('/home/clientes')}
           >
             Clientes
           </button>
 
+          {/* COTIZACIONES */}
           <button
             className={`tm-sidebar__item ${isActive('/home/cotizaciones') ? 'tm-sidebar__item--active' : ''}`}
+            type="button"
             onClick={() => goTo('/home/cotizaciones')}
           >
             Cotizaciones
           </button>
 
+          
+          {/* PEDIDOS */}
           <button
-            className={`tm-sidebar__item ${isActive('/home/pedidos') ? 'tm-sidebar__item--active' : ''}`}
+            className={`tm-sidebar__item ${
+            isGroupActive('/home/pedidos') ? 'tm-sidebar__item--active' : ''
+            }`}
+            type="button"
             onClick={() => goTo('/home/pedidos')}
           >
             Pedidos
           </button>
 
+          {/* ✅ MATERIALES (FIXED) */}
+          <button
+            className={`tm-sidebar__item ${isMaterialesActive ? 'tm-sidebar__item--active' : ''}`}
+            type="button"
+            onClick={() => goTo('/home/materiales')}
+          >
+            Materiales
+          </button>
+
           {/* CONFIGURACIÓN */}
           <div className="tm-sidebar__group">
             <button
-              className={`tm-sidebar__item tm-sidebar__item--with-arrow ${isConfigActive ? 'tm-sidebar__item--active' : ''}`}
-              onClick={() => setConfigOpen(!configOpen)}
+              className={`tm-sidebar__item tm-sidebar__item--with-arrow ${
+                isGroupActive('/home/configuracion') ? 'tm-sidebar__item--active' : ''
+              }`}
+              type="button"
+              onClick={() => toggleMenu('config')}
             >
               <span>Configuración</span>
-              <span className={`tm-sidebar__arrow ${configOpen ? 'tm-sidebar__arrow--open' : ''}`}>
+              <span className={`tm-sidebar__arrow ${
+                (openMenus['config'] ?? isGroupActive('/home/configuracion')) ? 'tm-sidebar__arrow--open' : ''
+              }`}>
                 ▾
               </span>
             </button>
 
-            {configOpen && (
+            {(openMenus['config'] ?? isGroupActive('/home/configuracion')) && (
               <div className="tm-sidebar__submenu">
-
                 <button
                   className={`tm-sidebar__subitem ${
-                    isActive('/home/configuracion/usuarios')
-                      ? 'tm-sidebar__subitem--active'
-                      : ''
+                    isActive('/home/configuracion/usuarios') ? 'tm-sidebar__subitem--active' : ''
                   }`}
                   onClick={() => goTo('/home/configuracion/usuarios')}
                 >
@@ -92,9 +122,7 @@ function Sidebar() {
 
                 <button
                   className={`tm-sidebar__subitem ${
-                    isActive('/home/configuracion/unidades')
-                      ? 'tm-sidebar__subitem--active'
-                      : ''
+                    isActive('/home/configuracion/unidades') ? 'tm-sidebar__subitem--active' : ''
                   }`}
                   onClick={() => goTo('/home/configuracion/unidades')}
                 >
@@ -103,15 +131,12 @@ function Sidebar() {
 
                 <button
                   className={`tm-sidebar__subitem ${
-                    isActive('/home/configuracion/tipo-medidas')
-                      ? 'tm-sidebar__subitem--active'
-                      : ''
+                    isActive('/home/configuracion/tipo-medidas') ? 'tm-sidebar__subitem--active' : ''
                   }`}
                   onClick={() => goTo('/home/configuracion/tipo-medidas')}
                 >
                   Tipos de medida
                 </button>
-
               </div>
             )}
           </div>
@@ -119,7 +144,6 @@ function Sidebar() {
         </nav>
       </div>
 
-      {/* FOOTER */}
       <div className="tm-sidebar__footer">
         <div className="tm-sidebar__user-box">
           <div className="tm-sidebar__avatar">{inicial}</div>
@@ -131,6 +155,7 @@ function Sidebar() {
 
           <button
             className="tm-sidebar__logout"
+            type="button"
             onClick={handleLogout}
           >
             Salir
