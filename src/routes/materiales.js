@@ -1,0 +1,27 @@
+const express = require('express')
+const multer = require('multer')
+const { createMaterial } = require('../controller/materiales/CreateMaterial')
+const { getCategorias } = require('../controller/materiales/getCategorias')
+const { getMateriales } = require('../controller/materiales/getMateriales')
+const { deleteMaterial } = require('../controller/materiales/DeleteMaterial')
+const { updateMaterial } = require('../controller/materiales/UpdateMaterial')
+
+const router = express.Router()
+
+// CONFIGURACIÓN DE MULTER
+const storage = multer.diskStorage({
+  destination: 'uploads/materiales/',
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + '-' + file.originalname)
+  }
+})
+
+const upload = multer({ storage })
+
+router.post('/', upload.array('imagenes'), createMaterial)
+router.get('/categorias', getCategorias)
+router.get('/', getMateriales)
+router.delete('/:id', deleteMaterial)
+router.put('/:id', updateMaterial)
+
+module.exports = router
