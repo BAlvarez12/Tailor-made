@@ -5,7 +5,7 @@ import {
   updateCliente,
   deleteCliente,
   restoreCliente,
-} from "../../services/clientes/clienteService";
+} from "../../services/clienteService";
 import "./clientes.css";
 
 /* COMPONENTE CLIENTES */

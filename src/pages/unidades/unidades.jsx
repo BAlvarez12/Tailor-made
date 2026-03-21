@@ -6,7 +6,7 @@ import {
   updateUnidad,
   archiveUnidad,
   restoreUnidad
-} from "../../services/unidades/unidadesService";
+} from "../../services/unidadesService";
 
 import "./unidades.css";
 

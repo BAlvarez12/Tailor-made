@@ -1,5 +1,7 @@
 /* CONFIGURACIÓN API */
 import axios from "axios";
+import api from '../utils/api';
+
 
 const API_URL = "http://localhost:3000/api/unidades";
 
@@ -26,4 +28,9 @@ export const archiveUnidad = async (id) => {
 /* DESARCHIVAR UNIDAD */
 export const restoreUnidad = async (id) => {
   return await axios.put(`${API_URL}/restaurar/${id}`);
+};
+
+export const obtenerUnidadesMedidaService = async () => {
+  const response = await api.get("/unidadesv2/activas");
+  return response.data;
 };

@@ -2,15 +2,41 @@ import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import './Sidebar.css'
 
+const MAIN_MENU_ITEMS = [
+  { label: 'Home', path: '/home', exact: true },
+  { label: 'Clientes', path: '/home/clientes', exact: true },
+  { label: 'Cotizaciones', path: '/home/cotizaciones', exact: true },
+  { label: 'Prendas', path: '/home/prendas', exact: false },
+  { label: 'Materiales', path: '/home/materiales', exact: false }
+]
+
+const CONFIG_SUBMENU_ITEMS = [
+  { label: 'Usuarios', path: '/home/configuracion/usuarios' },
+  { label: 'Unidades de medida', path: '/home/configuracion/unidades' },
+  { label: 'Tipos de medida', path: '/home/configuracion/tipo-medidas' }
+]
+
+function getStoredUser() {
+  try {
+    return JSON.parse(localStorage.getItem('usuario')) || {}
+  } catch {
+    return {}
+  }
+}
+
 function Sidebar() {
   const navigate = useNavigate()
   const location = useLocation()
-  const usuario = JSON.parse(localStorage.getItem('usuario')) || {}
+  const [openMenus, setOpenMenus] = useState({})
 
+  const usuario = getStoredUser()
   const nombreUsuario = usuario.nombre || usuario.usuario || 'Usuario'
   const inicial = nombreUsuario.charAt(0).toUpperCase()
 
-  const [openMenus, setOpenMenus] = useState({})
+  const isActive = (path) => location.pathname === path
+  const isGroupActive = (basePath) => location.pathname.startsWith(basePath)
+
+  const isConfigOpen = openMenus.config ?? isGroupActive('/home/configuracion')
 
   const handleLogout = () => {
     localStorage.removeItem('token')
@@ -18,22 +44,21 @@ function Sidebar() {
     navigate('/')
   }
 
-  const goTo = (path) => {
+  const handleNavigate = (path) => {
     navigate(path)
   }
 
-  const toggleMenu = (menu) => {
-    setOpenMenus(prev => ({
+  const toggleMenu = (menuKey) => {
+    setOpenMenus((prev) => ({
       ...prev,
-      [menu]: !prev[menu]
+      [menuKey]: !prev[menuKey]
     }))
   }
 
-  const isActive = (path) => location.pathname === path
-  const isGroupActive = (base) => location.pathname.startsWith(base)
-
-  // 🔥 CORRECCIÓN (AQUÍ ESTABA EL ERROR)
-  const isMaterialesActive = isGroupActive('/home/materiales')
+  const getItemClassName = (item) => {
+    const active = item.exact ? isActive(item.path) : isGroupActive(item.path)
+    return `tm-sidebar__item ${active ? 'tm-sidebar__item--active' : ''}`
+  }
 
   return (
     <aside className="tm-sidebar">
@@ -43,104 +68,48 @@ function Sidebar() {
         </div>
 
         <nav className="tm-sidebar__nav">
+          {MAIN_MENU_ITEMS.map((item) => (
+            <button
+              key={item.path}
+              type="button"
+              className={getItemClassName(item)}
+              onClick={() => handleNavigate(item.path)}
+            >
+              {item.label}
+            </button>
+          ))}
 
-          {/* HOME */}
-          <button
-            className={`tm-sidebar__item ${isActive('/home') ? 'tm-sidebar__item--active' : ''}`}
-            type="button"
-            onClick={() => goTo('/home')}
-          >
-            Home
-          </button>
-
-          {/* CLIENTES */}
-          <button
-            className={`tm-sidebar__item ${isActive('/home/clientes') ? 'tm-sidebar__item--active' : ''}`}
-            type="button"
-            onClick={() => goTo('/home/clientes')}
-          >
-            Clientes
-          </button>
-
-          {/* COTIZACIONES */}
-          <button
-            className={`tm-sidebar__item ${isActive('/home/cotizaciones') ? 'tm-sidebar__item--active' : ''}`}
-            type="button"
-            onClick={() => goTo('/home/cotizaciones')}
-          >
-            Cotizaciones
-          </button>
-
-          
-          {/* PEDIDOS */}
-          <button
-            className={`tm-sidebar__item ${
-            isGroupActive('/home/pedidos') ? 'tm-sidebar__item--active' : ''
-            }`}
-            type="button"
-            onClick={() => goTo('/home/pedidos')}
-          >
-            Pedidos
-          </button>
-
-          {/* ✅ MATERIALES (FIXED) */}
-          <button
-            className={`tm-sidebar__item ${isMaterialesActive ? 'tm-sidebar__item--active' : ''}`}
-            type="button"
-            onClick={() => goTo('/home/materiales')}
-          >
-            Materiales
-          </button>
-
-          {/* CONFIGURACIÓN */}
           <div className="tm-sidebar__group">
             <button
+              type="button"
               className={`tm-sidebar__item tm-sidebar__item--with-arrow ${
                 isGroupActive('/home/configuracion') ? 'tm-sidebar__item--active' : ''
               }`}
-              type="button"
               onClick={() => toggleMenu('config')}
             >
               <span>Configuración</span>
-              <span className={`tm-sidebar__arrow ${
-                (openMenus['config'] ?? isGroupActive('/home/configuracion')) ? 'tm-sidebar__arrow--open' : ''
-              }`}>
+              <span className={`tm-sidebar__arrow ${isConfigOpen ? 'tm-sidebar__arrow--open' : ''}`}>
                 ▾
               </span>
             </button>
 
-            {(openMenus['config'] ?? isGroupActive('/home/configuracion')) && (
+            {isConfigOpen && (
               <div className="tm-sidebar__submenu">
-                <button
-                  className={`tm-sidebar__subitem ${
-                    isActive('/home/configuracion/usuarios') ? 'tm-sidebar__subitem--active' : ''
-                  }`}
-                  onClick={() => goTo('/home/configuracion/usuarios')}
-                >
-                  Usuarios
-                </button>
-
-                <button
-                  className={`tm-sidebar__subitem ${
-                    isActive('/home/configuracion/unidades') ? 'tm-sidebar__subitem--active' : ''
-                  }`}
-                  onClick={() => goTo('/home/configuracion/unidades')}
-                >
-                  Unidades de medida
-                </button>
-
-                <button
-                  className={`tm-sidebar__subitem ${
-                    isActive('/home/configuracion/tipo-medidas') ? 'tm-sidebar__subitem--active' : ''
-                  }`}
-                  onClick={() => goTo('/home/configuracion/tipo-medidas')}
-                >
-                  Tipos de medida
-                </button>
+                {CONFIG_SUBMENU_ITEMS.map((item) => (
+                  <button
+                    key={item.path}
+                    type="button"
+                    className={`tm-sidebar__subitem ${
+                      isActive(item.path) ? 'tm-sidebar__subitem--active' : ''
+                    }`}
+                    onClick={() => handleNavigate(item.path)}
+                  >
+                    {item.label}
+                  </button>
+                ))}
               </div>
             )}
           </div>
-
         </nav>
       </div>
 
@@ -154,8 +123,8 @@ function Sidebar() {
           </div>
 
           <button
-            className="tm-sidebar__logout"
             type="button"
+            className="tm-sidebar__logout"
             onClick={handleLogout}
           >
             Salir

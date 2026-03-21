@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { obtenerUsuariosService } from '../../services/usuarios/usuarios'
+import { obtenerUsuariosService } from '../../services/usuarios'
 import Createusuarios from './createusuarios'
 import './pageusuario.css'
 

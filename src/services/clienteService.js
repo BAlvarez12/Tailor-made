@@ -1,5 +1,6 @@
 /* CONFIGURACIÓN API */
 import axios from "axios";
+import api from '../utils/api';
 
 const API_URL = "http://localhost:3000/api/clientes";
 
@@ -43,5 +44,10 @@ export const deleteCliente = async (id) => {
 /* DESARCHIVAR CLIENTE */
 export const restoreCliente = async (id) => {
   const response = await axios.put(`${API_URL}/restore/${id}`);
+  return response.data;
+};
+
+export const obtenerClientesActivosService = async () => {
+  const response = await api.get("/clientes/activos");
   return response.data;
 };

@@ -5,7 +5,7 @@ import {
   updateTipo,
   archiveTipo,
   restoreTipo
-} from "../../services/tipo_medidas/tipoMedidasService";
+} from "../../services/tipoMedidasService";
 
 import "./tipo_medidas.css";
 
