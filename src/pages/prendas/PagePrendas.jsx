@@ -351,7 +351,7 @@ function PrendasPage() {
                       className="prenda-card__button prenda-card__button--secondary"
                       onClick={() => handleVerImagenes(prenda)}
                     >
-                      Ver imágenes
+                      Ver imágeneschris
                     </button>
                   </div>
                 </div>
