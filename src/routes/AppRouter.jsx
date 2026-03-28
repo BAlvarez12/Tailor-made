@@ -4,7 +4,7 @@
   import PageUsuarios from '../pages/usuarios/pageusuario';
   import Clientes from '../pages/clientes/clientes';
   import Unidades from '../pages/unidades/unidades';
-  import TipoMedidas from '../pages/tipo_medidas/tipo_medidas';
+  import TipoMedidas from '../pages/tipo_medidas/tipoMedidas';
   import ProtectedRoute from './ProtectedRoute';
   import HomeLayout from '../layouts/HomeLayout';
   import Materiales from '../pages/materiales/Materiales';
