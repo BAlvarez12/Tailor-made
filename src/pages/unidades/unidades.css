@@ -436,8 +436,8 @@
 }
 
 .clientes-modal-footer .btn-desactivar {
-  --color: #f59e0b;
-  --hover-color: #ef4444;
+  --color: #2563eb;
+  --hover-color: #7c3aed;
 }
 
 .clientes-modal-footer .btn-activar {

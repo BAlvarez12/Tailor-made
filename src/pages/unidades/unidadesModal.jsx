@@ -53,13 +53,21 @@ export default function unidadesModal({
             Cancelar
           </button>
 
-          <button className="btn-guardar" onClick={onGuardar}>
-            {modoCrear ? "Crear" : "Guardar"}
-          </button>
+          {modoCrear && (
+            <button className="btn-guardar" onClick={onGuardar}>
+              Crear
+            </button>
+          )}
+
+          {!modoCrear && unidadSeleccionada?.estado === 1 && (
+            <button className="btn-guardar" onClick={onGuardar}>
+              Guardar
+            </button>
+          )}
 
           {!modoCrear && unidadSeleccionada?.estado === 1 && (
             <button className="btn-desactivar" onClick={onArchivar}>
-              Inactivar
+              Desactivar
             </button>
           )}
 
