@@ -1,12 +1,21 @@
 import { useEffect, useState } from 'react'
 import axios from 'axios'
-import { useNavigate } from 'react-router-dom'
 import './Materiales.css'
+import logo from '../../assets/logo-tailor-made.png'
+import MaterialesExistenciasModal from './MaterialesExistenciasModal'
+import CrearMaterial from './CrearMateriales'
 
 function Materiales() {
 
   const [materiales, setMateriales] = useState([])
-  const navigate = useNavigate()
+  const [busqueda, setBusqueda] = useState('')
+
+  const [mostrarModalExistencias, setMostrarModalExistencias] = useState(false)
+  const [mostrarModalCrear, setMostrarModalCrear] = useState(false)
+  const [materialEditarId, setMaterialEditarId] = useState(null)
+
+  const abrirModalExistencias = () => setMostrarModalExistencias(true)
+  const cerrarModalExistencias = () => setMostrarModalExistencias(false)
 
   useEffect(() => {
     fetchMateriales()
@@ -21,7 +30,6 @@ function Materiales() {
     }
   }
 
-  // 🗑️ ELIMINAR
   const handleDelete = async (id) => {
     if (!window.confirm('¿Eliminar material?')) return
 
@@ -33,70 +41,133 @@ function Materiales() {
     }
   }
 
-  // ✏️ EDITAR → REDIRIGE
-  const handleEdit = (id) => {
-    navigate(`/home/materiales/crear?id=${id}`)
-  }
+  const materialesFiltrados = materiales.filter(m =>
+    m.nombre_material.toLowerCase().includes(busqueda.toLowerCase())
+  )
 
   return (
     <div className="materiales-container">
 
+      {/* HEADER */}
       <div className="materiales-header">
-        <h2 className="materiales-title">Inventario de materiales</h2>
+        <div>
+          <h2 className="materiales-title">Materiales</h2>
+          <p className="materiales-subtitle">Listado de materiales</p>
+        </div>
 
-        <button 
-          className="materiales-btn"
-          onClick={() => navigate('/home/materiales/crear')}
-        >
-          + Agregar material
-        </button>
+        <div className="materiales-header-actions">
+          <button onClick={abrirModalExistencias}>
+            + Existencia
+          </button>
+
+          <button
+            onClick={() => {
+              setMaterialEditarId(null)
+              setMostrarModalCrear(true)
+            }}
+          >
+            + Material
+          </button>
+        </div>
       </div>
 
-      <div className="materiales-grid">
-        {materiales.map(mat => (
-          <div key={mat.material_id} className="materiales-card">
-
-            <img 
-              src={`http://localhost:3000/uploads/materiales/${mat.url_img}`} 
-              alt={mat.nombre_material}
-              className="materiales-img"
-            />
-
-            <h3>{mat.nombre_material}</h3>
-
-            <p><strong>Categoría:</strong> {mat.nombre_categoria}</p>
-
-            <p>
-              <strong>Precio:</strong> {
-                new Intl.NumberFormat('es-GT', {
-                  style: 'currency',
-                  currency: 'GTQ'
-                }).format(Number(mat.precio_unitario))
-              }
-            </p>
-
-            <p><strong>Stock:</strong> {mat.stock}</p>
-
-            {/* 🔥 BOTONES */}
-            <div className="materiales-actions">
-              <button 
-                className="btn-editar"
-                onClick={() => handleEdit(mat.material_id)}
-              >
-                Editar
-              </button>
-
-              <button 
-                className="btn-eliminar"
-                onClick={() => handleDelete(mat.material_id)}
-              >
-                Eliminar
-              </button>
-            </div>
-
-          </div>
-        ))}
+      {/* BUSCADOR */}
+      <div className="materiales-search">
+        <input
+          type="text"
+          placeholder="Buscar 🪡"
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+        />
       </div>
+
+      {/* TABLA */}
+      <div className="materiales-table-container">
+        <table className="materiales-table">
+
+          <thead>
+            <tr>
+              <th>Material</th>
+              <th>Categoría</th>
+              <th>Precio</th>
+              <th>Existencia</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {materialesFiltrados.map(mat => (
+              <tr key={mat.material_id}>
+
+                <td className="material-info">
+                  {mat.url_img ? (
+                    <img
+                      src={`http://localhost:3000/uploads/materiales/${mat.url_img}`}
+                      alt=""
+                    />
+                  ) : (
+                    <img src={logo} alt="" />
+                  )}
+
+                  <span>{mat.nombre_material}</span>
+                </td>
+
+                <td>{mat.nombre_categoria}</td>
+
+                <td>
+                  Q {Number(mat.precio_unitario).toFixed(2)}
+                </td>
+
+                <td>
+                  <span className="badge-stock">
+                    {mat.stock}
+                  </span>
+                </td>
+
+                <td>
+                  <div className="acciones">
+
+                    <button
+                      className="btn-accion editar"
+                      onClick={() => {
+                        setMaterialEditarId(mat.material_id)
+                        setMostrarModalCrear(true)
+                      }}
+                    >
+                      Editar
+                    </button>
+
+                    <button
+                      className="btn-accion eliminar"
+                      onClick={() => handleDelete(mat.material_id)}
+                    >
+                      Eliminar
+                    </button>
+
+                  </div>
+                </td>
+
+              </tr>
+            ))}
+          </tbody>
+
+        </table>
+      </div>
+
+      {/* MODALES */}
+      <MaterialesExistenciasModal
+        open={mostrarModalExistencias}
+        onClose={cerrarModalExistencias}
+      />
+
+      <CrearMaterial
+        open={mostrarModalCrear}
+        idProp={materialEditarId}
+        onClose={() => {
+          setMostrarModalCrear(false)
+          fetchMateriales()
+        }}
+      />
 
     </div>
   )
