@@ -1,0 +1,75 @@
+.pedidos-container {
+  padding: 25px;
+}
+
+/* HEADER */
+.pedidos-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+/* CARD */
+.pedidos-card {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 12px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+}
+
+/* TABLA */
+.pedidos-table thead {
+  background-color: #111827; /* más elegante */
+  color: white;
+}
+
+.pedidos-table th {
+  font-weight: 500;
+  padding: 12px;
+}
+
+.pedidos-table td {
+  vertical-align: middle;
+  padding: 12px;
+}
+
+/* HOVER FILAS */
+.pedidos-table tbody tr:hover {
+  background-color: #f9fafb;
+  transition: 0.2s ease;
+}
+
+/* BOTONES PERSONALIZADOS */
+
+/* EDITAR */
+.btn-edit {
+  background-color: #e5e7eb;
+  color: #111827;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: 0.2s;
+}
+
+.btn-edit:hover {
+  background-color: #d1d5db;
+}
+
+/* ELIMINAR */
+.btn-delete {
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: 0.2s;
+}
+
+.btn-delete:hover {
+  background-color: #dc2626;
+}

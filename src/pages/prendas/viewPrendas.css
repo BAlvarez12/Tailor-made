@@ -1,0 +1,73 @@
+.view-prenda {
+  padding: 1.5rem;
+}
+
+.view-prenda__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.view-prenda__title {
+  margin: 0;
+}
+
+.view-prenda__subtitle {
+  margin-top: 0.25rem;
+  color: #6b7280;
+}
+
+.view-prenda__back-button {
+  border: none;
+  background: #111827;
+  color: white;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.view-prenda__card {
+  background: white;
+  border-radius: 16px;
+  padding: 1.25rem;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.06);
+}
+
+.view-prenda__section + .view-prenda__section {
+  margin-top: 1.5rem;
+}
+
+.view-prenda__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 1rem;
+}
+
+.view-prenda__label {
+  display: block;
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin-bottom: 0.2rem;
+}
+
+.view-prenda__medidas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.view-prenda__medida-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 1rem;
+  background: #f9fafb;
+}
+
+.view-prenda__empty {
+  padding: 1rem;
+  border-radius: 12px;
+  background: #f3f4f6;
+  color: #374151;
+}

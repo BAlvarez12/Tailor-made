@@ -1,0 +1,101 @@
+.form-container {
+  padding: 25px;
+  color: #333;
+}
+
+.form-container h2 {
+  margin-bottom: 20px;
+}
+
+/* GRID DEL FORM */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+/* GRUPO */
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+/* LABEL */
+.form-group label {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+/* INPUT */
+.form-group input,
+.form-group select {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  outline: none;
+  transition: 0.2s;
+}
+
+/* FOCUS */
+.form-group input:focus,
+.form-group select:focus {
+  border-color: #7c3aed;
+  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.2);
+}
+
+/* INPUT FILE */
+.form-group input[type="file"] {
+  padding: 6px;
+  background: #fff;
+}
+
+/* FULL WIDTH */
+.full-width {
+  grid-column: span 3;
+}
+
+/* BOTÓN */
+.button-container {
+  margin-top: 10px;
+}
+
+.button-container button {
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #7c3aed, #9333ea);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.2s;
+}
+
+.button-container button:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+.form-group textarea {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  outline: none;
+  resize: none;
+  transition: 0.2s;
+}
+
+.form-group textarea:focus {
+  border-color: #7c3aed;
+  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.2);
+}
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .full-width {
+    grid-column: span 1;
+  }
+}
