@@ -16,7 +16,7 @@ const obtenerMaterialesActivos = async (req, res) => {
         stock
       FROM materiales
       WHERE estado = 1
-      ORDER BY nombre_material ASC
+      ORDER BY nombre_material DESC
     `
 
     const [rows] = await db.query(sql)
