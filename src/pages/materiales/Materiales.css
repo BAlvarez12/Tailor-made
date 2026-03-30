@@ -1,4 +1,3 @@
-/* CONTENEDOR */
 .materiales-container {
   padding: 20px;
 }
@@ -12,179 +11,137 @@
 }
 
 .materiales-title {
-  font-size: 24px;
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.materiales-subtitle {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.materiales-header-actions button {
+  background: #6d28d9;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 10px;
+  margin-left: 10px;
+  cursor: pointer;
+}
+
+/* BUSCADOR */
+.materiales-search {
+  margin-bottom: 15px;
+}
+
+.materiales-search input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+/* TABLA */
+.materiales-table-container {
+  background: white;
+  border-radius: 14px;
+  padding: 10px;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+}
+
+.materiales-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.materiales-table th {
+  text-align: left;
+  padding: 14px;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.materiales-table td {
+  padding: 14px;
+  border-top: 1px solid #f1f5f9;
+}
+
+/* INFO MATERIAL */
+.material-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.material-info img {
+  width: 45px;
+  height: 45px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+/* STOCK */
+.badge-stock {
+  background: #dcfce7;
+  color: #166534;
+  padding: 6px 10px;
+  border-radius: 10px;
+  font-size: 12px;
   font-weight: 600;
 }
 
-/* GRID */
-.materiales-grid {
+/* ACCIONES */
+.acciones {
   display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
+  gap: 8px;
 }
 
-/* CARD */
-.materiales-card {
-  background: #fff;
-  border-radius: 12px;
-  padding: 15px;
-  width: 250px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-  transition: 0.2s;
-}
-
-.materiales-card:hover {
-  transform: translateY(-3px);
-}
-
-/* IMAGEN */
-.materiales-img {
-  width: 100%;
-  height: 150px;
-  object-fit: cover;
-  border-radius: 8px;
-  margin-bottom: 10px;
-}
-
-/* TEXTO */
-.materiales-card h3 {
-  font-size: 16px;
-  margin-bottom: 5px;
-}
-
-.materiales-card p {
-  margin: 2px 0;
-  font-size: 14px;
-}
-
-/* BOTÓN AGREGAR */
-.materiales-btn {
-  background: #7c3aed;
+.btn-accion {
   border: none;
+  padding: 6px 10px;
   border-radius: 8px;
-  padding: 10px 20px;
-  color: white;
-  font-weight: 500;
-  transition: 0.3s;
+  font-size: 12px;
   cursor: pointer;
-}
-
-.materiales-btn:hover {
-  background: #6d28d9;
-}
-
-/* 🔥 ACCIONES (EDITAR / ELIMINAR) */
-.materiales-actions {
-  margin-top: 10px;
-  display: flex;
-  justify-content: space-between;
 }
 
 /* EDITAR */
-.btn-editar {
-  background: #3b82f6;
-  border: none;
-  color: white;
-  padding: 6px 10px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 12px;
-}
-
-.btn-editar:hover {
-  background: #2563eb;
+.btn-accion.editar {
+  background: #e0e7ff;
+  color: #3730a3;
 }
 
 /* ELIMINAR */
-.btn-eliminar {
-  background: #ef4444;
-  border: none;
-  color: white;
-  padding: 6px 10px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 12px;
+.btn-accion.eliminar {
+  background: #fee2e2;
+  color: #991b1b;
 }
+/* ================= MODAL EXISTENCIAS ================= */
 
-.btn-eliminar:hover {
-  background: #dc2626;
-}
-
-/* 🔥 MODAL */
-/* 🔥 MODAL OVERLAY */
-.modal-overlay {
+.materiales-existencias-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0,0,0,0.5);
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 9999;
 }
 
-/* 🔥 CONTENIDO */
-.modal-content {
-  background: #fff;
-  padding: 25px;
-  border-radius: 12px;
-  width: 600px;
+.materiales-existencias-modal {
+  width: 900px;
   max-width: 95%;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-}
+  max-height: 90vh;
+  overflow-y: auto;
 
-/* 🔥 FORM GRID */
-.form-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 15px;
-  margin-top: 15px;
-}
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 20px;
 
-/* INPUTS */
-.form-grid input,
-.form-grid select {
-  width: 100%;
-  padding: 10px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-}
-
-/* INPUT FILE FULL */
-.form-grid input[type="file"] {
-  grid-column: span 2;
-}
-
-/* BOTONES */
-.modal-actions {
-  grid-column: span 2;
-  display: flex;
-  justify-content: space-between;
-  margin-top: 10px;
-}
-
-.modal-actions button {
-  padding: 10px 15px;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-}
-
-.modal-actions button[type="submit"] {
-  background: #7c3aed;
-  color: white;
-}
-
-.modal-actions button[type="submit"]:hover {
-  background: #6d28d9;
-}
-
-.modal-actions button[type="button"] {
-  background: #e5e7eb;
-}
-
-.modal-actions button[type="button"]:hover {
-  background: #d1d5db;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.15);
 }

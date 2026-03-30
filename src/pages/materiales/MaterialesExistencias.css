@@ -1,0 +1,158 @@
+/* ================= MODAL ================= */
+.materiales-existencias-modal {
+  display: flex;
+  flex-direction: column;
+
+  max-height: 90vh;
+  overflow: hidden; /* 🔥 elimina scroll externo */
+
+  border-radius: 16px; /* 🔥 mantiene bordes redondeados */
+  background: #fff;
+}
+
+/* ================= BODY ================= */
+.modal-body {
+  flex: 1;
+  overflow: hidden; /* 🔥 evita doble scroll */
+}
+
+/* ================= TABLA WRAPPER (SCROLL REAL) ================= */
+.tabla-wrapper {
+  overflow-y: auto;
+  max-height: 55vh;
+  padding-right: 5px; /* evita que el scroll pegue al borde */
+}
+
+/* Scroll bonito */
+.tabla-wrapper::-webkit-scrollbar {
+  width: 8px;
+}
+
+.tabla-wrapper::-webkit-scrollbar-thumb {
+  background: #c4b5fd;
+  border-radius: 10px;
+}
+
+/* ================= TABLA ================= */
+.tabla-existencias {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+/* HEADERS */
+.tabla-existencias th {
+  background: #f9fafb;
+  padding: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: center;
+}
+
+/* CELDAS */
+.tabla-existencias td {
+  padding: 14px;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 14px;
+  color: #111827;
+  text-align: center;
+}
+
+/* PRIMER COLUMNA IZQUIERDA */
+.tabla-existencias th:first-child,
+.tabla-existencias td:first-child {
+  text-align: left;
+}
+
+/* ================= CONTROLES ================= */
+
+/* CONTENEDOR DE + - */
+.tabla-existencias td:nth-child(3) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* BOTONES + Y - */
+.btn-control {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: none;
+  background: #f3f4f6;
+  color: #111827;
+  font-size: 16px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.btn-control:hover {
+  background: #6d28d9;
+  color: white;
+}
+
+/* VALOR */
+.stock-value {
+  min-width: 20px;
+  text-align: center;
+  font-weight: 600;
+}
+
+/* ================= BUSCADOR ================= */
+.buscador-container {
+  padding: 10px 0 15px 0;
+}
+
+.buscador-input {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  outline: none;
+  transition: 0.2s;
+}
+
+.buscador-input:focus {
+  border-color: #6d28d9;
+  box-shadow: 0 0 0 2px rgba(109, 40, 217, 0.2);
+}
+
+/* ================= FOOTER ================= */
+.footer-acciones {
+  display: flex;
+  justify-content: flex-end;
+
+  padding-top: 12px;
+  margin-top: 10px;
+
+  border-top: 1px solid #e5e7eb;
+  background: #fff;
+
+  position: sticky;
+  bottom: 0;
+}
+
+/* BOTÓN GLOBAL */
+.btn-guardar-global {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #6d28d9, #7c3aed);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.btn-guardar-global:hover {
+  transform: translateY(-1px);
+  opacity: 0.9;
+}
