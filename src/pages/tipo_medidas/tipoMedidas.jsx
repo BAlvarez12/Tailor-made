@@ -1,60 +1,58 @@
 import { useState, useEffect } from "react";
 import {
-  getUnidades,
-  createUnidad,
-  updateUnidad,
-  archiveUnidad,
-  restoreUnidad
-} from "../../services/unidadesService";
-import UnidadesHeader from "./unidadesHeader";
-import UnidadesTable from "./unidadesTable";
-import UnidadesModal from "./unidadesModal";
+  getTipos,
+  createTipo,
+  updateTipo,
+  archiveTipo,
+  restoreTipo
+} from "../../services/tipoMedidasService";
+import TipoMedidasHeader from "./tipoMedidasHeader";
+import TipoMedidasTable from "./tipoMedidasTable";
+import TipoMedidasModal from "./tipoMedidasModal";
 
-import "./unidades.css";
+import "./tipo_medidas.css";
 
-export default function Unidades() {
-  const [unidades, setUnidades] = useState([]);
+export default function TipoMedidas() {
+  const [tipos, setTipos] = useState([]);
   const [busqueda, setBusqueda] = useState("");
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
   const [selected, setSelected] = useState([]);
-  const [filtroEstado, setFiltroEstado] = useState(null);
+  const [filtroEstado, setFiltroEstado] = useState(null); // null = todos, 1 = activos, 0 = archivados
   const [showFilterMenu, setShowFilterMenu] = useState(false);
   const [showActionMenu, setShowActionMenu] = useState(false);
 
-  const [unidadSeleccionada, setUnidadSeleccionada] = useState(null);
+  const [tipoSeleccionado, setTipoSeleccionado] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [modoCrear, setModoCrear] = useState(false);
 
   const [formData, setFormData] = useState({
-    nombre_unidad: "",
-    simbolo_unidad: "",
+    nombre_tipo_medida: "",
+    descripcion_tipo_medida: "",
   });
 
   useEffect(() => {
-    cargarUnidades();
+    cargarTipos();
   }, []);
 
   useEffect(() => {
     setCurrentPage(1);
   }, [busqueda, filtroEstado, itemsPerPage]);
 
-  const cargarUnidades = async () => {
+  const cargarTipos = async () => {
     try {
       const [res1, res2] = await Promise.all([
-        getUnidades(false),
-        getUnidades(true)
+        getTipos(false), // activos
+        getTipos(true)   // inactivos
       ]);
-
-      const todasLasUnidades = [
+      const todosLosTipos = [
         ...(Array.isArray(res1.data) ? res1.data : []),
         ...(Array.isArray(res2.data) ? res2.data : [])
       ];
-
-      setUnidades(todasLasUnidades);
+      setTipos(todosLosTipos);
     } catch (error) {
-      console.error("Error cargando unidades:", error);
-      setUnidades([]);
+      console.error("Error cargando tipos:", error);
+      setTipos([]);
     }
   };
 
@@ -66,46 +64,9 @@ export default function Unidades() {
     }
   };
 
-  const getUnidadesFiltradas = () => {
-    let filtradas = unidades;
-
-    if (filtroEstado !== null) {
-      filtradas = filtradas.filter((u) => u.estado === filtroEstado);
-    }
-
-    const texto = busqueda.trim().toLowerCase();
-    if (texto.length > 0) {
-      filtradas = filtradas.filter((u) => {
-        const nombre = (u.nombre_unidad || "").toLowerCase();
-        const simbolo = (u.simbolo_unidad || "").toLowerCase();
-        return nombre.includes(texto) || simbolo.includes(texto);
-      });
-    }
-
-    return filtradas;
-  };
-
-  const getUnidadesPaginadas = () => {
-    const unidadesFiltradas = getUnidadesFiltradas();
-    const inicio = (currentPage - 1) * itemsPerPage;
-    const fin = inicio + itemsPerPage;
-    return unidadesFiltradas.slice(inicio, fin);
-  };
-
-  const totalUnidadesFiltradas = getUnidadesFiltradas().length;
-  const totalPages = Math.max(1, Math.ceil(totalUnidadesFiltradas / itemsPerPage));
-  const inicioRegistro = totalUnidadesFiltradas === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
-  const finRegistro = totalUnidadesFiltradas === 0 ? 0 : Math.min(currentPage * itemsPerPage, totalUnidadesFiltradas);
-
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(1);
-    }
-  }, [currentPage, totalPages]);
-
   const handleSelectAll = () => {
-    const unidadesPagina = getUnidadesPaginadas();
-    const idsPagina = unidadesPagina.map((u) => u.unidad_id);
+    const tiposPagina = getTiposPaginados();
+    const idsPagina = tiposPagina.map((t) => t.tipo_medida_id);
     const todosSeleccionados = idsPagina.every((id) => selected.includes(id));
 
     if (todosSeleccionados) {
@@ -116,44 +77,81 @@ export default function Unidades() {
     setSelected([...new Set([...selected, ...idsPagina])]);
   };
 
-  const getSelectedUnidades = () => {
-    return unidades.filter((u) => selected.includes(u.unidad_id));
+  const getTiposFiltrados = () => {
+    let filtrados = tipos;
+
+    if (filtroEstado !== null) {
+      filtrados = filtrados.filter((t) => t.estado === filtroEstado);
+    }
+
+    const texto = busqueda.trim().toLowerCase();
+    if (texto.length > 0) {
+      filtrados = filtrados.filter((t) => {
+        const nombre = (t.nombre_tipo_medida || "").toLowerCase();
+        const descripcion = (t.descripcion_tipo_medida || "").toLowerCase();
+        return nombre.includes(texto) || descripcion.includes(texto);
+      });
+    }
+
+    return filtrados;
   };
 
-  const sonTodosArchivados = () => {
-    const selectedUnidades = getSelectedUnidades();
-    return selectedUnidades.length > 0 && selectedUnidades.every((u) => u.estado === 0);
+  const getTiposPaginados = () => {
+    const tiposFiltrados = getTiposFiltrados();
+    const inicio = (currentPage - 1) * itemsPerPage;
+    const fin = inicio + itemsPerPage;
+    return tiposFiltrados.slice(inicio, fin);
   };
 
-  const handleArchivarSeleccionados = async () => {
+  const totalTiposFiltrados = getTiposFiltrados().length;
+  const totalPages = Math.max(1, Math.ceil(totalTiposFiltrados / itemsPerPage));
+  const inicioRegistro = totalTiposFiltrados === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
+  const finRegistro = totalTiposFiltrados === 0 ? 0 : Math.min(currentPage * itemsPerPage, totalTiposFiltrados);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(1);
+    }
+  }, [currentPage, totalPages]);
+
+  const getSelectedTipos = () => {
+    return tipos.filter(t => selected.includes(t.tipo_medida_id));
+  };
+
+  const sonTodosInactivos = () => {
+    const selectedTipos = getSelectedTipos();
+    return selectedTipos.length > 0 && selectedTipos.every(t => t.estado === 0);
+  };
+
+  const handleDesactivarSeleccionados = async () => {
     try {
       for (let id of selected) {
-        await archiveUnidad(id);
+        await archiveTipo(id);
       }
       setSelected([]);
-      cargarUnidades();
+      cargarTipos();
     } catch (error) {
-      console.error("Error archivando:", error);
+      console.error("Error desactivando:", error);
     }
   };
 
-  const handleDesarchivarSeleccionados = async () => {
+  const handleActivarSeleccionados = async () => {
     try {
       for (let id of selected) {
-        await restoreUnidad(id);
+        await restoreTipo(id);
       }
       setSelected([]);
-      cargarUnidades();
+      cargarTipos();
     } catch (error) {
-      console.error("Error desarchivando:", error);
+      console.error("Error activando:", error);
     }
   };
 
   const handleDesarchivar = async () => {
     try {
-      await restoreUnidad(unidadSeleccionada.unidad_id);
+      await restoreTipo(tipoSeleccionado.tipo_medida_id);
       setShowModal(false);
-      cargarUnidades();
+      cargarTipos();
     } catch (error) {
       console.error("Error restaurando:", error);
     }
@@ -161,9 +159,9 @@ export default function Unidades() {
 
   const handleArchivarIndividual = async () => {
     try {
-      await archiveUnidad(unidadSeleccionada.unidad_id);
+      await archiveTipo(tipoSeleccionado.tipo_medida_id);
       setShowModal(false);
-      cargarUnidades();
+      cargarTipos();
     } catch (error) {
       console.error("Error archivando:", error);
     }
@@ -171,33 +169,40 @@ export default function Unidades() {
 
   const handleGuardar = async () => {
     try {
+      const usuario = JSON.parse(localStorage.getItem("usuario"));
+
       if (modoCrear) {
-        await createUnidad(formData);
+        await createTipo({
+          ...formData,
+          usuario_creador: usuario?.usuario_id
+        });
       } else {
-        await updateUnidad(unidadSeleccionada.unidad_id, formData);
+        await updateTipo(tipoSeleccionado.tipo_medida_id, formData);
       }
 
       setShowModal(false);
-      cargarUnidades();
+      cargarTipos();
+
     } catch (error) {
-      console.error("Error guardando unidad:", error);
+      console.error("Error guardando:", error);
+      alert(error.response?.data?.error || "Error al guardar");
     }
   };
 
-  const handleModalOpen = (unidad = null) => {
-    if (unidad) {
-      setUnidadSeleccionada(unidad);
+  const handleModalOpen = (tipo = null) => {
+    if (tipo) {
+      setTipoSeleccionado(tipo);
       setModoCrear(false);
       setFormData({
-        nombre_unidad: unidad.nombre_unidad,
-        simbolo_unidad: unidad.simbolo_unidad,
+        nombre_tipo_medida: tipo.nombre_tipo_medida,
+        descripcion_tipo_medida: tipo.descripcion_tipo_medida,
       });
     } else {
       setModoCrear(true);
-      setUnidadSeleccionada(null);
+      setTipoSeleccionado(null);
       setFormData({
-        nombre_unidad: "",
-        simbolo_unidad: "",
+        nombre_tipo_medida: "",
+        descripcion_tipo_medida: "",
       });
     }
     setShowModal(true);
@@ -207,9 +212,11 @@ export default function Unidades() {
     setShowModal(false);
   };
 
+
   return (
     <div className="tm-users">
-      <UnidadesHeader
+      {/* HEADER */}
+      <TipoMedidasHeader
         selected={selected}
         busqueda={busqueda}
         setBusqueda={setBusqueda}
@@ -221,33 +228,32 @@ export default function Unidades() {
         setShowActionMenu={setShowActionMenu}
         onCreateClick={() => handleModalOpen()}
         onActionClick={() => {
-          if (sonTodosArchivados()) {
-            handleDesarchivarSeleccionados();
+          if (sonTodosInactivos()) {
+            handleActivarSeleccionados();
           } else {
-            handleArchivarSeleccionados();
+            handleDesactivarSeleccionados();
           }
         }}
-        actionLabel={sonTodosArchivados() ? "Activar" : "Inactivar"}
+        actionLabel={sonTodosInactivos() ? "Activar" : "Desactivar"}
       />
 
+      {/* CARD */}
       <div className="tm-users__card">
-        {totalUnidadesFiltradas === 0 && (
+        {totalTiposFiltrados === 0 && (
           <p className="tm-users__state">
-            No hay unidades registradas.
+            No hay tipos registrados.
           </p>
         )}
 
-        {totalUnidadesFiltradas > 0 && (
-          <div className="tm-users__table-wrapper">
-            <UnidadesTable
-              unidades={getUnidadesPaginadas()}
-              selected={selected}
-              setSelected={setSelected}
-              handleSelectAll={handleSelectAll}
-              handleSelectOne={handleSelectOne}
-              onRowClick={handleModalOpen}
-            />
-          </div>
+        {totalTiposFiltrados > 0 && (
+          <TipoMedidasTable
+            tipos={getTiposPaginados()}
+            selected={selected}
+            setSelected={setSelected}
+            handleSelectAll={handleSelectAll}
+            handleSelectOne={handleSelectOne}
+            onRowClick={handleModalOpen}
+          />
         )}
 
         <div className="tm-users__pagination">
@@ -265,13 +271,13 @@ export default function Unidades() {
           </div>
 
           <span className="tm-users__pagination-info">
-            {inicioRegistro}-{finRegistro} de {totalUnidadesFiltradas}
+            {inicioRegistro}-{finRegistro} de {totalTiposFiltrados}
           </span>
 
           <button
             className="tm-users__pagination-icon-btn"
             onClick={() => setCurrentPage(1)}
-            disabled={currentPage === 1 || totalUnidadesFiltradas === 0}
+            disabled={currentPage === 1 || totalTiposFiltrados === 0}
             aria-label="Primera pagina"
           >
             {"<<"}
@@ -279,7 +285,7 @@ export default function Unidades() {
           <button
             className="tm-users__pagination-icon-btn"
             onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-            disabled={currentPage === 1 || totalUnidadesFiltradas === 0}
+            disabled={currentPage === 1 || totalTiposFiltrados === 0}
             aria-label="Pagina anterior"
           >
             {"<"}
@@ -287,7 +293,7 @@ export default function Unidades() {
           <button
             className="tm-users__pagination-icon-btn"
             onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-            disabled={currentPage === totalPages || totalUnidadesFiltradas === 0}
+            disabled={currentPage === totalPages || totalTiposFiltrados === 0}
             aria-label="Pagina siguiente"
           >
             {">"}
@@ -295,7 +301,7 @@ export default function Unidades() {
           <button
             className="tm-users__pagination-icon-btn"
             onClick={() => setCurrentPage(totalPages)}
-            disabled={currentPage === totalPages || totalUnidadesFiltradas === 0}
+            disabled={currentPage === totalPages || totalTiposFiltrados === 0}
             aria-label="Ultima pagina"
           >
             {">>"}
@@ -303,10 +309,11 @@ export default function Unidades() {
         </div>
       </div>
 
+      {/* MODAL */}
       {showModal && (
-        <UnidadesModal
+        <TipoMedidasModal
           modoCrear={modoCrear}
-          unidadSeleccionada={unidadSeleccionada}
+          tipoSeleccionado={tipoSeleccionado}
           formData={formData}
           setFormData={setFormData}
           onClose={handleModalClose}

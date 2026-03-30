@@ -29,7 +29,7 @@ function PageUsuarios() {
   }, [])
 
   return (
-    <div className="tm-users">
+    <div className="tm-users tm-users--usuarios">
       <div className="tm-users__header">
         <div>
           <h1>Usuarios</h1>
@@ -40,7 +40,7 @@ function PageUsuarios() {
           className="tm-users__create-btn"
           onClick={() => setOpenModal(true)}
         >
-          Crear usuario
+          <span>Crear usuario</span>
         </button>
       </div>
 
