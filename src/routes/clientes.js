@@ -1,29 +1,22 @@
-/* CONFIGURACIÓN ROUTER */
 const express = require("express");
 const router = express.Router();
 
-/* CONTROLADOR CLIENTES */
-const clientesCtrl = require("../controller/clientes/clientes");
-const obtenerClientesActivos = require('../controller/clientes/obtenerClientesActivos')
+const { leerClientes } = require("../controller/clientes/leerClientes");
+const { crearCliente } = require("../controller/clientes/crearCliente");
+const { actualizarCliente } = require("../controller/clientes/actualizarCliente");
+const { obtenerClientesActivos } = require("../controller/clientes/obtenerClientesActivos");
+const { guardarMedidas } = require('../controller/clientes/guardarMedidas');
+const { obtenerMedidasCliente } = require("../controller/clientes/obtenerMedidasCliente");
+const { actualizarMedidas } = require('../controller/clientes/actualizarMedidas');
 
-router.get('/activos', obtenerClientesActivos)
 
-/* OBTENER CLIENTES */
-router.get("/", clientesCtrl.getClientes);
-
-/* OBTENER CLIENTE POR ID */
-router.get("/:id", clientesCtrl.getClienteById);
-
-/* CREAR CLIENTE */
-router.post("/", clientesCtrl.createCliente);
-
-/* ACTUALIZAR CLIENTE */
-router.put("/:id", clientesCtrl.updateCliente);
-
-/* DESARCHIVAR CLIENTE */
-router.put("/restore/:id", clientesCtrl.restoreCliente);
-
-/* ARCHIVAR CLIENTE */
-router.delete("/:id", clientesCtrl.deleteCliente);
+router.get("/", leerClientes);
+router.post("/", crearCliente);
+router.put("/:id", actualizarCliente);
+router.get("/activos", obtenerClientesActivos);
+router.post('/medidas', guardarMedidas);
+//router.get('/medidas/:cliente_prenda_id', obtenerMedidas);
+router.put('/medidas', actualizarMedidas);
+router.get("/medidas/cliente/:cliente_id", obtenerMedidasCliente);
 
 module.exports = router;
