@@ -11,7 +11,7 @@ const createMaterial = async (req, res) => {
       stock
     } = req.body
 
-    const usuario_creador = req.user?.id || 1
+    const usuario_creador = req.user.usuario_id
 
     const [result] = await db.query(`
       INSERT INTO materiales 

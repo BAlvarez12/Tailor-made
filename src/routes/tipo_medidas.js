@@ -1,15 +1,16 @@
 const express = require('express')
 const router = express.Router()
 
-const {
-  getTipos,
-  createTipo,
-  updateTipo,
-  archiveTipo,
-  restoreTipo
-} = require('../controller/tipos_medidas/tipos_medidas')
-
+// 🔥 IMPORTS CORRECTOS (ARCHIVOS SEPARADOS)
+const getTipos = require('../controller/tipos_medidas/getTipos')
+const createTipo = require('../controller/tipos_medidas/createTipo')
+const updateTipo = require('../controller/tipos_medidas/updateTipo')
+const archiveTipo = require('../controller/tipos_medidas/archiveTipo')
+const restoreTipo = require('../controller/tipos_medidas/restoreTipo')
 const obtenerTiposMedidaPorPrenda = require('../controller/tipos_medidas/obtenerTiposMedidaPorPrenda')
+
+// RUTAS
+
 
 router.get('/', getTipos)
 

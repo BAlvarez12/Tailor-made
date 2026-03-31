@@ -6,6 +6,8 @@ const { getMateriales } = require('../controller/materiales/getMateriales')
 const { deleteMaterial } = require('../controller/materiales/DeleteMaterial')
 const { updateMaterial } = require('../controller/materiales/UpdateMaterial')
 const obtenerMaterialesActivos = require('../controller/materiales/obtenerMaterialesActivos')
+const { createMovimientoExistencias } = require('../controller/materiales/createMovimientoExistencias')
+const auth = require('../middleware/auth')
 
 const router = express.Router()
 
@@ -19,11 +21,12 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage })
 
-router.post('/', upload.array('imagenes'), createMaterial)
+router.post('/', auth,upload.array('imagenes'), createMaterial)
 router.get('/categorias', getCategorias)
 router.get('/', getMateriales)
 router.delete('/:id', deleteMaterial)
 router.put('/:id', updateMaterial)
 router.get('/activos', obtenerMaterialesActivos)
+router.post('/movimientos-existencias', auth, createMovimientoExistencias)
 
 module.exports = router

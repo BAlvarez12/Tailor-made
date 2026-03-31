@@ -4,13 +4,14 @@ const deleteMaterial = async (req, res) => {
   try {
     const { id } = req.params
 
-    // 🔥 borrar imágenes primero (opcional pero recomendado)
-    await db.query('DELETE FROM materiales_img WHERE material_id = ?', [id])
+    // 🔥 SOFT DELETE (desactivar)
+    await db.query(`
+      UPDATE materiales
+      SET estado = 0
+      WHERE material_id = ?
+    `, [id])
 
-    // 🔥 borrar material
-    await db.query('DELETE FROM materiales WHERE material_id = ?', [id])
-
-    res.json({ message: 'Material eliminado correctamente' })
+    res.json({ message: 'Material desactivado correctamente' })
 
   } catch (error) {
     console.error(error)

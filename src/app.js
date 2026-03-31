@@ -1,5 +1,4 @@
-require('dotenv').config();
-
+require('dotenv').config()
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -8,6 +7,7 @@ const app = express();
 
 
 // 🌐 CONFIGURACIÓN CORS
+// MIDDLEWARES
 app.use(cors({
   origin: 'http://localhost:5173',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
@@ -55,6 +55,7 @@ app.use('/api/clientes', require('./routes/clientes'));
 app.use('/api/unidades', require('./routes/unidades'));
 app.use('/api/unidadesv2', require('./routes/unidades_medida'));
 app.use('/api/tipo-medidas', require('./routes/tipo_medidas'));
+app.use('/api/tipo-prendas', require('./routes/tipo_prendas'))
 
 //archivo temporal de medidas
 app.use("/api/tipo_medidas2", tipoMedidas2Routes);
