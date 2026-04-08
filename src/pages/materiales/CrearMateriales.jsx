@@ -37,7 +37,7 @@ function CrearMaterial({ open, idProp, onClose }) {
     }
   }
 
-  // 🔥 RESET FORM CUANDO ABRES EN MODO CREAR
+  // RESET FORM CUANDO CREAS
   useEffect(() => {
     if (open && !id) {
       setForm(initialForm)
@@ -45,7 +45,7 @@ function CrearMaterial({ open, idProp, onClose }) {
     }
   }, [open, id])
 
-  // 🔥 CARGAR DATOS SI ES EDICIÓN
+  // CARGAR DATOS EN EDICIÓN
   useEffect(() => {
     if (id && open) fetchMaterial()
   }, [id, open])
@@ -77,8 +77,15 @@ function CrearMaterial({ open, idProp, onClose }) {
   }
 
   const handleFiles = (e) => {
-    setImagenes(e.target.files)
-  }
+  const nuevos = Array.from(e.target.files)
+
+  setImagenes(prev => [
+    ...prev,
+    ...nuevos
+  ])
+
+  e.target.value = null // 🔥 RESET INPUT
+}
 
   const resetForm = () => {
     setForm(initialForm)
@@ -208,14 +215,17 @@ function CrearMaterial({ open, idProp, onClose }) {
               />
             </div>
 
-            <div className="form-group">
-              <label>Stock</label>
-              <input 
-                name="stock"
-                value={form.stock}
-                onChange={handleChange}
-              />
-            </div>
+            {/* SOLO EN CREAR */}
+            {!id && (
+              <div className="form-group">
+                <label>Cantidad</label>
+                <input 
+                  name="stock"
+                  value={form.stock}
+                  onChange={handleChange}
+                />
+              </div>
+            )}
 
             {!id && (
               <div className="form-group">
