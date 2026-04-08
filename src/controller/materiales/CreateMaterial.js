@@ -13,23 +13,23 @@ const createMaterial = async (req, res) => {
 
     const usuario_creador = req.user.usuario_id
 
-    const [result] = await db.query(`
-      INSERT INTO materiales 
-      (categoria_id, nombre_material, descripcion_material, precio_unitario, referencia_compra, stock, usuario_creador)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `, [
-      categoria_id,
-      nombre_material,
-      descripcion_material,
-      precio_unitario,
-      referencia_compra,
-      stock,
-      usuario_creador
-    ])
+    const [rows] = await db.query(
+  `CALL sp_create_material(?, ?, ?, ?, ?, ?, ?)`,
+  [
+    categoria_id,
+    nombre_material,
+    descripcion_material,
+    precio_unitario,
+    referencia_compra,
+    stock,
+    usuario_creador
+  ]
+)
 
-    const material_id = result.insertId
+const material_id = rows[0][0].material_id
 
     // IMÁGENES
+    console.log(req.files)
     if (req.files && req.files.length > 0) {
       const images = req.files.map(file => [material_id, file.filename])
 
