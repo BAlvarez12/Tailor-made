@@ -2,15 +2,12 @@ const db = require('../../config/db')
 
 const getCategorias = async (req, res) => {
   try {
-    const [rows] = await db.query(`
-      SELECT categoria_id, nombre_categoria 
-      FROM categorias_material
-    `)
+    const [rows] = await db.query(`CALL sp_get_categorias()`)
 
-    res.json(rows)
+    return res.json(rows[0]) // 👈 SOLO ESTA
   } catch (error) {
     console.error(error)
-    res.status(500).json({ error: 'Error al obtener categorías' })
+    return res.status(500).json({ error: 'Error al obtener categorías' })
   }
 }
 
