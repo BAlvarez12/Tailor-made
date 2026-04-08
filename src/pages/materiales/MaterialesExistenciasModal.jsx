@@ -6,6 +6,7 @@ function MaterialesExistenciasModal({ open, onClose }) {
 
   const [materiales, setMateriales] = useState([])
   const [busqueda, setBusqueda] = useState('')
+  const [guardado, setGuardado] = useState(false) // 🔥 NUEVO
 
   useEffect(() => {
     if (open) {
@@ -19,7 +20,7 @@ function MaterialesExistenciasModal({ open, onClose }) {
 
       const data = res.data.map(m => ({
         ...m,
-        nuevoStock: m.stock
+        nuevoStock: 0
       }))
 
       setMateriales(data)
@@ -36,20 +37,17 @@ function MaterialesExistenciasModal({ open, onClose }) {
   const aumentar = (index) => {
     const nuevos = [...materialesFiltrados]
     nuevos[index].nuevoStock++
-    
+
     actualizarGlobal(nuevos[index])
   }
 
   const disminuir = (index) => {
     const nuevos = [...materialesFiltrados]
-    if (nuevos[index].nuevoStock > 0) {
-      nuevos[index].nuevoStock--
-    }
+    nuevos[index].nuevoStock--
 
     actualizarGlobal(nuevos[index])
   }
 
-  // 🔥 ACTUALIZA EL ARRAY ORIGINAL
   const actualizarGlobal = (materialActualizado) => {
     const nuevos = materiales.map(m =>
       m.material_id === materialActualizado.material_id
@@ -61,25 +59,22 @@ function MaterialesExistenciasModal({ open, onClose }) {
 
   // 🔥 GUARDAR TODO
   const guardarCambios = async () => {
-  try {
-    const cambios = materiales.filter(m => m.nuevoStock !== m.stock)
+    try {
+      const cambios = materiales.filter(m => m.nuevoStock !== 0)
 
-    if (cambios.length === 0) {
-      alert('No hay cambios')
-      return
-    }
+      if (cambios.length === 0) {
+        return // 🔥 quitamos alert
+      }
 
-    const token = localStorage.getItem('token')
+      const token = localStorage.getItem('token')
 
       await Promise.all(
         cambios.map(mat => {
-          const diferencia = mat.nuevoStock - mat.stock
-
           return axios.post(
             'http://localhost:3000/api/materiales/movimientos-existencias',
             {
               material_id: mat.material_id,
-              cantidad: diferencia
+              cantidad: mat.nuevoStock
             },
             {
               headers: {
@@ -90,14 +85,21 @@ function MaterialesExistenciasModal({ open, onClose }) {
         })
       )
 
-    alert('Cambios guardados correctamente')
-    fetchMateriales()
+      // 🔥 mostrar mensaje y cerrar
+      setGuardado(true)
 
-  } catch (error) {
-    console.error(error)
-    alert('Error al guardar cambios')
+      fetchMateriales()
+
+      setTimeout(() => {
+        setGuardado(false)
+        onClose()
+      }, 1200)
+
+    } catch (error) {
+      console.error(error)
+      alert(error.response?.data?.error || 'Error al guardar cambios')
+    }
   }
-}
 
   if (!open) return null
 
@@ -144,7 +146,7 @@ function MaterialesExistenciasModal({ open, onClose }) {
                     <td>{mat.stock}</td>
 
                     <td>
-                      <button 
+                      <button
                         className="btn-control"
                         onClick={() => disminuir(index)}
                       >
@@ -152,10 +154,10 @@ function MaterialesExistenciasModal({ open, onClose }) {
                       </button>
 
                       <span className="stock-value">
-                        {mat.nuevoStock}
+                        {mat.nuevoStock > 0 ? `${mat.nuevoStock}` : mat.nuevoStock}
                       </span>
 
-                      <button 
+                      <button
                         className="btn-control"
                         onClick={() => aumentar(index)}
                       >
@@ -171,7 +173,14 @@ function MaterialesExistenciasModal({ open, onClose }) {
           </div>
         </div>
 
-        {/* 🔥 FOOTER */}
+        {/* 🔥 MENSAJE DE ÉXITO */}
+        {guardado && (
+          <div className="mensaje-guardado">
+            ✔ Cambios guardados correctamente
+          </div>
+        )}
+
+        {/* FOOTER */}
         <div className="footer-acciones">
           <button className="btn-guardar-global" onClick={guardarCambios}>
             Guardar cambios

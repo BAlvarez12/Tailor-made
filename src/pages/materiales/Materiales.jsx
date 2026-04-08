@@ -14,6 +14,11 @@ function Materiales() {
   const [mostrarModalCrear, setMostrarModalCrear] = useState(false)
   const [materialEditarId, setMaterialEditarId] = useState(null)
 
+  const [previewImagenes, setPreviewImagenes] = useState([])
+  const [previewIndex, setPreviewIndex] = useState(0)
+
+  const [animando, setAnimando] = useState(false) // 🔥 NUEVO
+
   const abrirModalExistencias = () => setMostrarModalExistencias(true)
   const cerrarModalExistencias = () => setMostrarModalExistencias(false)
 
@@ -39,6 +44,16 @@ function Materiales() {
     } catch (error) {
       console.error(error)
     }
+  }
+
+  // 🔥 ANIMACIÓN
+  const cambiarImagen = (nuevoIndex) => {
+    setAnimando(true)
+
+    setTimeout(() => {
+      setPreviewIndex(nuevoIndex)
+      setAnimando(false)
+    }, 150)
   }
 
   const materialesFiltrados = materiales.filter(m =>
@@ -96,59 +111,78 @@ function Materiales() {
           </thead>
 
           <tbody>
-            {materialesFiltrados.map(mat => (
-              <tr key={mat.material_id}>
+            {materialesFiltrados.map(mat => {
 
-                <td className="material-info">
-                  {mat.url_img ? (
-                    <img
-                      src={`http://localhost:3000/uploads/materiales/${mat.url_img}`}
-                      alt=""
-                    />
-                  ) : (
-                    <img src={logo} alt="" />
-                  )}
+              const imgs = Array.isArray(mat.imagenes)
+                ? mat.imagenes
+                : []
 
-                  <span>{mat.nombre_material}</span>
-                </td>
+              const primeraImg = imgs[0] || null
 
-                <td>{mat.nombre_categoria}</td>
+              return (
+                <tr key={mat.material_id}>
 
-                <td>
-                  Q {Number(mat.precio_unitario).toFixed(2)}
-                </td>
+                  <td className="material-info">
 
-                <td>
-                  <span className="badge-stock">
-                    {mat.stock}
-                  </span>
-                </td>
+                    <div className="carrusel-container">
 
-                <td>
-                  <div className="acciones">
+                      {primeraImg ? (
+                        <img
+                          src={`http://localhost:3000/uploads/materiales/${primeraImg}`}
+                          alt=""
+                          onClick={() => {
+                            setPreviewImagenes(imgs)
+                            setPreviewIndex(0)
+                          }}
+                          style={{ cursor: 'pointer' }}
+                        />
+                      ) : (
+                        <img src={logo} alt="" />
+                      )}
 
-                    <button
-                      className="btn-accion editar"
-                      onClick={() => {
-                        setMaterialEditarId(mat.material_id)
-                        setMostrarModalCrear(true)
-                      }}
-                    >
-                      Editar
-                    </button>
+                    </div>
 
-                    <button
-                      className="btn-accion eliminar"
-                      onClick={() => handleDelete(mat.material_id)}
-                    >
-                      Eliminar
-                    </button>
+                    <span>{mat.nombre_material}</span>
+                  </td>
 
-                  </div>
-                </td>
+                  <td>{mat.nombre_categoria}</td>
 
-              </tr>
-            ))}
+                  <td>
+                    Q {Number(mat.precio_unitario).toFixed(2)}
+                  </td>
+
+                  <td>
+                    <span className="badge-stock">
+                      {mat.stock}
+                    </span>
+                  </td>
+
+                  <td>
+                    <div className="acciones">
+
+                      <button
+                        className="btn-accion editar"
+                        onClick={() => {
+                          setMaterialEditarId(mat.material_id)
+                          setMostrarModalCrear(true)
+                        }}
+                      >
+                        Editar
+                      </button>
+
+                      <button
+                        className="btn-accion eliminar"
+                        onClick={() => handleDelete(mat.material_id)}
+                      >
+                        Eliminar
+                      </button>
+
+                    </div>
+                  </td>
+
+                </tr>
+              )
+            })}
           </tbody>
 
         </table>
@@ -157,7 +191,10 @@ function Materiales() {
       {/* MODALES */}
       <MaterialesExistenciasModal
         open={mostrarModalExistencias}
-        onClose={cerrarModalExistencias}
+        onClose={() => {
+          cerrarModalExistencias()
+          fetchMateriales()
+        }}
       />
 
       <CrearMaterial
@@ -168,6 +205,69 @@ function Materiales() {
           fetchMateriales()
         }}
       />
+
+      {/* MODAL IMÁGENES */}
+      {previewImagenes.length > 0 && (
+        <div
+          className="modal-img-overlay"
+          onClick={() => setPreviewImagenes([])}
+        >
+          <div
+            className="modal-img-container"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="btn-cerrar"
+              onClick={() => setPreviewImagenes([])}
+            >
+              ✕
+            </button>
+
+            <img
+              src={`http://localhost:3000/uploads/materiales/${previewImagenes[previewIndex]}`}
+              alt="preview"
+              className={`modal-img ${animando ? 'fade-out' : 'fade-in'}`}
+            />
+
+            {/* PUNTITOS */}
+            <div className="dots-container">
+              {previewImagenes.map((_, i) => (
+                <span
+                  key={i}
+                  className={`dot ${i === previewIndex ? 'active' : ''}`}
+                  onClick={() => cambiarImagen(i)} // 🔥 usa animación
+                />
+              ))}
+            </div>
+
+            {previewImagenes.length > 1 && (
+              <>
+                <button
+                  className="carrusel-btn left"
+                  onClick={() =>
+                    cambiarImagen(
+                      (previewIndex - 1 + previewImagenes.length) % previewImagenes.length
+                    )
+                  }
+                >
+                  ‹
+                </button>
+
+                <button
+                  className="carrusel-btn right"
+                  onClick={() =>
+                    cambiarImagen(
+                      (previewIndex + 1) % previewImagenes.length
+                    )
+                  }
+                >
+                  ›
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
     </div>
   )
