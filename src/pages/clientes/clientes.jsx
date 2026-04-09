@@ -7,19 +7,15 @@ import ModalMedidas from "./ModalMedidas";
 import ModalActualizarMedidas from "./ModalActualizarMedidas";
 
 function Clientes() {
-
   const [clientes, setClientes] = useState([]);
   const [showCrear, setShowCrear] = useState(false);
   const [clienteEditar, setClienteEditar] = useState(null);
 
-  // 🔥 NUEVO
   const [showMedidas, setShowMedidas] = useState(false);
   const [clienteMedidas, setClienteMedidas] = useState(null);
 
-  //actualizar medidas del cliente
   const [showActualizar, setShowActualizar] = useState(false);
   const [clienteActualizar, setClienteActualizar] = useState(null);
-  
 
   useEffect(() => {
     cargarClientes();
@@ -34,20 +30,8 @@ function Clientes() {
     }
   };
 
-  // 🔥 NUEVO
-  const handleSuccess = (data) => {
-    cargarClientes();
-
-    if (data) {
-      setClienteMedidas(data);
-      setShowMedidas(true);
-    }
-  };
-
   return (
     <div className="clientes-container">
-
-      {/* HEADER */}
       <div className="clientes-header">
         <h2>Clientes</h2>
 
@@ -59,11 +43,7 @@ function Clientes() {
         </button>
       </div>
 
-
-
-      {/* TABLA */}
       <div className="clientes-table">
-
         <table>
           <thead>
             <tr>
@@ -81,7 +61,6 @@ function Clientes() {
                 <td>{c.nombre_cliente}</td>
                 <td>{c.apellido_cliente}</td>
                 <td>{c.telefono}</td>
-
                 <td>
                   <span className={c.estado === 1 ? "badge-activo" : "badge-inactivo"}>
                     {c.estado === 1 ? "Activo" : "Inactivo"}
@@ -94,25 +73,23 @@ function Clientes() {
                   >
                     Editar cliente
                   </button>
+
                   <button
-                  className="btn-editar"
-                  onClick={() => {
-                    setClienteActualizar(c);
-                    setShowActualizar(true);
-                  }}
-                >
-                  Actualizar medidas
-                </button>
-              </td>
+                    className="btn-editar"
+                    onClick={() => {
+                      setClienteActualizar(c);
+                      setShowActualizar(true);
+                    }}
+                  >
+                    Actualizar medidas
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
-
         </table>
-
       </div>
 
-      {/* MODAL CREAR */}
       {showCrear && (
         <CrearCliente
           open={showCrear}
@@ -134,7 +111,6 @@ function Clientes() {
         />
       )}
 
-      {/* MODAL EDITAR */}
       {clienteEditar && (
         <EditarCliente
           isOpen={true}
@@ -144,14 +120,12 @@ function Clientes() {
         />
       )}
 
-      {/* 🔥 MODAL MEDIDAS */}
       {showMedidas && (
         <ModalMedidas
           cliente={clienteMedidas}
           onClose={() => setShowMedidas(false)}
         />
       )}
-
     </div>
   );
 }
