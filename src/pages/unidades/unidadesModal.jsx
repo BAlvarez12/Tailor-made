@@ -67,7 +67,7 @@ export default function unidadesModal({
 
           {!modoCrear && unidadSeleccionada?.estado === 1 && (
             <button className="btn-desactivar" onClick={onArchivar}>
-              Desactivar
+              Innactivar
             </button>
           )}
 

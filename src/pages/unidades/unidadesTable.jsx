@@ -2,47 +2,23 @@ import "./unidades.css";
 
 export default function unidadesTable({
   unidades,
-  selected,
-  setSelected,
-  handleSelectAll,
-  handleSelectOne,
-  onRowClick
+  onEditClick
 }) {
   return (
     <div className="tm-users__table-wrapper">
       <table className="tm-users__table">
         <thead>
           <tr>
-            <th>
-              <input
-                type="checkbox"
-                className="ui-checkbox"
-                checked={selected.length === unidades.length && unidades.length > 0}
-                onChange={handleSelectAll}
-              />
-            </th>
             <th>Nombre</th>
             <th>Símbolo</th>
             <th>Estado</th>
+            <th>Acciones</th>
           </tr>
         </thead>
 
         <tbody>
           {unidades.map((u) => (
-            <tr
-              key={u.unidad_id}
-              onClick={() => onRowClick(u)}
-            >
-              <td>
-                <input
-                  type="checkbox"
-                  className="ui-checkbox"
-                  checked={selected.includes(u.unidad_id)}
-                  onClick={(e) => e.stopPropagation()}
-                  onChange={() => handleSelectOne(u.unidad_id)}
-                />
-              </td>
-
+            <tr key={u.unidad_id}>
               <td>{u.nombre_unidad}</td>
               <td>{u.simbolo_unidad}</td>
 
@@ -56,6 +32,18 @@ export default function unidadesTable({
                 >
                   {u.estado === 1 ? "Activo" : "Inactivo"}
                 </span>
+              </td>
+
+              <td>
+                <div className="tm-users__actions">
+                  <button
+                    type="button"
+                    className="tm-users__action-btn tm-users__action-btn--edit"
+                    onClick={() => onEditClick(u)}
+                  >
+                    Editar
+                  </button>
+                </div>
               </td>
             </tr>
           ))}

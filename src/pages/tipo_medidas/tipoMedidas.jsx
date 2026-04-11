@@ -17,10 +17,8 @@ export default function TipoMedidas() {
   const [busqueda, setBusqueda] = useState("");
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
-  const [selected, setSelected] = useState([]);
   const [filtroEstado, setFiltroEstado] = useState(null); // null = todos, 1 = activos, 0 = archivados
   const [showFilterMenu, setShowFilterMenu] = useState(false);
-  const [showActionMenu, setShowActionMenu] = useState(false);
 
   const [tipoSeleccionado, setTipoSeleccionado] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -54,27 +52,6 @@ export default function TipoMedidas() {
       console.error("Error cargando tipos:", error);
       setTipos([]);
     }
-  };
-
-  const handleSelectOne = (id) => {
-    if (selected.includes(id)) {
-      setSelected(selected.filter((item) => item !== id));
-    } else {
-      setSelected([...selected, id]);
-    }
-  };
-
-  const handleSelectAll = () => {
-    const tiposPagina = getTiposPaginados();
-    const idsPagina = tiposPagina.map((t) => t.tipo_medida_id);
-    const todosSeleccionados = idsPagina.every((id) => selected.includes(id));
-
-    if (todosSeleccionados) {
-      setSelected(selected.filter((id) => !idsPagina.includes(id)));
-      return;
-    }
-
-    setSelected([...new Set([...selected, ...idsPagina])]);
   };
 
   const getTiposFiltrados = () => {
@@ -113,39 +90,6 @@ export default function TipoMedidas() {
       setCurrentPage(1);
     }
   }, [currentPage, totalPages]);
-
-  const getSelectedTipos = () => {
-    return tipos.filter(t => selected.includes(t.tipo_medida_id));
-  };
-
-  const sonTodosInactivos = () => {
-    const selectedTipos = getSelectedTipos();
-    return selectedTipos.length > 0 && selectedTipos.every(t => t.estado === 0);
-  };
-
-  const handleDesactivarSeleccionados = async () => {
-    try {
-      for (let id of selected) {
-        await archiveTipo(id);
-      }
-      setSelected([]);
-      cargarTipos();
-    } catch (error) {
-      console.error("Error desactivando:", error);
-    }
-  };
-
-  const handleActivarSeleccionados = async () => {
-    try {
-      for (let id of selected) {
-        await restoreTipo(id);
-      }
-      setSelected([]);
-      cargarTipos();
-    } catch (error) {
-      console.error("Error activando:", error);
-    }
-  };
 
   const handleDesarchivar = async () => {
     try {
@@ -217,24 +161,13 @@ export default function TipoMedidas() {
     <div className="tm-users">
       {/* HEADER */}
       <TipoMedidasHeader
-        selected={selected}
         busqueda={busqueda}
         setBusqueda={setBusqueda}
         filtroEstado={filtroEstado}
         setFiltroEstado={setFiltroEstado}
         showFilterMenu={showFilterMenu}
         setShowFilterMenu={setShowFilterMenu}
-        showActionMenu={showActionMenu}
-        setShowActionMenu={setShowActionMenu}
         onCreateClick={() => handleModalOpen()}
-        onActionClick={() => {
-          if (sonTodosInactivos()) {
-            handleActivarSeleccionados();
-          } else {
-            handleDesactivarSeleccionados();
-          }
-        }}
-        actionLabel={sonTodosInactivos() ? "Activar" : "Desactivar"}
       />
 
       {/* CARD */}
@@ -248,11 +181,7 @@ export default function TipoMedidas() {
         {totalTiposFiltrados > 0 && (
           <TipoMedidasTable
             tipos={getTiposPaginados()}
-            selected={selected}
-            setSelected={setSelected}
-            handleSelectAll={handleSelectAll}
-            handleSelectOne={handleSelectOne}
-            onRowClick={handleModalOpen}
+            onEditClick={handleModalOpen}
           />
         )}
 
