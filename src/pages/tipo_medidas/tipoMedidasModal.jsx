@@ -54,7 +54,7 @@ export default function tipoMedidasModal({
           {!modoCrear && tipoSeleccionado?.estado === 1 && (
             <>
               <button className="btn-guardar" onClick={onGuardar}>Guardar</button>
-              <button className="btn-desactivar" onClick={onArchivar}>Desactivar</button>
+              <button className="btn-desactivar" onClick={onArchivar}>Innactivar</button>
             </>
           )}
           {!modoCrear && tipoSeleccionado?.estado === 0 && (

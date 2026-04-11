@@ -2,47 +2,23 @@ import "./tipo_medidas.css";
 
 export default function tipoMedidasTable({
   tipos,
-  selected,
-  setSelected,
-  handleSelectAll,
-  handleSelectOne,
-  onRowClick
+  onEditClick
 }) {
   return (
     <div className="tm-users__table-wrapper">
       <table className="tm-users__table">
         <thead>
           <tr>
-            <th>
-              <input
-                type="checkbox"
-                className="ui-checkbox"
-                checked={selected.length === tipos.length && tipos.length > 0}
-                onChange={handleSelectAll}
-              />
-            </th>
             <th>Nombre</th>
             <th>Descripción</th>
             <th>Estado</th>
+            <th>Acciones</th>
           </tr>
         </thead>
 
         <tbody>
           {tipos.map((t) => (
-            <tr
-              key={t.tipo_medida_id}
-              onClick={() => onRowClick(t)}
-            >
-              <td>
-                <input
-                  type="checkbox"
-                  className="ui-checkbox"
-                  checked={selected.includes(t.tipo_medida_id)}
-                  onClick={(e) => e.stopPropagation()}
-                  onChange={() => handleSelectOne(t.tipo_medida_id)}
-                />
-              </td>
-
+            <tr key={t.tipo_medida_id}>
               <td>{t.nombre_tipo_medida}</td>
               <td>{t.descripcion_tipo_medida}</td>
 
@@ -56,6 +32,18 @@ export default function tipoMedidasTable({
                 >
                   {t.estado === 1 ? "Activo" : "Inactivo"}
                 </span>
+              </td>
+
+              <td>
+                <div className="tm-users__actions">
+                  <button
+                    type="button"
+                    className="tm-users__action-btn tm-users__action-btn--edit"
+                    onClick={() => onEditClick(t)}
+                  >
+                    Editar
+                  </button>
+                </div>
               </td>
             </tr>
           ))}

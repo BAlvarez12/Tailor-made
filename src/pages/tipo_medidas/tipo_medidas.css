@@ -558,20 +558,25 @@
 }
 
 .filter-button {
-  background: none;
-  border: none;
+  background: #ffffff;
+  border: 1px solid #d1d5db;
   cursor: pointer;
-  padding: 8px;
+  padding: 10px 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
+  gap: 8px;
+  border-radius: 10px;
   transition: all 0.2s ease;
-  color: #7c3aed;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
 }
 
 .filter-button:hover {
-  background-color: rgba(124, 58, 237, 0.1);
+  border-color: #7c3aed;
+  background-color: rgba(124, 58, 237, 0.08);
 }
 
 .filter-icon {
@@ -680,4 +685,40 @@
   color: #6b7280;
   font-size: 15px;
   margin: 0;
+}
+
+.tm-users__table tbody tr {
+  cursor: default;
+}
+
+.tm-users__table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.tm-users__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.tm-users__action-btn {
+  border: none;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.tm-users__action-btn:hover {
+  transform: translateY(-1px);
+}
+
+.tm-users__action-btn--edit {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+.tm-users__action-btn--edit:hover {
+  background: #c7d2fe;
 }
