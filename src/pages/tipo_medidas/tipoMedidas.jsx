@@ -9,6 +9,7 @@ import {
 import TipoMedidasHeader from "./tipoMedidasHeader";
 import TipoMedidasTable from "./tipoMedidasTable";
 import TipoMedidasModal from "./tipoMedidasModal";
+import { toast } from "react-toastify";
 
 import "./tipo_medidas.css";
 
@@ -50,6 +51,7 @@ export default function TipoMedidas() {
       setTipos(todosLosTipos);
     } catch (error) {
       console.error("Error cargando tipos:", error);
+      toast.error("Error al cargar tipos de medida");
       setTipos([]);
     }
   };
@@ -94,24 +96,41 @@ export default function TipoMedidas() {
   const handleDesarchivar = async () => {
     try {
       await restoreTipo(tipoSeleccionado.tipo_medida_id);
+      toast.success("Tipo de medida activado con éxito");
       setShowModal(false);
       cargarTipos();
     } catch (error) {
       console.error("Error restaurando:", error);
+      toast.error(error?.response?.data?.message || "Error al activar tipo de medida");
     }
   };
 
   const handleArchivarIndividual = async () => {
     try {
       await archiveTipo(tipoSeleccionado.tipo_medida_id);
+      toast.success("Tipo de medida innactivado con éxito");
       setShowModal(false);
       cargarTipos();
     } catch (error) {
       console.error("Error archivando:", error);
+      toast.error(error?.response?.data?.message || "Error al innactivar tipo de medida");
     }
   };
 
   const handleGuardar = async () => {
+    const nombre = (formData.nombre_tipo_medida || "").trim();
+    const descripcion = (formData.descripcion_tipo_medida || "").trim();
+
+    if (nombre.length > 100) {
+      toast.error("El nombre del tipo de medida no puede superar 100 caracteres");
+      return;
+    }
+
+    if (descripcion.length > 300) {
+      toast.error("La descripción del tipo de medida no puede superar 300 caracteres");
+      return;
+    }
+
     try {
       const usuario = JSON.parse(localStorage.getItem("usuario"));
 
@@ -120,8 +139,10 @@ export default function TipoMedidas() {
           ...formData,
           usuario_creador: usuario?.usuario_id
         });
+        toast.success("Tipo de medida creado con éxito");
       } else {
         await updateTipo(tipoSeleccionado.tipo_medida_id, formData);
+        toast.success("Tipo de medida actualizado con éxito");
       }
 
       setShowModal(false);
@@ -129,7 +150,23 @@ export default function TipoMedidas() {
 
     } catch (error) {
       console.error("Error guardando:", error);
-      alert(error.response?.data?.error || "Error al guardar");
+      const backendMessage = String(
+        error?.response?.data?.error ||
+        error?.response?.data?.message ||
+        ""
+      ).toLowerCase();
+
+      if (backendMessage.includes("data too long") && backendMessage.includes("nombre_tipo_medida")) {
+        toast.error("El nombre del tipo de medida no puede superar 100 caracteres");
+        return;
+      }
+
+      if (backendMessage.includes("data too long") && backendMessage.includes("descripcion_tipo_medida")) {
+        toast.error("La descripción del tipo de medida no puede superar 300 caracteres");
+        return;
+      }
+
+      toast.error(error?.response?.data?.error || error?.response?.data?.message || "Error al guardar tipo de medida");
     }
   };
 

@@ -9,6 +9,7 @@ import {
 import UnidadesHeader from "./unidadesHeader";
 import UnidadesTable from "./unidadesTable";
 import UnidadesModal from "./unidadesModal";
+import { toast } from "react-toastify";
 
 import "./unidades.css";
 
@@ -52,6 +53,7 @@ export default function Unidades() {
       setUnidades(todasLasUnidades);
     } catch (error) {
       console.error("Error cargando unidades:", error);
+      toast.error("Error al cargar unidades");
       setUnidades([]);
     }
   };
@@ -96,35 +98,71 @@ export default function Unidades() {
   const handleDesarchivar = async () => {
     try {
       await restoreUnidad(unidadSeleccionada.unidad_id);
+      toast.success("Unidad activada con éxito");
       setShowModal(false);
       cargarUnidades();
     } catch (error) {
       console.error("Error restaurando:", error);
+      toast.error(error?.response?.data?.message || "Error al activar unidad");
     }
   };
 
   const handleArchivarIndividual = async () => {
     try {
       await archiveUnidad(unidadSeleccionada.unidad_id);
+      toast.success("Unidad innactivada con éxito");
       setShowModal(false);
       cargarUnidades();
     } catch (error) {
       console.error("Error archivando:", error);
+      toast.error(error?.response?.data?.message || "Error al innactivar unidad");
     }
   };
 
   const handleGuardar = async () => {
+    const nombre = (formData.nombre_unidad || "").trim();
+    const simbolo = (formData.simbolo_unidad || "").trim();
+
+    if (nombre.length > 20) {
+      toast.error("El nombre de la unidad no puede superar 20 caracteres");
+      return;
+    }
+
+    if (simbolo.length > 10) {
+      toast.error("El símbolo de la unidad no puede superar 10 caracteres");
+      return;
+    }
+
     try {
       if (modoCrear) {
         await createUnidad(formData);
+        toast.success("Unidad creada con éxito");
       } else {
         await updateUnidad(unidadSeleccionada.unidad_id, formData);
+        toast.success("Unidad actualizada con éxito");
       }
 
       setShowModal(false);
       cargarUnidades();
     } catch (error) {
       console.error("Error guardando unidad:", error);
+      const backendMessage = String(
+        error?.response?.data?.error ||
+        error?.response?.data?.message ||
+        ""
+      ).toLowerCase();
+
+      if (backendMessage.includes("data too long") && backendMessage.includes("nombre_unidad")) {
+        toast.error("El nombre de la unidad no puede superar 20 caracteres");
+        return;
+      }
+
+      if (backendMessage.includes("data too long") && backendMessage.includes("simbolo_unidad")) {
+        toast.error("El símbolo de la unidad no puede superar 10 caracteres");
+        return;
+      }
+
+      toast.error(error?.response?.data?.error || error?.response?.data?.message || "Error al guardar unidad");
     }
   };
 
