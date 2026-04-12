@@ -121,6 +121,11 @@ export default function TipoMedidas() {
     const nombre = (formData.nombre_tipo_medida || "").trim();
     const descripcion = (formData.descripcion_tipo_medida || "").trim();
 
+    if (!nombre) {
+      toast.error("El nombre del tipo de medida es obligatorio");
+      return;
+    }
+
     if (nombre.length > 100) {
       toast.error("El nombre del tipo de medida no puede superar 100 caracteres");
       return;

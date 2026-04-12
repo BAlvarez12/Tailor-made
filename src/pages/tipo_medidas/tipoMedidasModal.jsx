@@ -78,7 +78,6 @@ export default function tipoMedidasModal({
                 Guardar
               </button>
               <button className="btn-desactivar" onClick={onArchivar}>
-                <ToggleLeft size={15} />
                 Innactivar
               </button>
             </>

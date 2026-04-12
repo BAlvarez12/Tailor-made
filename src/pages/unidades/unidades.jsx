@@ -123,6 +123,11 @@ export default function Unidades() {
     const nombre = (formData.nombre_unidad || "").trim();
     const simbolo = (formData.simbolo_unidad || "").trim();
 
+    if (!nombre) {
+      toast.error("El nombre de la unidad es obligatorio");
+      return;
+    }
+
     if (nombre.length > 20) {
       toast.error("El nombre de la unidad no puede superar 20 caracteres");
       return;
