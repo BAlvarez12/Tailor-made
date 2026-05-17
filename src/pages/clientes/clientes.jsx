@@ -1,365 +1,260 @@
-import { useState, useEffect } from "react";
-import {
-  getClientes,
-  createCliente,
-  updateCliente,
-  deleteCliente,
-  restoreCliente,
-} from "../../services/clientes/clienteService";
+import { useEffect, useMemo, useState } from "react";
+import { getClientes } from "../../services/clienteService";
+import "../../styles/tmListPage.css";
 import "./clientes.css";
+import CrearCliente from "./CrearCliente";
+import EditarCliente from "./EditarCliente";
+import ModalMedidas from "./ModalMedidas";
+import ModalActualizarMedidas from "./ModalActualizarMedidas";
 
-/* COMPONENTE CLIENTES */
-export default function Clientes() {
-
-  /* ESTADOS PRINCIPALES */
+function Clientes() {
   const [clientes, setClientes] = useState([]);
-  const [selected, setSelected] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [busqueda, setBusqueda] = useState("");
+  const [filtroEstado, setFiltroEstado] = useState(null);
+  const [showFilterMenu, setShowFilterMenu] = useState(false);
 
-  /* ESTADOS DE UI */
-  const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
-  const [showModal, setShowModal] = useState(false);
-  const [modoCrear, setModoCrear] = useState(false);
-  const [mostrarArchivados, setMostrarArchivados] = useState(false);
+  const [showCrear, setShowCrear] = useState(false);
+  const [clienteEditar, setClienteEditar] = useState(null);
+  const [showMedidas, setShowMedidas] = useState(false);
+  const [clienteMedidas, setClienteMedidas] = useState(null);
+  const [showActualizar, setShowActualizar] = useState(false);
+  const [clienteActualizar, setClienteActualizar] = useState(null);
 
-  /* ESTADO DEL FORMULARIO */
-  const [formData, setFormData] = useState({
-    nombre_cliente: "",
-    apellido_cliente: "",
-    telefono: "",
-  });
-
-  /* EFECTO: CARGAR CLIENTES */
-  useEffect(() => {
-    cargarClientes();
-  }, [mostrarArchivados]);
-
-  /* FUNCIÓN: OBTENER CLIENTES */
   const cargarClientes = async () => {
     try {
-      const data = await getClientes(mostrarArchivados);
-      setClientes(data);
-    } catch (error) {
-      console.error("Error cargando clientes:", error);
+      setLoading(true);
+      setError("");
+      const data = await getClientes();
+      setClientes(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Error cargando clientes:", err);
+      setError("No se pudieron cargar los clientes.");
+      setClientes([]);
+    } finally {
+      setLoading(false);
     }
   };
 
-  /* FUNCIÓN: SELECCIONAR TODOS */
-  const handleSelectAll = (e) => {
-    if (e.target.checked) {
-      setSelected(clientes.map((c) => c.cliente_id));
-    } else {
-      setSelected([]);
+  useEffect(() => {
+    cargarClientes();
+  }, []);
+
+  const clientesFiltrados = useMemo(() => {
+    let lista = clientes;
+
+    if (filtroEstado !== null) {
+      lista = lista.filter((c) => Number(c.estado) === filtroEstado);
     }
-  };
 
-  /* FUNCIÓN: SELECCIONAR UNO */
-  const handleSelectOne = (id) => {
-    if (selected.includes(id)) {
-      setSelected(selected.filter((item) => item !== id));
-    } else {
-      setSelected([...selected, id]);
-    }
-  };
+    const texto = busqueda.trim().toLowerCase();
+    if (!texto) return lista;
 
-  /* FUNCIÓN: ARCHIVAR CLIENTES */
-  const handleArchivar = async () => {
-    try {
-      for (let id of selected) {
-        await deleteCliente(id);
-      }
-      setSelected([]);
-      cargarClientes();
-    } catch (error) {
-      console.error("Error archivando:", error);
-    }
-  };
-
-  /* FUNCIÓN: DESARCHIVAR CLIENTE */
-  const handleDesarchivar = async () => {
-    try {
-      await restoreCliente(clienteSeleccionado.cliente_id);
-      setShowModal(false);
-      cargarClientes();
-    } catch (error) {
-      console.error("Error desarchivando:", error);
-    }
-  };
-
-  /* FUNCIÓN: GUARDAR CLIENTE */
-  const handleGuardar = async () => {
-    try {
-      const usuario = JSON.parse(localStorage.getItem('usuario'));
-
-      if (modoCrear) {
-        await createCliente({
-          ...formData,
-          usuario_creador: usuario?.usuario_id
-        });
-      } else {
-        await updateCliente(clienteSeleccionado.cliente_id, formData);
-      }
-
-      setShowModal(false);
-      cargarClientes();
-    } catch (error) {
-      console.error("Error guardando cliente:", error);
-    }
-  };
+    return lista.filter((c) => {
+      const nombre = (c.nombre_cliente || "").toLowerCase();
+      const apellido = (c.apellido_cliente || "").toLowerCase();
+      const telefono = (c.telefono || "").toLowerCase();
+      return (
+        nombre.includes(texto) ||
+        apellido.includes(texto) ||
+        telefono.includes(texto)
+      );
+    });
+  }, [clientes, busqueda, filtroEstado]);
 
   return (
-    <div className="container clientes-container">
-
-      {/* TITULO */}
-      <h2 className="clientes-title">Clientes</h2>
-
-      {/* TOOLBAR */}
-      <div className="clientes-toolbar">
-
-        {/* BUSCADOR */}
-        <div className="clientes-search">
-          <div className="input-group">
-            <span className="input-group-text">🔍</span>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Buscar"
-            />
-          </div>
+    <div className="tm-users">
+      <header className="tm-users__header">
+        <div>
+          <h1>Clientes</h1>
+          <p>Administra la información de tus clientes y sus medidas.</p>
         </div>
 
-        {/* FILTRO */}
-        <div className="clientes-filtro dropdown">
-          <button
-            className="btn btn-outline-secondary dropdown-toggle"
-            data-bs-toggle="dropdown"
-          >
-            {mostrarArchivados ? "Archivados" : "Activos"}
-          </button>
+        <div className="search-filter-container">
+          <div className="group">
+            <svg className="icon" aria-hidden="true" viewBox="0 0 24 24">
+              <g>
+                <path d="M21.53 20.47l-3.66-3.66C19.195 15.24 20 13.214 20 11c0-4.97-4.03-9-9-9s-9 4.03-9 9 4.03 9 9 9c2.215 0 4.24-.804 5.808-2.13l3.66 3.66c.147.146.34.22.53.22s.385-.073.53-.22c.295-.293.295-.767.002-1.06zM3.5 11c0-4.135 3.365-7.5 7.5-7.5s7.5 3.365 7.5 7.5-3.365 7.5-7.5 7.5-7.5-3.365-7.5-7.5z" />
+              </g>
+            </svg>
+            <input
+              type="search"
+              className="input"
+              placeholder="Buscar por nombre o teléfono"
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+            />
+          </div>
 
-          <ul className="dropdown-menu">
-            <li>
+          <div className="filter-dropdown">
+            <button
+              type="button"
+              className="filter-button"
+              title="Filtrar"
+              onClick={() => setShowFilterMenu(!showFilterMenu)}
+            >
+              <svg
+                className="filter-icon"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M3 6a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707l-6.414 6.414A1 1 0 0114 15.414V19a1 1 0 01-.553.894l-4 2A1 1 0 018 21v-5.586a1 1 0 00-.293-.707L1.293 8.707A1 1 0 011 8V6z"
+                  fill="currentColor"
+                />
+              </svg>
+            </button>
+            <div className={`filter-menu ${showFilterMenu ? "active" : ""}`}>
               <button
-                className="dropdown-item"
+                type="button"
+                className={`filter-option ${filtroEstado === null ? "active" : ""}`}
                 onClick={() => {
-                  setMostrarArchivados(false);
-                  setSelected([]);
+                  setFiltroEstado(null);
+                  setShowFilterMenu(false);
+                }}
+              >
+                Todos
+              </button>
+              <button
+                type="button"
+                className={`filter-option ${filtroEstado === 1 ? "active" : ""}`}
+                onClick={() => {
+                  setFiltroEstado(1);
+                  setShowFilterMenu(false);
                 }}
               >
                 Activos
               </button>
-            </li>
-            <li>
               <button
-                className="dropdown-item"
+                type="button"
+                className={`filter-option ${filtroEstado === 0 ? "active" : ""}`}
                 onClick={() => {
-                  setMostrarArchivados(true);
-                  setSelected([]);
+                  setFiltroEstado(0);
+                  setShowFilterMenu(false);
                 }}
               >
-                Archivados
+                Inactivos
               </button>
-            </li>
-          </ul>
-        </div>
-
-        {/* ACCIONES */}
-        <div className="clientes-accion-center">
-          <div className="dropdown">
-            <button
-              className="btn btn-secondary dropdown-toggle"
-              type="button"
-              data-bs-toggle="dropdown"
-            >
-              ⚙️ Acción
-            </button>
-
-            <ul className="dropdown-menu">
-              <li>
-                <button
-                  className="dropdown-item"
-                  onClick={handleArchivar}
-                >
-                  Archivar seleccionados
-                </button>
-              </li>
-            </ul>
+            </div>
           </div>
         </div>
 
-        {/* BOTÓN CREAR */}
-        <div className="clientes-crear">
+        <div className="tm-users__buttons">
           <button
-            className="btn btn-primary"
-            onClick={() => {
-              setModoCrear(true);
-              setClienteSeleccionado(null);
-              setFormData({
-                nombre_cliente: "",
-                apellido_cliente: "",
-                telefono: "",
-              });
-              setShowModal(true);
-            }}
+            type="button"
+            className="tm-users__create-btn"
+            onClick={() => setShowCrear(true)}
           >
-            Crear cliente
+            <span>Crear cliente</span>
           </button>
         </div>
+      </header>
 
+      <div className="tm-users__card">
+        {loading && <p className="tm-users__state">Cargando clientes...</p>}
+
+        {error && <p className="tm-users__error">{error}</p>}
+
+        {!loading && !error && clientesFiltrados.length === 0 && (
+          <p className="tm-users__state">No hay clientes para mostrar.</p>
+        )}
+
+        {!loading && !error && clientesFiltrados.length > 0 && (
+          <div className="tm-users__table-wrapper">
+            <table className="tm-users__table">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Apellido</th>
+                  <th>Teléfono</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {clientesFiltrados.map((c) => (
+                  <tr key={c.cliente_id}>
+                    <td>{c.nombre_cliente}</td>
+                    <td>{c.apellido_cliente}</td>
+                    <td>{c.telefono || "—"}</td>
+                    <td>
+                      <span
+                        className={`tm-users__badge ${
+                          Number(c.estado) === 1
+                            ? "tm-users__badge--active"
+                            : "tm-users__badge--inactive"
+                        }`}
+                      >
+                        {Number(c.estado) === 1 ? "Activo" : "Inactivo"}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="tm-users__acciones">
+                        <button
+                          type="button"
+                          className="tm-users__btn-accion tm-users__btn-accion--editar"
+                          onClick={() => setClienteEditar(c)}
+                        >
+                          Editar
+                        </button>
+                        <button
+                          type="button"
+                          className="tm-users__btn-accion tm-users__btn-accion--secundario"
+                          onClick={() => {
+                            setClienteActualizar(c);
+                            setShowActualizar(true);
+                          }}
+                        >
+                          Actualizar medidas
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
-      {/* TABLA */}
-      <table className="table clientes-table">
-        <thead className="table-dark">
-          <tr>
-            <th>
-              <input
-                type="checkbox"
-                onChange={handleSelectAll}
-                checked={
-                  selected.length === clientes.length &&
-                  clientes.length > 0
-                }
-              />
-            </th>
-            <th>Nombre</th>
-            <th>Apellido</th>
-            <th>Teléfono</th>
-            <th>Estado</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {clientes.map((c) => (
-            <tr
-              key={c.cliente_id}
-              className={
-                selected.includes(c.cliente_id)
-                  ? "clientes-row-selected"
-                  : ""
-              }
-              onClick={() => {
-                setClienteSeleccionado(c);
-                setModoCrear(false);
-                setFormData({
-                  nombre_cliente: c.nombre_cliente,
-                  apellido_cliente: c.apellido_cliente,
-                  telefono: c.telefono,
-                });
-                setShowModal(true);
-              }}
-            >
-              <td>
-                <input
-                  type="checkbox"
-                  checked={selected.includes(c.cliente_id)}
-                  onClick={(e) => e.stopPropagation()}
-                  onChange={() => handleSelectOne(c.cliente_id)}
-                />
-              </td>
-              <td>{c.nombre_cliente}</td>
-              <td>{c.apellido_cliente}</td>
-              <td>{c.telefono}</td>
-              <td>
-                {c.estado === 0 ? (
-                  <span className="badge bg-danger">Archivado</span>
-                ) : (
-                  <span className="badge bg-success">Activo</span>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      {/* MODAL */}
-      {showModal && (
-        <div className="clientes-modal-overlay">
-          <div className="clientes-modal">
-
-            {/* HEADER MODAL */}
-            <div className="clientes-modal-header">
-              <h3>
-                {modoCrear ? "Crear cliente" : "Editar cliente"}
-              </h3>
-              <button onClick={() => setShowModal(false)}>✖</button>
-            </div>
-
-            {/* BODY MODAL */}
-            <div className="clientes-modal-body">
-
-              <div className="row">
-                <div className="col">
-                  <label>Nombre</label>
-                  <input
-                    className="form-control"
-                    value={formData.nombre_cliente}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        nombre_cliente: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-
-                <div className="col">
-                  <label>Apellido</label>
-                  <input
-                    className="form-control"
-                    value={formData.apellido_cliente}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        apellido_cliente: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-              </div>
-
-              <div className="mt-3">
-                <label>Teléfono</label>
-                <input
-                  className="form-control"
-                  value={formData.telefono}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      telefono: e.target.value,
-                    })
-                  }
-                />
-              </div>
-
-            </div>
-
-            {/* FOOTER MODAL */}
-            <div className="clientes-modal-footer">
-              <button
-                className="btn btn-secondary"
-                onClick={() => setShowModal(false)}
-              >
-                Cancelar
-              </button>
-
-              <button className="btn btn-primary" onClick={handleGuardar}>
-                {modoCrear ? "Crear" : "Guardar"}
-              </button>
-
-              {clienteSeleccionado?.estado === 0 && (
-                <button
-                  className="btn btn-warning"
-                  onClick={handleDesarchivar}
-                >
-                  Desarchivar
-                </button>
-              )}
-            </div>
-
-          </div>
-        </div>
+      {showCrear && (
+        <CrearCliente
+          open={showCrear}
+          onClose={() => setShowCrear(false)}
+          onSuccess={(nuevoCliente) => {
+            cargarClientes();
+            setShowCrear(false);
+            setClienteMedidas(nuevoCliente);
+            setShowMedidas(true);
+          }}
+        />
       )}
 
+      {showActualizar && (
+        <ModalActualizarMedidas
+          cliente={clienteActualizar}
+          onClose={() => setShowActualizar(false)}
+        />
+      )}
+
+      {clienteEditar && (
+        <EditarCliente
+          isOpen={true}
+          cliente={clienteEditar}
+          onClose={() => setClienteEditar(null)}
+          onSuccess={cargarClientes}
+        />
+      )}
+
+      {showMedidas && (
+        <ModalMedidas
+          cliente={clienteMedidas}
+          onClose={() => setShowMedidas(false)}
+        />
+      )}
     </div>
   );
 }
+
+export default Clientes;

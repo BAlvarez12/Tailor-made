@@ -1,5 +1,6 @@
 /* CONFIGURACIÓN API */
 import axios from "axios";
+import api from '../utils/api';
 
 const API_URL = "http://localhost:3000/api/tipo-medidas";
 
@@ -22,3 +23,8 @@ export const archiveTipo = (id) =>
 /* DESARCHIVAR TIPO */
 export const restoreTipo = (id) =>
   axios.put(`${API_URL}/restaurar/${id}`);
+
+export const obtenerTiposMedidaPorPrenda = async (prendaId) => {
+  const response = await api.get(`/tipo-medidas/obtener/${prendaId}/medidas`)
+  return response.data
+}

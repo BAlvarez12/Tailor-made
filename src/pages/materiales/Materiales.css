@@ -1,0 +1,114 @@
+/* Estilos específicos de Materiales (layout base en tmListPage.css) */
+
+.materiales-material-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.materiales-carrusel-container {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.materiales-carrusel-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  cursor: pointer;
+}
+
+.materiales-material-info span {
+  font-weight: 600;
+  color: #111827;
+}
+
+/* Modal vista previa de imágenes */
+.modal-img-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.modal-img-container {
+  position: relative;
+  max-width: 90%;
+  max-height: 90%;
+}
+
+.modal-img {
+  max-width: 100%;
+  max-height: 80vh;
+  border-radius: 12px;
+}
+
+.fade-in {
+  opacity: 1;
+  transition: opacity 0.15s ease;
+}
+
+.fade-out {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.btn-cerrar {
+  position: absolute;
+  top: -40px;
+  right: 0;
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.carrusel-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.carrusel-btn.left {
+  left: -50px;
+}
+
+.carrusel-btn.right {
+  right: -50px;
+}
+
+.dots-container {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+}
+
+.dot.active {
+  background: white;
+}

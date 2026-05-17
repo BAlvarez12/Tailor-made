@@ -10,6 +10,12 @@
   border-right: 1px solid rgba(255, 255, 255, 0.06);
   padding: 20px 16px;
   box-sizing: border-box;
+
+  position: fixed;  /*lui*/
+  top: 0;        
+  left: 0;
+
+  z-index: 100;
 }
 
 .tm-sidebar__menu {

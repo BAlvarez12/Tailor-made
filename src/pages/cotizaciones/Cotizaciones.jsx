@@ -1,0 +1,750 @@
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import "./Cotizaciones.css";
+import { obtenerClientesActivosService } from "../../services/clienteService";
+import { obtenerPrendas, obtenerPrendaPorId } from "../../services/Prendas";
+import {
+  crearCotizacionService,
+  listarCotizacionesService,
+  abrirPdfCotizacion,
+} from "../../services/cotizacionesService";
+import {
+  obtenerDetallePrenda,
+  obtenerImagenesPrenda,
+  construirUrlImagenPrenda,
+} from "../../utils/Imagenes";
+import {
+  normalizarCliente,
+  formatearClienteDisplay,
+  clienteCoincideBusqueda,
+} from "../../utils/clienteDisplay";
+import {
+  Search,
+  User,
+  Shirt,
+  Ruler,
+  Package,
+  Image,
+  X,
+  Save,
+  Printer,
+  List,
+  Plus,
+} from "lucide-react";
+
+const obtenerUsuarioId = () => {
+  try {
+    const usuario = JSON.parse(localStorage.getItem("usuario")) || {};
+    return usuario.usuario_id ?? usuario.id ?? null;
+  } catch {
+    return null;
+  }
+};
+
+const normalizarRespuesta = (data) => {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.data)) return data.data;
+  if (Array.isArray(data?.results)) return data.results;
+  return [];
+};
+
+const obtenerIdPrenda = (prenda) =>
+  String(prenda?.cliente_prenda_id ?? prenda?.id ?? "");
+
+const formatearMoneda = (valor) => {
+  const numero = Number(valor);
+  if (Number.isNaN(numero)) return "Q 0.00";
+  return `Q ${numero.toLocaleString("es-GT", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+};
+
+const IconoQuetzal = ({ size = 18 }) => (
+  <span className="cotiz-currency-icon" style={{ fontSize: size }}>
+    Q
+  </span>
+);
+
+function Cotizaciones() {
+  const [clientes, setClientes] = useState([]);
+  const [prendas, setPrendas] = useState([]);
+  const [loadingInicial, setLoadingInicial] = useState(true);
+  const [errorCarga, setErrorCarga] = useState("");
+
+  const [clienteId, setClienteId] = useState("");
+  const [clienteSearch, setClienteSearch] = useState("");
+  const [clienteDropdownOpen, setClienteDropdownOpen] = useState(false);
+  const clienteAutocompleteRef = useRef(null);
+
+  const [prendaId, setPrendaId] = useState("");
+
+  const [detallePrenda, setDetallePrenda] = useState(null);
+  const [loadingDetalle, setLoadingDetalle] = useState(false);
+  const [errorDetalle, setErrorDetalle] = useState("");
+
+  const [valorCotizacion, setValorCotizacion] = useState("");
+  const [notas, setNotas] = useState("");
+  const [guardando, setGuardando] = useState(false);
+  const [mensajeExito, setMensajeExito] = useState("");
+
+  const [vista, setVista] = useState("crear");
+  const [cotizaciones, setCotizaciones] = useState([]);
+  const [busquedaListado, setBusquedaListado] = useState("");
+  const [loadingListado, setLoadingListado] = useState(false);
+  const [errorListado, setErrorListado] = useState("");
+
+  const cargarDatos = useCallback(async () => {
+    try {
+      setLoadingInicial(true);
+      setErrorCarga("");
+      const [clientesResp, prendasResp] = await Promise.all([
+        obtenerClientesActivosService(),
+        obtenerPrendas(),
+      ]);
+      setClientes(normalizarRespuesta(clientesResp).map(normalizarCliente));
+      setPrendas(normalizarRespuesta(prendasResp));
+    } catch (err) {
+      console.error("Error al cargar cotizaciones:", err);
+      setErrorCarga("No se pudo cargar la información inicial.");
+    } finally {
+      setLoadingInicial(false);
+    }
+  }, []);
+
+  const cargarListado = async (termino = busquedaListado) => {
+    try {
+      setLoadingListado(true);
+      setErrorListado("");
+      const data = await listarCotizacionesService(String(termino || "").trim());
+      setCotizaciones(normalizarRespuesta(data));
+    } catch (err) {
+      console.error("Error al cargar listado:", err);
+      setErrorListado("No se pudo cargar el listado de cotizaciones.");
+      setCotizaciones([]);
+    } finally {
+      setLoadingListado(false);
+    }
+  };
+
+  useEffect(() => {
+    cargarDatos();
+  }, [cargarDatos]);
+
+  useEffect(() => {
+    if (vista === "listado") {
+      cargarListado("");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vista]);
+
+  const clienteSeleccionado = useMemo(
+    () => clientes.find((c) => String(c.cliente_id) === String(clienteId)),
+    [clientes, clienteId]
+  );
+
+  const prendasDelCliente = useMemo(() => {
+    if (!clienteId) return [];
+    return prendas.filter(
+      (p) =>
+        String(p.cliente?.cliente_id ?? p.cliente_id) === String(clienteId)
+    );
+  }, [prendas, clienteId]);
+
+  const clientesFiltrados = useMemo(() => {
+    const texto = clienteSearch.trim().toLowerCase();
+    const lista = texto
+      ? clientes.filter((c) => clienteCoincideBusqueda(c, texto))
+      : clientes;
+    return lista.slice(0, 12);
+  }, [clientes, clienteSearch]);
+
+  const imagenesReferencia = useMemo(() => {
+    if (!detallePrenda) return [];
+    return obtenerImagenesPrenda(detallePrenda).map(construirUrlImagenPrenda);
+  }, [detallePrenda]);
+
+  const medidas = useMemo(() => {
+    if (!detallePrenda?.medidas) return [];
+    return normalizarRespuesta(detallePrenda.medidas);
+  }, [detallePrenda]);
+
+  const materiales = useMemo(() => {
+    if (!detallePrenda?.materiales) return [];
+    return normalizarRespuesta(detallePrenda.materiales);
+  }, [detallePrenda]);
+
+  const tipoPrendaNombre = useMemo(() => {
+    if (!detallePrenda) return "";
+    return (
+      detallePrenda.nombre_tipo_prenda ||
+      detallePrenda.tipo_prenda?.nombre ||
+      "Sin tipo"
+    );
+  }, [detallePrenda]);
+
+  const cargarDetallePrenda = async (id) => {
+    try {
+      setLoadingDetalle(true);
+      setErrorDetalle("");
+      const response = await obtenerPrendaPorId(id);
+      setDetallePrenda(obtenerDetallePrenda(response));
+    } catch (err) {
+      console.error("Error al cargar detalle de prenda:", err);
+      setDetallePrenda(null);
+      setErrorDetalle("No se pudo cargar el detalle de la prenda.");
+    } finally {
+      setLoadingDetalle(false);
+    }
+  };
+
+  const limpiarPrenda = () => {
+    setPrendaId("");
+    setDetallePrenda(null);
+    setErrorDetalle("");
+    setValorCotizacion("");
+    setNotas("");
+    setMensajeExito("");
+  };
+
+  const limpiarCliente = () => {
+    setClienteId("");
+    setClienteSearch("");
+    limpiarPrenda();
+  };
+
+  const seleccionarCliente = (cliente) => {
+    const id = String(cliente.cliente_id);
+    setClienteId(id);
+    setClienteSearch(formatearClienteDisplay(cliente));
+    setClienteDropdownOpen(false);
+    limpiarPrenda();
+  };
+
+  const seleccionarPrenda = async (prenda) => {
+    const id = obtenerIdPrenda(prenda);
+    if (!id) return;
+    if (id === prendaId && detallePrenda) return;
+    setPrendaId(id);
+    setMensajeExito("");
+    await cargarDetallePrenda(id);
+  };
+
+  useEffect(() => {
+    if (!clienteDropdownOpen) return;
+    const handleClickOutside = (e) => {
+      if (
+        clienteAutocompleteRef.current &&
+        !clienteAutocompleteRef.current.contains(e.target)
+      ) {
+        setClienteDropdownOpen(false);
+        if (clienteSeleccionado) {
+          setClienteSearch(formatearClienteDisplay(clienteSeleccionado));
+        }
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [clienteDropdownOpen, clienteSeleccionado]);
+
+  const handleGuardar = async (e) => {
+    e.preventDefault();
+    setMensajeExito("");
+
+    if (!clienteId) {
+      setErrorDetalle("Selecciona un cliente.");
+      return;
+    }
+    if (!prendaId || !detallePrenda) {
+      setErrorDetalle("Selecciona una prenda del cliente.");
+      return;
+    }
+    const valor = Number(valorCotizacion);
+    if (!valorCotizacion.trim() || Number.isNaN(valor) || valor <= 0) {
+      setErrorDetalle("Ingresa un valor de cotización válido.");
+      return;
+    }
+
+    try {
+      setGuardando(true);
+      const resultado = await crearCotizacionService({
+        cliente_id: Number(clienteId),
+        cliente_prenda_id: Number(prendaId),
+        valor_total: valor,
+        notas: notas.trim(),
+        usuario_creador: obtenerUsuarioId(),
+      });
+
+      setMensajeExito(
+        `Cotización ${resultado.codigo_cotizacion || ""} guardada correctamente.`
+      );
+      setErrorDetalle("");
+
+      if (resultado.cotizacion_id) {
+        await abrirPdfCotizacion(
+          resultado.cotizacion_id,
+          resultado.codigo_cotizacion
+        );
+      }
+    } catch (err) {
+      console.error("Error al guardar cotización:", err);
+      setErrorDetalle(
+        err?.response?.data?.message || "No se pudo guardar la cotización."
+      );
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  const handleImprimirPdf = async (cotizacion) => {
+    try {
+      await abrirPdfCotizacion(
+        cotizacion.cotizacion_id,
+        cotizacion.codigo_cotizacion
+      );
+    } catch (err) {
+      console.error("Error al abrir PDF:", err);
+      setErrorListado("No se pudo generar el PDF.");
+    }
+  };
+
+  return (
+    <div className="cotiz-page">
+      <header className="cotiz-page__header">
+        <div>
+          <span className="cotiz-page__eyebrow">Ventas</span>
+          <h1 className="cotiz-page__title">Cotizaciones</h1>
+          <p className="cotiz-page__subtitle">
+            Crea cotizaciones, consulta el historial y reimprime PDF con
+            encabezado BeautyBell.
+          </p>
+        </div>
+        <div className="cotiz-tabs">
+          <button
+            type="button"
+            className={`cotiz-tabs__btn ${vista === "crear" ? "is-active" : ""}`}
+            onClick={() => setVista("crear")}
+          >
+            <Plus size={18} />
+            Nueva cotización
+          </button>
+          <button
+            type="button"
+            className={`cotiz-tabs__btn ${vista === "listado" ? "is-active" : ""}`}
+            onClick={() => setVista("listado")}
+          >
+            <List size={18} />
+            Listado
+          </button>
+        </div>
+      </header>
+
+      {vista === "listado" && (
+        <section className="cotiz-listado">
+          <div className="cotiz-listado__toolbar">
+            <input
+              type="text"
+              className="cotiz-listado__search"
+              placeholder="Buscar por código, nombre o teléfono del cliente..."
+              value={busquedaListado}
+              onChange={(e) => setBusquedaListado(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && cargarListado()}
+            />
+            <button type="button" onClick={() => cargarListado()}>
+              Buscar
+            </button>
+          </div>
+
+          {loadingListado && (
+            <div className="cotiz-page__state">Cargando cotizaciones...</div>
+          )}
+
+          {!loadingListado && errorListado && (
+            <div className="cotiz-page__state cotiz-page__state--error">
+              <span>{errorListado}</span>
+            </div>
+          )}
+
+          {!loadingListado && !errorListado && cotizaciones.length === 0 && (
+            <div className="cotiz-page__state">No hay cotizaciones para mostrar.</div>
+          )}
+
+          {!loadingListado && !errorListado && cotizaciones.length > 0 && (
+            <div className="cotiz-table-wrap">
+              <table className="cotiz-table">
+                <thead>
+                  <tr>
+                    <th>Código</th>
+                    <th>Cliente</th>
+                    <th>Teléfono</th>
+                    <th>Tipo de prenda</th>
+                    <th>Total</th>
+                    <th>Fecha</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {cotizaciones.map((item) => (
+                    <tr key={item.cotizacion_id}>
+                      <td>
+                        <strong>{item.codigo_cotizacion}</strong>
+                      </td>
+                      <td>{item.cliente_nombre}</td>
+                      <td>{item.cliente_telefono || "—"}</td>
+                      <td>{item.tipo_prenda_nombre || "—"}</td>
+                      <td>{formatearMoneda(item.valor_total)}</td>
+                      <td>
+                        {item.fecha_creado
+                          ? new Date(item.fecha_creado).toLocaleDateString("es-GT")
+                          : "—"}
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          className="cotiz-table__pdf"
+                          onClick={() => handleImprimirPdf(item)}
+                        >
+                          <Printer size={16} />
+                          Ver / Reimprimir PDF
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      )}
+
+      {vista === "crear" && loadingInicial && (
+        <div className="cotiz-page__state">Cargando información...</div>
+      )}
+
+      {vista === "crear" && !loadingInicial && errorCarga && (
+        <div className="cotiz-page__state cotiz-page__state--error">
+          <span>{errorCarga}</span>
+          <button type="button" onClick={cargarDatos}>
+            Reintentar
+          </button>
+        </div>
+      )}
+
+      {vista === "crear" && !loadingInicial && !errorCarga && (
+        <form className="cotiz-layout" onSubmit={handleGuardar}>
+          <section className="cotiz-panel cotiz-panel--selectors">
+            <h2>Selección</h2>
+
+            <div
+              className="cotiz-field cotiz-autocomplete"
+              ref={clienteAutocompleteRef}
+            >
+              <label>Cliente</label>
+              <div className="cotiz-input-icon cotiz-autocomplete__trigger">
+                {clienteId ? <User size={18} /> : <Search size={18} />}
+                <input
+                  type="text"
+                  value={clienteSearch}
+                  onChange={(e) => {
+                    setClienteSearch(e.target.value);
+                    setClienteDropdownOpen(true);
+                    if (clienteId) {
+                      const sel = clientes.find(
+                        (c) => String(c.cliente_id) === String(clienteId)
+                      );
+                      if (e.target.value.trim() !== formatearClienteDisplay(sel)) {
+                        limpiarCliente();
+                        setClienteSearch(e.target.value);
+                      }
+                    }
+                  }}
+                  onFocus={() => setClienteDropdownOpen(true)}
+                  placeholder="Buscar por nombre o teléfono"
+                  autoComplete="off"
+                />
+                {clienteId && (
+                  <button
+                    type="button"
+                    className="cotiz-autocomplete__clear"
+                    onClick={limpiarCliente}
+                    aria-label="Quitar cliente"
+                  >
+                    <X size={16} />
+                  </button>
+                )}
+              </div>
+              {clienteDropdownOpen && (
+                <ul className="cotiz-autocomplete__list" role="listbox">
+                  {clientesFiltrados.length > 0 ? (
+                    clientesFiltrados.map((cliente) => (
+                      <li key={cliente.cliente_id}>
+                        <button
+                          type="button"
+                          className="cotiz-autocomplete__option"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => seleccionarCliente(cliente)}
+                        >
+                          {formatearClienteDisplay(cliente)}
+                        </button>
+                      </li>
+                    ))
+                  ) : (
+                    <li className="cotiz-autocomplete__empty">
+                      No se encontraron clientes
+                    </li>
+                  )}
+                </ul>
+              )}
+            </div>
+
+            <div
+              className={`cotiz-field cotiz-prenda-picker ${
+                !clienteId ? "is-disabled" : ""
+              }`}
+            >
+              <label>
+                Prenda del cliente
+                {clienteId && prendasDelCliente.length > 0 && (
+                  <span className="cotiz-prenda-picker__count">
+                    ({prendasDelCliente.length})
+                  </span>
+                )}
+              </label>
+
+              {!clienteId && (
+                <p className="cotiz-prenda-picker__placeholder">
+                  Primero selecciona un cliente
+                </p>
+              )}
+
+              {clienteId && prendasDelCliente.length === 0 && (
+                <p className="cotiz-prenda-picker__placeholder">
+                  Este cliente no tiene prendas registradas
+                </p>
+              )}
+
+              {clienteId && prendasDelCliente.length > 0 && (
+                <ul
+                  className="cotiz-prenda-picker__list"
+                  role="listbox"
+                  aria-label="Prendas del cliente"
+                >
+                  {prendasDelCliente.map((prenda) => {
+                    const id = obtenerIdPrenda(prenda);
+                    const isSelected = prendaId === id;
+                    const tipo =
+                      prenda.tipo_prenda?.nombre ||
+                      prenda.nombre_tipo_prenda ||
+                      "Sin tipo";
+
+                    return (
+                      <li key={id}>
+                        <button
+                          type="button"
+                          role="option"
+                          aria-selected={isSelected}
+                          className={`cotiz-prenda-picker__item ${
+                            isSelected ? "is-selected" : ""
+                          }`}
+                          onClick={() => seleccionarPrenda(prenda)}
+                          disabled={guardando}
+                        >
+                          <Shirt size={16} aria-hidden />
+                          <span className="cotiz-prenda-picker__text">
+                            <span className="cotiz-prenda-picker__title">
+                              {prenda.titulo || "Sin título"}
+                            </span>
+                            <span className="cotiz-prenda-picker__tipo">
+                              {tipo}
+                            </span>
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          </section>
+
+          <section className="cotiz-panel cotiz-panel--detail">
+            <h2>Detalle de la prenda</h2>
+
+            {!clienteId && (
+              <p className="cotiz-hint">
+                Selecciona un cliente y una prenda para ver el detalle.
+              </p>
+            )}
+
+            {clienteId && !prendaId && (
+              <p className="cotiz-hint">
+                Elige una prenda asociada al cliente seleccionado.
+              </p>
+            )}
+
+            {loadingDetalle && (
+              <p className="cotiz-hint">Cargando detalle de la prenda...</p>
+            )}
+
+            {errorDetalle && (
+              <p className="cotiz-error" role="alert">
+                {errorDetalle}
+              </p>
+            )}
+
+            {mensajeExito && (
+              <p className="cotiz-success" role="status">
+                {mensajeExito}
+              </p>
+            )}
+
+            {detallePrenda && !loadingDetalle && (
+              <div className="cotiz-detail-grid">
+                <article className="cotiz-detail-card">
+                  <div className="cotiz-detail-card__head">
+                    <Shirt size={20} />
+                    <h3>Tipo de prenda</h3>
+                  </div>
+                  <p className="cotiz-detail-card__value">{tipoPrendaNombre}</p>
+                  {detallePrenda.titulo && (
+                    <p className="cotiz-detail-card__meta">
+                      Título: {detallePrenda.titulo}
+                    </p>
+                  )}
+                </article>
+
+                <article className="cotiz-detail-card cotiz-detail-card--wide">
+                  <div className="cotiz-detail-card__head">
+                    <Image size={20} />
+                    <h3>Imágenes de referencia</h3>
+                  </div>
+                  {imagenesReferencia.length > 0 ? (
+                    <div className="cotiz-images">
+                      {imagenesReferencia.map((url, index) => (
+                        <div
+                          key={`${url}-${index}`}
+                          className="cotiz-images__item"
+                        >
+                          <img src={url} alt={`Referencia ${index + 1}`} />
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="cotiz-hint">Sin imágenes de referencia.</p>
+                  )}
+                </article>
+
+                <article className="cotiz-detail-card">
+                  <div className="cotiz-detail-card__head">
+                    <Ruler size={20} />
+                    <h3>Medidas del cliente</h3>
+                  </div>
+                  {medidas.length > 0 ? (
+                    <ul className="cotiz-list">
+                      {medidas.map((m) => (
+                        <li key={m.cliente_medida_id ?? `${m.tipo_medida_id}-${m.valor}`}>
+                          <span>{m.nombre_tipo_medida || "Medida"}</span>
+                          <strong>
+                            {m.valor}
+                            {m.simbolo_unidad
+                              ? ` ${m.simbolo_unidad}`
+                              : m.nombre_unidad
+                                ? ` ${m.nombre_unidad}`
+                                : ""}
+                          </strong>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="cotiz-hint">Sin medidas registradas en esta prenda.</p>
+                  )}
+                </article>
+
+                <article className="cotiz-detail-card">
+                  <div className="cotiz-detail-card__head">
+                    <Package size={20} />
+                    <h3>Materiales a utilizar</h3>
+                  </div>
+                  {materiales.length > 0 ? (
+                    <ul className="cotiz-list cotiz-list--materials">
+                      {materiales.map((mat) => (
+                        <li
+                          key={
+                            mat.cliente_p_material_id ??
+                            `${mat.material_id}-${mat.cantidad}`
+                          }
+                        >
+                          <div>
+                            <span>{mat.nombre_material || "Material"}</span>
+                            {mat.observaciones && (
+                              <small>{mat.observaciones}</small>
+                            )}
+                          </div>
+                          <strong>{mat.cantidad ?? 1}</strong>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="cotiz-hint">Sin materiales asignados.</p>
+                  )}
+                </article>
+              </div>
+            )}
+          </section>
+
+          <section className="cotiz-panel cotiz-panel--valor">
+            <div className="cotiz-detail-card__head">
+              <IconoQuetzal size={20} />
+              <h2>Valor de la cotización</h2>
+            </div>
+
+            <div className="cotiz-valor-row">
+              <label htmlFor="valor-cotizacion">Monto (quetzales)</label>
+              <div className="cotiz-input-icon">
+                <IconoQuetzal size={16} />
+                <input
+                  id="valor-cotizacion"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={valorCotizacion}
+                  onChange={(e) => setValorCotizacion(e.target.value)}
+                  placeholder="0.00"
+                  disabled={!detallePrenda || guardando}
+                />
+              </div>
+              {valorCotizacion && !Number.isNaN(Number(valorCotizacion)) && (
+                <p className="cotiz-valor-preview">
+                  Total: {formatearMoneda(valorCotizacion)}
+                </p>
+              )}
+            </div>
+
+            <div className="cotiz-valor-row">
+              <label htmlFor="notas-cotizacion">Notas (opcional)</label>
+              <textarea
+                id="notas-cotizacion"
+                className="cotiz-textarea"
+                value={notas}
+                onChange={(e) => setNotas(e.target.value)}
+                placeholder="Detalles adicionales de la cotización..."
+                rows={3}
+                disabled={!detallePrenda || guardando}
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="cotiz-save"
+              disabled={!detallePrenda || guardando}
+            >
+              <Save size={18} />
+              {guardando ? "Guardando..." : "Guardar cotización"}
+            </button>
+          </section>
+        </form>
+      )}
+    </div>
+  );
+}
+
+export default Cotizaciones;

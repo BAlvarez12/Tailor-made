@@ -1,0 +1,494 @@
+.img-prendas-page {
+  min-height: 100vh;
+  background: #f5f7fb;
+  padding: 24px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.img-prendas-page__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.img-prendas-page__title {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: #1f2937;
+  word-break: break-word;
+  max-width: 100%;
+}
+
+.img-prendas-page__subtitle {
+  margin: 6px 0 0;
+  color: #6b7280;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.img-prendas-page__header-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.img-prendas-page__header-actions button,
+.img-prendas-toolbar button,
+.img-prendas-page__state button {
+  border: none;
+  background: #111827;
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.img-prendas-page__header-actions button:hover,
+.img-prendas-toolbar button:hover,
+.img-prendas-page__state button:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.img-prendas-toolbar button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.img-prendas-viewer {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 18px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 500px;
+}
+
+.img-prendas-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+  padding: 8px;
+  background: #f9f9f9;
+  border-radius: 12px;
+}
+
+.img-prendas-toolbar__zoom {
+  min-width: 70px;
+  text-align: center;
+  font-weight: 700;
+  color: #374151;
+  font-size: 14px;
+}
+
+.img-prendas-canvas {
+  flex: 1;
+  width: 100%;
+  min-height: 400px;
+  height: 70vh;
+  background: #eef2f7;
+  border-radius: 16px;
+  overflow: auto;
+  overflow-y: auto;
+  overflow-x: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.img-prendas-canvas__image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  transition: transform 0.2s ease;
+  transform-origin: center center;
+  user-select: none;
+  -webkit-user-drag: none;
+  cursor: grab;
+}
+
+.img-prendas-canvas__image:active {
+  cursor: grabbing;
+}
+
+.img-prendas-thumbs {
+  margin-top: 18px;
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 0 10px 0;
+  scroll-behavior: smooth;
+}
+
+.img-prendas-thumbs::-webkit-scrollbar {
+  height: 6px;
+}
+
+.img-prendas-thumbs::-webkit-scrollbar-track {
+  background: #e5e7eb;
+  border-radius: 10px;
+}
+
+.img-prendas-thumbs::-webkit-scrollbar-thumb {
+  background: #9ca3af;
+  border-radius: 10px;
+}
+
+.img-prendas-thumbs::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+.img-prendas-thumbs__item {
+  border: 2px solid transparent;
+  background: transparent;
+  padding: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  width: 88px;
+  height: 88px;
+  flex: 0 0 auto;
+  transition: all 0.2s ease;
+}
+
+.img-prendas-thumbs__item:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.img-prendas-thumbs__item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.img-prendas-thumbs__item--active {
+  border-color: #111827;
+  box-shadow: 0 0 0 3px #111827;
+}
+
+.img-prendas-page__state {
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #374151;
+  padding: 20px;
+}
+
+.img-prendas-page__state--error {
+  color: #b91c1c;
+}
+
+.img-prendas-page__state-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* ==================== MEDIA QUERIES RESPONSIVE ==================== */
+
+/* Tablets y pantallas medianas (768px y menos) */
+@media (max-width: 768px) {
+  .img-prendas-page {
+    padding: 16px;
+    min-height: 100vh;
+  }
+
+  .img-prendas-page__header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .img-prendas-page__title {
+    font-size: 24px;
+    font-weight: 700;
+  }
+
+  .img-prendas-page__subtitle {
+    font-size: 13px;
+  }
+
+  .img-prendas-page__header-actions {
+    width: 100%;
+    gap: 8px;
+  }
+
+  .img-prendas-page__header-actions button {
+    flex: 1;
+    min-width: 120px;
+    padding: 12px 14px;
+    font-size: 13px;
+  }
+
+  .img-prendas-viewer {
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .img-prendas-toolbar {
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .img-prendas-toolbar button {
+    padding: 9px 12px;
+    font-size: 13px;
+    border-radius: 8px;
+  }
+
+  .img-prendas-toolbar__zoom {
+    min-width: 60px;
+    font-size: 13px;
+  }
+
+  .img-prendas-canvas {
+    height: 50vh;
+    padding: 12px;
+    border-radius: 14px;
+  }
+
+  .img-prendas-thumbs {
+    margin-top: 14px;
+    gap: 10px;
+  }
+
+  .img-prendas-thumbs__item {
+    width: 76px;
+    height: 76px;
+    border-radius: 10px;
+  }
+}
+
+/* Celulares medianos (480px - 768px) */
+@media (max-width: 480px) {
+  .img-prendas-page {
+    padding: 12px;
+  }
+
+  .img-prendas-page__header {
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .img-prendas-page__title {
+    font-size: 20px;
+    font-weight: 700;
+  }
+
+  .img-prendas-page__subtitle {
+    font-size: 12px;
+    margin-top: 4px;
+  }
+
+  .img-prendas-page__header-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .img-prendas-page__header-actions button {
+    padding: 11px 10px;
+    font-size: 12px;
+    border-radius: 8px;
+  }
+
+  .img-prendas-viewer {
+    padding: 12px;
+    border-radius: 14px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  }
+
+  .img-prendas-toolbar {
+    gap: 6px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+
+  .img-prendas-toolbar button {
+    padding: 8px 10px;
+    font-size: 12px;
+    border-radius: 6px;
+  }
+
+  .img-prendas-toolbar__zoom {
+    min-width: 50px;
+    font-size: 12px;
+  }
+
+  .img-prendas-canvas {
+    height: 45vh;
+    min-height: 300px;
+    padding: 10px;
+    border-radius: 12px;
+  }
+
+  .img-prendas-canvas__image {
+    max-width: 100%;
+    max-height: 100%;
+  }
+
+  .img-prendas-thumbs {
+    margin-top: 12px;
+    gap: 8px;
+  }
+
+  .img-prendas-thumbs__item {
+    width: 64px;
+    height: 64px;
+    border-radius: 8px;
+  }
+
+  .img-prendas-page__state {
+    min-height: 50vh;
+    gap: 12px;
+  }
+
+  .img-prendas-page__state-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .img-prendas-page__state-actions button {
+    padding: 11px 10px;
+    font-size: 12px;
+  }
+}
+
+/* Celulares pequeños (hasta 380px) */
+@media (max-width: 380px) {
+  .img-prendas-page {
+    padding: 10px;
+  }
+
+  .img-prendas-page__title {
+    font-size: 18px;
+  }
+
+  .img-prendas-page__subtitle {
+    font-size: 11px;
+  }
+
+  .img-prendas-page__header-actions {
+    gap: 6px;
+  }
+
+  .img-prendas-page__header-actions button {
+    padding: 10px 8px;
+    font-size: 11px;
+  }
+
+  .img-prendas-viewer {
+    padding: 10px;
+  }
+
+  .img-prendas-toolbar {
+    gap: 4px;
+    margin-bottom: 10px;
+  }
+
+  .img-prendas-toolbar button {
+    padding: 7px 8px;
+    font-size: 11px;
+  }
+
+  .img-prendas-toolbar__zoom {
+    min-width: 45px;
+    font-size: 11px;
+  }
+
+  .img-prendas-canvas {
+    height: 40vh;
+    min-height: 250px;
+    padding: 8px;
+  }
+
+  .img-prendas-thumbs {
+    margin-top: 10px;
+    gap: 6px;
+  }
+
+  .img-prendas-thumbs__item {
+    width: 56px;
+    height: 56px;
+    border-radius: 6px;
+    border-width: 1px;
+  }
+}
+
+/* Pantallas grandes (1024px y más) */
+@media (min-width: 1024px) {
+  .img-prendas-page {
+    padding: 32px;
+  }
+
+  .img-prendas-page__header {
+    margin-bottom: 24px;
+  }
+
+  .img-prendas-page__title {
+    font-size: 32px;
+  }
+
+  .img-prendas-viewer {
+    padding: 24px;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.1);
+  }
+
+  .img-prendas-canvas {
+    height: 75vh;
+    padding: 24px;
+  }
+
+  .img-prendas-thumbs__item {
+    width: 100px;
+    height: 100px;
+    border-radius: 14px;
+  }
+}
+
+/* Pantallas muy grandes (1440px y más) */
+@media (min-width: 1440px) {
+  .img-prendas-page {
+    padding: 40px;
+  }
+
+  .img-prendas-page__title {
+    font-size: 36px;
+  }
+
+  .img-prendas-canvas {
+    height: 80vh;
+  }
+}
