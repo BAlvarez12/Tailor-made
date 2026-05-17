@@ -1,195 +1,271 @@
-import { useEffect, useState } from 'react'
-import axios from 'axios'
-import './MaterialesExistencias.css'
+import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
+import api from "../../utils/api";
+import "../../styles/tmModalShared.css";
+import "./MaterialesModales.css";
+import { Layers, Search, Save, XCircle } from "lucide-react";
 
 function MaterialesExistenciasModal({ open, onClose }) {
-
-  const [materiales, setMateriales] = useState([])
-  const [busqueda, setBusqueda] = useState('')
-  const [guardado, setGuardado] = useState(false) // 🔥 NUEVO
-
-  useEffect(() => {
-    if (open) {
-      fetchMateriales()
-    }
-  }, [open])
+  const [materiales, setMateriales] = useState([]);
+  const [busqueda, setBusqueda] = useState("");
+  const [cargando, setCargando] = useState(false);
+  const [guardando, setGuardando] = useState(false);
+  const [guardado, setGuardado] = useState(false);
+  const [error, setError] = useState("");
 
   const fetchMateriales = async () => {
     try {
-      const res = await axios.get('http://localhost:3000/api/materiales')
-
-      const data = res.data.map(m => ({
+      setCargando(true);
+      setError("");
+      const res = await api.get("/materiales");
+      const data = (Array.isArray(res.data) ? res.data : []).map((m) => ({
         ...m,
-        nuevoStock: 0
-      }))
-
-      setMateriales(data)
-    } catch (error) {
-      console.error(error)
+        nuevoStock: 0,
+      }));
+      setMateriales(data);
+    } catch (err) {
+      console.error(err);
+      setError("No se pudieron cargar los materiales.");
+      setMateriales([]);
+    } finally {
+      setCargando(false);
     }
-  }
+  };
 
-  // 🔍 FILTRO
-  const materialesFiltrados = materiales.filter(m =>
-    m.nombre_material.toLowerCase().includes(busqueda.toLowerCase())
-  )
+  useEffect(() => {
+    if (open) {
+      setBusqueda("");
+      setGuardado(false);
+      setError("");
+      fetchMateriales();
+    }
+  }, [open]);
 
-  const aumentar = (index) => {
-    const nuevos = [...materialesFiltrados]
-    nuevos[index].nuevoStock++
+  const materialesFiltrados = useMemo(() => {
+    const t = busqueda.trim().toLowerCase();
+    if (!t) return materiales;
+    return materiales.filter((m) => {
+      const nombre = (m.nombre_material || "").toLowerCase();
+      const cat = (m.nombre_categoria || "").toLowerCase();
+      return nombre.includes(t) || cat.includes(t);
+    });
+  }, [materiales, busqueda]);
 
-    actualizarGlobal(nuevos[index])
-  }
+  const cambios = useMemo(
+    () => materiales.filter((m) => Number(m.nuevoStock) !== 0),
+    [materiales]
+  );
 
-  const disminuir = (index) => {
-    const nuevos = [...materialesFiltrados]
-    nuevos[index].nuevoStock--
+  const ajustarCantidad = (materialId, delta) => {
+    setMateriales((prev) =>
+      prev.map((m) =>
+        m.material_id === materialId
+          ? {
+              ...m,
+              nuevoStock: Math.max(0, (Number(m.nuevoStock) || 0) + delta),
+            }
+          : m
+      )
+    );
+  };
 
-    actualizarGlobal(nuevos[index])
-  }
+  const setCantidadEntrada = (materialId, valor) => {
+    const n = Math.max(0, parseInt(valor, 10) || 0);
+    setMateriales((prev) =>
+      prev.map((m) =>
+        m.material_id === materialId ? { ...m, nuevoStock: n } : m
+      )
+    );
+  };
 
-  const actualizarGlobal = (materialActualizado) => {
-    const nuevos = materiales.map(m =>
-      m.material_id === materialActualizado.material_id
-        ? materialActualizado
-        : m
-    )
-    setMateriales(nuevos)
-  }
-
-  // 🔥 GUARDAR TODO
   const guardarCambios = async () => {
+    if (cambios.length === 0) return;
+
     try {
-      const cambios = materiales.filter(m => m.nuevoStock !== 0)
-
-      if (cambios.length === 0) {
-        return // 🔥 quitamos alert
-      }
-
-      const token = localStorage.getItem('token')
+      setGuardando(true);
+      setError("");
 
       await Promise.all(
-        cambios.map(mat => {
-          return axios.post(
-            'http://localhost:3000/api/materiales/movimientos-existencias',
-            {
-              material_id: mat.material_id,
-              cantidad: mat.nuevoStock
-            },
-            {
-              headers: {
-                Authorization: `Bearer ${token}`
-              }
-            }
-          )
-        })
-      )
+        cambios.map((mat) =>
+          api.post("/materiales/movimientos-existencias", {
+            material_id: mat.material_id,
+            cantidad: mat.nuevoStock,
+          })
+        )
+      );
 
-      // 🔥 mostrar mensaje y cerrar
-      setGuardado(true)
-
-      fetchMateriales()
+      setGuardado(true);
+      await fetchMateriales();
 
       setTimeout(() => {
-        setGuardado(false)
-        onClose()
-      }, 1200)
-
-    } catch (error) {
-      console.error(error)
-      alert(error.response?.data?.error || 'Error al guardar cambios')
+        setGuardado(false);
+        onClose?.();
+      }, 1000);
+    } catch (err) {
+      console.error(err);
+      setError(
+        err?.response?.data?.error ||
+          err?.response?.data?.message ||
+          "Error al guardar los movimientos."
+      );
+    } finally {
+      setGuardando(false);
     }
-  }
+  };
 
-  if (!open) return null
+  if (!open) return null;
 
-  return (
-    <div className="materiales-existencias-overlay" onClick={onClose}>
-      <div className="materiales-existencias-modal" onClick={(e) => e.stopPropagation()}>
+  return createPortal(
+    <div className="tm-modal-form">
+      <div className="tm-modal-overlay" onClick={onClose}>
+        <div
+          className="tm-modal tm-modal--lg"
+          onClick={(e) => e.stopPropagation()}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="tm-modal__header">
+            <div className="tm-modal__title-wrap">
+              <div className="tm-modal__title-icon" aria-hidden>
+                <Layers size={22} />
+              </div>
+              <div>
+                <h2>Agregar existencia</h2>
+                <p className="tm-modal__subtitle">
+                  Registra entradas de stock por material. El total se actualiza al guardar.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              className="tm-modal__close"
+              onClick={onClose}
+              aria-label="Cerrar"
+            >
+              ×
+            </button>
+          </div>
 
-        {/* HEADER */}
-        <div className="modal-header">
-          <h2>Agregar Existencias</h2>
-          <button className="btn-cerrar" onClick={onClose}>✕</button>
-        </div>
+          <div className="mat-exist-search">
+            <div className="tm-input-wrap">
+              <Search size={16} className="tm-input-icon" />
+              <input
+                type="search"
+                placeholder="Buscar material o categoría..."
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+              />
+            </div>
+          </div>
 
-        {/* 🔍 BUSCADOR */}
-        <div className="buscador-container">
-          <input
-            type="text"
-            placeholder="Buscar material..."
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-            className="buscador-input"
-          />
-        </div>
+          {error && <p className="mat-modal__error" style={{ margin: "0 28px 12px" }}>{error}</p>}
+          {guardado && (
+            <p className="mat-exist-success">Cambios guardados correctamente.</p>
+          )}
 
-        {/* BODY */}
-        <div className="modal-body">
-          <div className="tabla-wrapper">
-            <table className="tabla-existencias">
+          <div className="mat-exist-body">
+            {cargando && (
+              <p className="mat-modal__loading">Cargando materiales...</p>
+            )}
 
-              <thead>
-                <tr>
-                  <th>Material</th>
-                  <th>Existencia actual</th>
-                  <th>Nueva existencia</th>
-                </tr>
-              </thead>
+            {!cargando && materialesFiltrados.length === 0 && (
+              <p className="mat-modal__loading">No hay materiales para mostrar.</p>
+            )}
 
-              <tbody>
-                {materialesFiltrados.map((mat, index) => (
-                  <tr key={mat.material_id}>
-
-                    <td>{mat.nombre_material}</td>
-
-                    <td>{mat.stock}</td>
-
-                    <td>
-                      <button
-                        className="btn-control"
-                        onClick={() => disminuir(index)}
-                      >
-                        -
-                      </button>
-
-                      <span className="stock-value">
-                        {mat.nuevoStock > 0 ? `${mat.nuevoStock}` : mat.nuevoStock}
-                      </span>
-
-                      <button
-                        className="btn-control"
-                        onClick={() => aumentar(index)}
-                      >
-                        +
-                      </button>
-                    </td>
-
+            {!cargando && materialesFiltrados.length > 0 && (
+              <table className="mat-exist-table">
+                <thead>
+                  <tr>
+                    <th>Material</th>
+                    <th>Actual</th>
+                    <th>Entrada</th>
+                    <th>Total después</th>
                   </tr>
-                ))}
-              </tbody>
+                </thead>
+                <tbody>
+                  {materialesFiltrados.map((mat) => {
+                    const actual = Number(mat.stock) || 0;
+                    const entrada = Number(mat.nuevoStock) || 0;
+                    const total = actual + entrada;
 
-            </table>
+                    return (
+                      <tr key={mat.material_id}>
+                        <td>
+                          <div className="mat-exist-material">
+                            <strong>{mat.nombre_material}</strong>
+                            <span>{mat.nombre_categoria || "Sin categoría"}</span>
+                          </div>
+                        </td>
+                        <td className="mat-exist-stock-actual">{actual}</td>
+                        <td>
+                          <div className="mat-exist-controls">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                ajustarCantidad(mat.material_id, -1)
+                              }
+                              aria-label="Menos"
+                            >
+                              −
+                            </button>
+                            <input
+                              type="number"
+                              min="0"
+                              value={entrada}
+                              onChange={(e) =>
+                                setCantidadEntrada(
+                                  mat.material_id,
+                                  e.target.value
+                                )
+                              }
+                            />
+                            <button
+                              type="button"
+                              onClick={() =>
+                                ajustarCantidad(mat.material_id, 1)
+                              }
+                              aria-label="Más"
+                            >
+                              +
+                            </button>
+                          </div>
+                        </td>
+                        <td className="mat-exist-stock-final">{total}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          <div className="mat-exist-footer">
+            <p className="mat-exist-footer__hint">
+              {cambios.length === 0
+                ? "Indica la cantidad a agregar en cada material."
+                : `${cambios.length} material(es) con cambios pendientes`}
+            </p>
+            <div className="tm-modal__actions" style={{ margin: 0, padding: 0, border: "none" }}>
+              <button type="button" className="btn-cancelar" onClick={onClose}>
+                <XCircle size={16} />
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="btn-guardar"
+                onClick={guardarCambios}
+                disabled={guardando || cambios.length === 0}
+              >
+                <Save size={16} />
+                {guardando ? "Guardando..." : "Guardar cambios"}
+              </button>
+            </div>
           </div>
         </div>
-
-        {/* 🔥 MENSAJE DE ÉXITO */}
-        {guardado && (
-          <div className="mensaje-guardado">
-            ✔ Cambios guardados correctamente
-          </div>
-        )}
-
-        {/* FOOTER */}
-        <div className="footer-acciones">
-          <button className="btn-guardar-global" onClick={guardarCambios}>
-            Guardar cambios
-          </button>
-        </div>
-
       </div>
-    </div>
-  )
+    </div>,
+    document.body
+  );
 }
 
-export default MaterialesExistenciasModal
+export default MaterialesExistenciasModal;

@@ -17,10 +17,8 @@ export default function Unidades() {
   const [busqueda, setBusqueda] = useState("");
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
-  const [selected, setSelected] = useState([]);
   const [filtroEstado, setFiltroEstado] = useState(null);
   const [showFilterMenu, setShowFilterMenu] = useState(false);
-  const [showActionMenu, setShowActionMenu] = useState(false);
 
   const [unidadSeleccionada, setUnidadSeleccionada] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -55,14 +53,6 @@ export default function Unidades() {
     } catch (error) {
       console.error("Error cargando unidades:", error);
       setUnidades([]);
-    }
-  };
-
-  const handleSelectOne = (id) => {
-    if (selected.includes(id)) {
-      setSelected(selected.filter((item) => item !== id));
-    } else {
-      setSelected([...selected, id]);
     }
   };
 
@@ -102,52 +92,6 @@ export default function Unidades() {
       setCurrentPage(1);
     }
   }, [currentPage, totalPages]);
-
-  const handleSelectAll = () => {
-    const unidadesPagina = getUnidadesPaginadas();
-    const idsPagina = unidadesPagina.map((u) => u.unidad_id);
-    const todosSeleccionados = idsPagina.every((id) => selected.includes(id));
-
-    if (todosSeleccionados) {
-      setSelected(selected.filter((id) => !idsPagina.includes(id)));
-      return;
-    }
-
-    setSelected([...new Set([...selected, ...idsPagina])]);
-  };
-
-  const getSelectedUnidades = () => {
-    return unidades.filter((u) => selected.includes(u.unidad_id));
-  };
-
-  const sonTodosArchivados = () => {
-    const selectedUnidades = getSelectedUnidades();
-    return selectedUnidades.length > 0 && selectedUnidades.every((u) => u.estado === 0);
-  };
-
-  const handleArchivarSeleccionados = async () => {
-    try {
-      for (let id of selected) {
-        await archiveUnidad(id);
-      }
-      setSelected([]);
-      cargarUnidades();
-    } catch (error) {
-      console.error("Error archivando:", error);
-    }
-  };
-
-  const handleDesarchivarSeleccionados = async () => {
-    try {
-      for (let id of selected) {
-        await restoreUnidad(id);
-      }
-      setSelected([]);
-      cargarUnidades();
-    } catch (error) {
-      console.error("Error desarchivando:", error);
-    }
-  };
 
   const handleDesarchivar = async () => {
     try {
@@ -210,24 +154,13 @@ export default function Unidades() {
   return (
     <div className="tm-users">
       <UnidadesHeader
-        selected={selected}
         busqueda={busqueda}
         setBusqueda={setBusqueda}
         filtroEstado={filtroEstado}
         setFiltroEstado={setFiltroEstado}
         showFilterMenu={showFilterMenu}
         setShowFilterMenu={setShowFilterMenu}
-        showActionMenu={showActionMenu}
-        setShowActionMenu={setShowActionMenu}
         onCreateClick={() => handleModalOpen()}
-        onActionClick={() => {
-          if (sonTodosArchivados()) {
-            handleDesarchivarSeleccionados();
-          } else {
-            handleArchivarSeleccionados();
-          }
-        }}
-        actionLabel={sonTodosArchivados() ? "Activar" : "Inactivar"}
       />
 
       <div className="tm-users__card">
@@ -241,11 +174,7 @@ export default function Unidades() {
           <div className="tm-users__table-wrapper">
             <UnidadesTable
               unidades={getUnidadesPaginadas()}
-              selected={selected}
-              setSelected={setSelected}
-              handleSelectAll={handleSelectAll}
-              handleSelectOne={handleSelectOne}
-              onRowClick={handleModalOpen}
+              onEdit={handleModalOpen}
             />
           </div>
         )}

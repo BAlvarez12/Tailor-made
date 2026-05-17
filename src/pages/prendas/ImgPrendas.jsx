@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
+import "./ImgPrendas.css";
 import { obtenerPrendaPorId } from "../../services/Prendas";
 import {
-  normalizarRespuestaPrenda,
+  obtenerDetallePrenda,
   obtenerImagenesPrenda,
   obtenerImagenActualPrenda,
   cambiarImagenPrenda,
@@ -13,13 +14,22 @@ function ImgPrendas() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const [prenda, setPrenda] = useState(location.state?.prenda || null);
-  const [loading, setLoading] = useState(!location.state?.prenda);
+  const prendaDesdeNavegacion = location.state?.prenda ?? null;
+  const idPrendaNavegacion = prendaDesdeNavegacion
+    ? String(prendaDesdeNavegacion.cliente_prenda_id ?? prendaDesdeNavegacion.id ?? "")
+    : "";
+  const puedeUsarPrendaNavegacion =
+    Boolean(prendaDesdeNavegacion) && idPrendaNavegacion === String(id);
+
+  const [prenda, setPrenda] = useState(
+    puedeUsarPrendaNavegacion ? prendaDesdeNavegacion : null
+  );
+  const [loading, setLoading] = useState(!puedeUsarPrendaNavegacion);
   const [error, setError] = useState("");
   const [imageIndexes, setImageIndexes] = useState({});
 
   const obtenerIdPrenda = (item) =>
-    Number(item?.cliente_prenda_id ?? item?.id ?? id);
+    String(item?.cliente_prenda_id ?? item?.id ?? id ?? "");
 
   const imagenes = useMemo(() => {
     return obtenerImagenesPrenda(prenda);
@@ -47,12 +57,12 @@ function ImgPrendas() {
       setError("");
 
       const response = await obtenerPrendaPorId(id);
-      const detalle = normalizarRespuestaPrenda(response)?.[0] || response?.data || response;
+      const detalle = obtenerDetallePrenda(response);
 
-      setPrenda(detalle || null);
+      setPrenda(detalle);
       setImageIndexes((prev) => ({
         ...prev,
-        [Number(id)]: 0,
+        [String(id)]: 0,
       }));
     } catch (err) {
       console.error("Error al cargar imágenes de la prenda:", err);
@@ -67,18 +77,22 @@ function ImgPrendas() {
   };
 
   useEffect(() => {
-    if (!prenda && id) {
-      cargarPrenda();
+    if (!id) return;
+
+    if (puedeUsarPrendaNavegacion) {
+      setPrenda(prendaDesdeNavegacion);
+      setLoading(false);
+      setError("");
+      setImageIndexes((prev) => ({
+        ...prev,
+        [String(id)]: prev[String(id)] ?? 0,
+      }));
       return;
     }
 
-    if (prenda) {
-      setImageIndexes((prev) => ({
-        ...prev,
-        [obtenerIdPrenda(prenda)]: 0,
-      }));
-    }
-  }, [id]);
+    cargarPrenda();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, puedeUsarPrendaNavegacion]);
 
   const handleCambiarImagen = (direction) => {
     const prendaId = obtenerIdPrenda(prenda);

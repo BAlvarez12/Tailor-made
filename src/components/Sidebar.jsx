@@ -6,6 +6,7 @@ const MAIN_MENU_ITEMS = [
   { label: 'Home', path: '/home', exact: true },
   { label: 'Clientes', path: '/home/clientes', exact: true },
   { label: 'Cotizaciones', path: '/home/cotizaciones', exact: true },
+  { label: 'Pagos', path: '/home/pagos', exact: true },
   { label: 'Prendas', path: '/home/prendas', exact: false },
   { label: 'Materiales', path: '/home/materiales', exact: false }
 ]

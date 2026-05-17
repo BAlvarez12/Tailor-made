@@ -114,7 +114,25 @@
 
 .tm-users__table tbody tr:hover {
   background: #f8fafc;
+}
+
+.tm-users__btn-accion {
+  border: none;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
   cursor: pointer;
+}
+
+.tm-users__btn-accion--editar {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+.tm-users__btn-accion--editar:hover {
+  background: #c7d2fe;
+  color: #312e81;
 }
 
 .tm-users__pagination {

@@ -38,20 +38,41 @@
 }
 
 .btn-editar {
-  background: #6366f1;
-  color: white;
   border: none;
-  padding: 8px 14px;
-  border-radius: 10px;
-  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 12px;
   font-weight: 600;
+  cursor: pointer;
   margin-right: 8px;
-  transition: 0.2s ease;
+  background: #e0e7ff;
+  color: #3730a3;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
 .btn-editar:hover {
-  transform: translateY(-1px);
-  filter: brightness(1.05);
+  background: #c7d2fe;
+  color: #312e81;
+}
+
+.btn-accion {
+  border: none;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.btn-accion--medidas {
+  background: #f1f5f9;
+  color: #334155;
+}
+
+.btn-accion--medidas:hover {
+  background: #e2e8f0;
+  color: #0f172a;
 }
 
 /* ================= TABLA ================= */

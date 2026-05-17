@@ -2,17 +2,22 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./PrendasPage.css";
 import { obtenerPrendas } from "../../services/Prendas";
-import CrearPrendas from "./CrearPrendas";
-import { obtenerImagenesPrenda, obtenerImagenActualPrenda, cambiarImagenPrenda, } from "../../utils/Imagenes";
+import PrendaFormulario from "./PrendaFormulario";
+import {
+  obtenerImagenesPrenda,
+  obtenerImagenActualPrenda,
+  cambiarImagenPrenda,
+} from "../../utils/Imagenes";
 
 function PrendasPage() {
   const navigate = useNavigate();
-
   const [prendas, setPrendas] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
-  const [mostrarModalCrear, setMostrarModalCrear] = useState(false);
+  const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  const [modoFormulario, setModoFormulario] = useState("create");
+  const [prendaSeleccionadaId, setPrendaSeleccionadaId] = useState(null);
   const [imageIndexes, setImageIndexes] = useState({});
 
   const normalizarRespuesta = (response) => {
@@ -82,7 +87,12 @@ function PrendasPage() {
   };
 
   const obtenerTipoPrenda = (prenda) => {
-    return prenda?.tipo_prenda?.nombre || "Sin tipo de prenda";
+    return (
+      prenda?.tipo_prenda?.nombre ||
+      prenda?.tipoPrenda?.nombre ||
+      prenda?.nombre_tipo_prenda ||
+      "Sin tipo de prenda"
+    );
   };
 
   const obtenerFechaCreado = (prenda) => {
@@ -163,36 +173,37 @@ function PrendasPage() {
     cambiarImagenPrenda(prendaId, total, direction, setImageIndexes);
   };
 
-  const handleEditar = (prenda) => {
+  const abrirFormularioCrear = () => {
+    setModoFormulario("create");
+    setPrendaSeleccionadaId(null);
+    setMostrarFormulario(true);
+  };
+
+  const abrirFormularioEditar = (prenda) => {
     const id = obtenerIdPrenda(prenda);
     if (!id) return;
-    navigate(`/home/prendas/editar/${id}`);
+
+    setModoFormulario("edit");
+    setPrendaSeleccionadaId(id);
+    setMostrarFormulario(true);
   };
 
-  const abrirModalCrear = () => {
-    setMostrarModalCrear(true);
+  const cerrarFormulario = () => {
+    setMostrarFormulario(false);
+    setModoFormulario("create");
+    setPrendaSeleccionadaId(null);
   };
 
-  const cerrarModalCrear = () => {
-    setMostrarModalCrear(false);
-  };
-
-  const handleGuardarPrenda = async (formData) => {
-    try {
-      console.log("Datos para crear prenda:", formData);
-      cerrarModalCrear();
-    } catch (error) {
-      console.error("Error al guardar prenda:", error);
-    }
+  const handleFormularioSuccess = async () => {
+    cerrarFormulario();
+    await cargarPrendas();
   };
 
   const handleVerImagenes = (prenda) => {
     const id = obtenerIdPrenda(prenda);
     if (!id) return;
 
-    navigate(`/home/prendas/${id}/imagenes`, {
-      state: { prenda },
-    });
+    navigate(`/home/prendas/${id}/imagenes`, { state: { prenda } });
   };
 
   return (
@@ -217,7 +228,7 @@ function PrendasPage() {
           <button
             type="button"
             className="prendas-page__create-button"
-            onClick={abrirModalCrear}
+            onClick={abrirFormularioCrear}
           >
             Crear prenda
           </button>
@@ -247,8 +258,8 @@ function PrendasPage() {
 
       {!loading && !error && prendasFiltradas.length > 0 && (
         <div className="prendas-page__grid">
-          {prendasFiltradas.map((prenda) => {
-            const idPrenda = obtenerIdPrenda(prenda);
+          {prendasFiltradas.map((prenda, index) => {
+            const idPrenda = obtenerIdPrenda(prenda) || `temp-${index}`;
             const nombreCliente = obtenerNombreCliente(prenda);
             const telefono = obtenerTelefono(prenda);
             const tituloPrenda = obtenerTituloPrenda(prenda);
@@ -289,11 +300,13 @@ function PrendasPage() {
                           </button>
 
                           <div className="prenda-card__dots">
-                            {imagenes.map((_, index) => (
+                            {imagenes.map((_, indexDot) => (
                               <span
-                                key={index}
+                                key={indexDot}
                                 className={`prenda-card__dot ${
-                                  index === currentIndex ? "prenda-card__dot--active" : ""
+                                  indexDot === currentIndex
+                                    ? "prenda-card__dot--active"
+                                    : ""
                                 }`}
                               />
                             ))}
@@ -302,9 +315,7 @@ function PrendasPage() {
                       )}
                     </>
                   ) : (
-                    <div className="prenda-card__image-placeholder">
-                      {tipoPrenda}
-                    </div>
+                    <div className="prenda-card__image-placeholder">{tipoPrenda}</div>
                   )}
 
                   <span className={obtenerClaseEstado(estado)}>{estado}</span>
@@ -341,7 +352,7 @@ function PrendasPage() {
                     <button
                       type="button"
                       className="prenda-card__button prenda-card__button--primary"
-                      onClick={() => handleEditar(prenda)}
+                      onClick={() => abrirFormularioEditar(prenda)}
                     >
                       Editar
                     </button>
@@ -361,10 +372,12 @@ function PrendasPage() {
         </div>
       )}
 
-      <CrearPrendas
-        open={mostrarModalCrear}
-        onClose={cerrarModalCrear}
-        onGuardar={handleGuardarPrenda}
+      <PrendaFormulario
+        open={mostrarFormulario}
+        mode={modoFormulario}
+        prendaId={prendaSeleccionadaId}
+        onClose={cerrarFormulario}
+        onSuccess={handleFormularioSuccess}
       />
     </div>
   );

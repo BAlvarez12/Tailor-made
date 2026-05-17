@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react'
 import { obtenerUsuariosService } from '../../services/usuarios'
-import Createusuarios from './createusuarios'
-import './pageusuario.css'
+import Createusuarios from './formularioUsuarios'
+import './paginaUsuarios.css'
 
 function PageUsuarios() {
   const [usuarios, setUsuarios] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [openModal, setOpenModal] = useState(false)
+  const [usuarioEditarId, setUsuarioEditarId] = useState(null)
 
   const cargarUsuarios = async () => {
     try {
@@ -28,6 +29,21 @@ function PageUsuarios() {
     cargarUsuarios()
   }, [])
 
+  const abrirCrearUsuario = () => {
+    setUsuarioEditarId(null)
+    setOpenModal(true)
+  }
+
+  const abrirEditarUsuario = (usuarioId) => {
+    setUsuarioEditarId(usuarioId)
+    setOpenModal(true)
+  }
+
+  const cerrarModal = () => {
+    setOpenModal(false)
+    setUsuarioEditarId(null)
+  }
+
   return (
     <div className="tm-users tm-users--usuarios">
       <div className="tm-users__header">
@@ -38,7 +54,7 @@ function PageUsuarios() {
 
         <button
           className="tm-users__create-btn"
-          onClick={() => setOpenModal(true)}
+          onClick={abrirCrearUsuario}
         >
           <span>Crear usuario</span>
         </button>
@@ -58,18 +74,17 @@ function PageUsuarios() {
             <table className="tm-users__table">
               <thead>
                 <tr>
-                  <th>ID</th>
                   <th>Nombre</th>
                   <th>Usuario</th>
                   <th>Correo</th>
                   <th>Rol</th>
                   <th>Estado</th>
+                  <th>Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {usuarios.map((user) => (
                   <tr key={user.usuario_id}>
-                    <td>{user.usuario_id}</td>
                     <td>
                       {`${user.nombre_usuario || ''} ${user.apellido_usuario || ''}`.trim() || '-'}
                     </td>
@@ -87,6 +102,15 @@ function PageUsuarios() {
                         {Number(user.estado) === 1 || user.activo ? 'Activo' : 'Inactivo'}
                       </span>
                     </td>
+                    <td>
+                      <button
+                        type="button"
+                        className="tm-users__btn-accion tm-users__btn-accion--editar"
+                        onClick={() => abrirEditarUsuario(user.usuario_id)}
+                      >
+                        Editar
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -97,8 +121,12 @@ function PageUsuarios() {
 
       <Createusuarios
         isOpen={openModal}
-        onClose={() => setOpenModal(false)}
-        onSuccess={cargarUsuarios}
+        onClose={cerrarModal}
+        onSuccess={() => {
+          cerrarModal()
+          cargarUsuarios()
+        }}
+        usuarioEditarId={usuarioEditarId}
       />
     </div>
   )

@@ -1,0 +1,130 @@
+.formularioUsuarios .tm-modal__actions,
+.formularioUsuarios .formularioUsuarios__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.formularioUsuarios .formularioUsuarios__footer button:first-child {
+  margin-left: auto;
+}
+
+/* BASE */
+.formularioUsuarios .tm-modal__actions button,
+.formularioUsuarios .formularioUsuarios__footer button {
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 2.2em;
+  line-height: 2.2em;
+  padding: 0 16px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  z-index: 1;
+  border-radius: 6px;
+  border: 2px solid transparent;
+  transition: color 0.3s ease, opacity 0.2s ease;
+}
+
+/* EFECTO */
+.formularioUsuarios .tm-modal__actions button::before,
+.formularioUsuarios .formularioUsuarios__footer button::before {
+  content: "";
+  position: absolute;
+  width: 150px;
+  height: 200px;
+  border-radius: 50%;
+  top: 100%;
+  left: 100%;
+  z-index: -1;
+  transition: 0.3s all;
+}
+
+.formularioUsuarios .tm-modal__actions button:hover::before,
+.formularioUsuarios .formularioUsuarios__footer button:hover::before {
+  top: -30px;
+  left: -30px;
+}
+
+/* CANCELAR */
+.formularioUsuarios .tm-modal__actions .btn-cancelar,
+.formularioUsuarios .formularioUsuarios__footer .btn-cancelar {
+  background: #ffffff;
+  color: #6b7280;
+  border-color: #6b7280;
+}
+
+.formularioUsuarios .tm-modal__actions .btn-cancelar::before,
+.formularioUsuarios .formularioUsuarios__footer .btn-cancelar::before {
+  background: #6b7280;
+}
+
+.formularioUsuarios .tm-modal__actions .btn-cancelar:hover,
+.formularioUsuarios .formularioUsuarios__footer .btn-cancelar:hover {
+  color: #ffffff;
+}
+
+/* GUARDAR MORADO */
+.formularioUsuarios .tm-modal__actions .btn-guardar,
+.formularioUsuarios .formularioUsuarios__footer .btn-guardar {
+  background: #7c3aed;
+  color: #ffffff;
+  border-color: #7c3aed;
+}
+
+.formularioUsuarios .tm-modal__actions .btn-guardar::before,
+.formularioUsuarios .formularioUsuarios__footer .btn-guardar::before {
+  background: #60a5fa;
+}
+
+.formularioUsuarios .tm-modal__actions .btn-guardar:hover,
+.formularioUsuarios .formularioUsuarios__footer .btn-guardar:hover {
+  color: #ffffff;
+}
+
+/* DESACTIVAR */
+.formularioUsuarios .tm-modal__actions .btn-desactivar,
+.formularioUsuarios .formularioUsuarios__footer .btn-desactivar {
+  background: #f59e0b;
+  color: #ffffff;
+  border-color: #f59e0b;
+}
+
+.formularioUsuarios .tm-modal__actions .btn-desactivar::before,
+.formularioUsuarios .formularioUsuarios__footer .btn-desactivar::before {
+  background: #ef4444;
+}
+
+/* ACTIVAR */
+.formularioUsuarios .tm-modal__actions .btn-activar,
+.formularioUsuarios .formularioUsuarios__footer .btn-activar {
+  background: #0ba33e;
+  color: #ffffff;
+  border-color: #0ba33e;
+}
+
+.formularioUsuarios .tm-modal__actions .btn-activar::before,
+.formularioUsuarios .formularioUsuarios__footer .btn-activar::before {
+  background: #44efa8;
+}
+
+/* DISABLED */
+.formularioUsuarios .tm-modal__actions button:disabled,
+.formularioUsuarios .formularioUsuarios__footer button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.formularioUsuarios .tm-modal__actions button:disabled::before,
+.formularioUsuarios .formularioUsuarios__footer button:disabled::before {
+  display: none;
+}

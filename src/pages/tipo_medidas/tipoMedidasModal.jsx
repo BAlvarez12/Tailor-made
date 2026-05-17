@@ -1,6 +1,15 @@
-import "./tipo_medidas.css";
+import {
+  Plus,
+  Settings,
+  Tag,
+  AlignLeft,
+  FileText,
+  Save,
+  XCircle,
+} from "lucide-react";
+import "../../styles/tmModalShared.css";
 
-export default function tipoMedidasModal({
+export default function TipoMedidasModal({
   modoCrear,
   tipoSeleccionado,
   formData,
@@ -8,60 +17,133 @@ export default function tipoMedidasModal({
   onClose,
   onGuardar,
   onArchivar,
-  onRestaurar
+  onRestaurar,
 }) {
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onGuardar();
+  };
+
   return (
-    <div className="clientes-modal-overlay">
-      <div className="clientes-modal">
-        <div className="clientes-modal-header">
-          <h3>{modoCrear ? "Crear tipo" : "Editar tipo"}</h3>
-          <button onClick={onClose}>✖</button>
-        </div>
-
-        <div className="clientes-modal-body">
-          <div className="form-group">
-            <label>Nombre</label>
-            <input
-              value={formData.nombre_tipo_medida}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  nombre_tipo_medida: e.target.value
-                })
-              }
-            />
+    <div className="tm-modal-form">
+      <div className="tm-modal-overlay" onClick={onClose}>
+        <div
+          className="tm-modal tm-modal--sm"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="tm-modal__header">
+            <div className="tm-modal__title-wrap">
+              <div className="tm-modal__title-icon" aria-hidden>
+                {modoCrear ? <Plus size={22} /> : <Settings size={22} />}
+              </div>
+              <div>
+                <h2>
+                  {modoCrear ? "Crear tipo de medida" : "Editar tipo de medida"}
+                </h2>
+                <p className="tm-modal__subtitle">
+                  {modoCrear
+                    ? "Registra un nuevo tipo de medida para las prendas"
+                    : "Actualiza el nombre y la descripción del tipo"}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              className="tm-modal__close"
+              onClick={onClose}
+              aria-label="Cerrar"
+            >
+              ×
+            </button>
           </div>
 
-          <div className="form-group">
-            <label>Descripción</label>
-            <input
-              value={formData.descripcion_tipo_medida}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  descripcion_tipo_medida: e.target.value
-                })
-              }
-            />
-          </div>
-        </div>
+          <form className="tm-modal__form" onSubmit={handleSubmit}>
+            <div className="tm-modal__section">
+              <p className="tm-modal__section-title">
+                <FileText size={16} />
+                Datos del tipo de medida
+              </p>
 
-        <div className="clientes-modal-footer">
-          <button className="btn-cancelar" onClick={onClose}>Cancelar</button>
-          {modoCrear && (
-            <button className="btn-guardar" onClick={onGuardar}>Crear</button>
-          )}
-          {!modoCrear && tipoSeleccionado?.estado === 1 && (
-            <>
-              <button className="btn-guardar" onClick={onGuardar}>Guardar</button>
-              <button className="btn-desactivar" onClick={onArchivar}>Desactivar</button>
-            </>
-          )}
-          {!modoCrear && tipoSeleccionado?.estado === 0 && (
-            <button className="btn-activar" onClick={onRestaurar}>Activar</button>
-          )}
+              <div className="tm-modal__grid">
+                <div className="tm-modal__field tm-modal__field--icon tm-modal__field--full">
+                  <label htmlFor="nombre_tipo_medida">Nombre</label>
+                  <div className="tm-input-wrap">
+                    <Tag size={16} className="tm-input-icon" />
+                    <input
+                      id="nombre_tipo_medida"
+                      type="text"
+                      value={formData.nombre_tipo_medida}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          nombre_tipo_medida: e.target.value,
+                        })
+                      }
+                      placeholder="Ej. Busto"
+                    />
+                  </div>
+                </div>
+
+                <div className="tm-modal__field tm-modal__field--icon tm-modal__field--full">
+                  <label htmlFor="descripcion_tipo_medida">Descripción</label>
+                  <div className="tm-input-wrap tm-input-wrap--textarea">
+                    <AlignLeft size={16} className="tm-input-icon" />
+                    <textarea
+                      id="descripcion_tipo_medida"
+                      value={formData.descripcion_tipo_medida}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          descripcion_tipo_medida: e.target.value,
+                        })
+                      }
+                      placeholder="Descripción opcional del tipo de medida"
+                      rows={3}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="tm-modal-form__footer tm-modal__actions">
+              <button type="button" className="btn-cancelar" onClick={onClose}>
+                <XCircle size={16} />
+                Cancelar
+              </button>
+
+              {modoCrear && (
+                <button type="submit" className="btn-guardar">
+                  <Save size={16} />
+                  Crear
+                </button>
+              )}
+
+              {!modoCrear && tipoSeleccionado?.estado === 1 && (
+                <>
+                  <button type="submit" className="btn-guardar">
+                    <Save size={16} />
+                    Guardar
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-desactivar"
+                    onClick={onArchivar}
+                  >
+                    Desactivar
+                  </button>
+                </>
+              )}
+
+              {!modoCrear && tipoSeleccionado?.estado === 0 && (
+                <button type="button" className="btn-activar" onClick={onRestaurar}>
+                  Activar
+                </button>
+              )}
+            </div>
+          </form>
         </div>
       </div>
     </div>
   );
 }
+

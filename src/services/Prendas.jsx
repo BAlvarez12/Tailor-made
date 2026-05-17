@@ -5,6 +5,11 @@ export const obtenerPrendas = async () => {
   return response.data
 }
 
+export const obtenerMedidasPorCliente = async (clienteId) => {
+  const response = await api.get(`/prendas/${clienteId}/obtener`)
+  return response.data
+}
+
 export const crearPrendas = async (prendaData) => {
   const response = await api.post('/prendas/crear', prendaData)
   return response.data

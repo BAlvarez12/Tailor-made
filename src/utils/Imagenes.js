@@ -5,6 +5,13 @@ export const normalizarRespuestaPrenda = (data) => {
   return [];
 };
 
+export const obtenerDetallePrenda = (data) => {
+  const detalle = data?.data ?? data?.prenda ?? data;
+  if (Array.isArray(detalle)) return detalle[0] || null;
+  if (detalle && typeof detalle === "object") return detalle;
+  return null;
+};
+
 export const obtenerImagenesPrenda = (prenda) => {
   if (!prenda) return [];
 
@@ -49,6 +56,11 @@ export const construirUrlImagenPrenda = (url) => {
 
   if (url.startsWith("/")) {
     return `${backendBase}${url}`;
+  }
+
+  // Assume relative paths are under /uploads/prendas/
+  if (!url.includes("/")) {
+    return `${backendBase}/uploads/prendas/${url}`;
   }
 
   return `${backendBase}/${url}`;
