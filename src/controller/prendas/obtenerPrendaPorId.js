@@ -64,22 +64,16 @@ const obtenerPrendaPorId = async (req, res) => {
           cpm.cliente_medida_id,
           cpm.cliente_prenda_id,
           cpm.tipo_medida_id,
-          cpm.unidad_id,
           cpm.valor,
           cpm.fecha_creado,
           cpm.usuario_creado,
 
           tm.nombre_tipo_medida,
-          tm.descripcion_tipo_medida,
-
-          um.nombre_unidad,
-          um.simbolo_unidad
-
+          tm.descripcion_tipo_medida
+          
         FROM cliente_prenda_medidas cpm
         LEFT JOIN tipo_medidas tm
           ON cpm.tipo_medida_id = tm.tipo_medida_id
-        LEFT JOIN unidades_medida um
-          ON cpm.unidad_id = um.unidad_id
         WHERE cpm.cliente_prenda_id = ?
         ORDER BY cpm.cliente_medida_id ASC
       `,
@@ -93,7 +87,6 @@ const obtenerPrendaPorId = async (req, res) => {
           cpmat.cliente_prenda_id,
           cpmat.material_id,
           cpmat.cantidad,
-          cpmat.unidad_id,
           cpmat.observaciones,
           cpmat.fecha_creado,
           cpmat.usuario,
@@ -105,18 +98,13 @@ const obtenerPrendaPorId = async (req, res) => {
           m.stock,
           m.categoria_id,
 
-          cm.nombre_categoria,
-
-          um.nombre_unidad,
-          um.simbolo_unidad
+          cm.nombre_categoria
 
         FROM cliente_prenda_material cpmat
         LEFT JOIN materiales m
           ON cpmat.material_id = m.material_id
         LEFT JOIN categorias_material cm
           ON m.categoria_id = cm.categoria_id
-        LEFT JOIN unidades_medida um
-          ON cpmat.unidad_id = um.unidad_id
         WHERE cpmat.cliente_prenda_id = ?
         ORDER BY cpmat.cliente_p_material_id ASC
       `,

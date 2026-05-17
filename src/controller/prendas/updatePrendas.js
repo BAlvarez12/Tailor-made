@@ -17,20 +17,17 @@ const normalizarMedidas = (medidas) => {
       (medida) =>
         medida &&
         medida.tipo_medida_id &&
-        medida.unidad_id &&
         medida.valor !== undefined &&
         medida.valor !== null &&
         medida.valor !== ''
     )
     .map((medida) => ({
       tipo_medida_id: Number(medida.tipo_medida_id),
-      unidad_id: Number(medida.unidad_id),
       valor: Number(medida.valor)
     }))
     .filter(
       (medida) =>
         medida.tipo_medida_id > 0 &&
-        medida.unidad_id > 0 &&
         !Number.isNaN(medida.valor)
     )
 }
@@ -43,14 +40,12 @@ const normalizarMateriales = (materiales) => {
       (material) =>
         material &&
         material.material_id &&
-        material.unidad_id &&
         material.cantidad !== undefined &&
         material.cantidad !== null &&
         material.cantidad !== ''
     )
     .map((material) => ({
       material_id: Number(material.material_id),
-      unidad_id: Number(material.unidad_id),
       cantidad: Number(material.cantidad),
       observaciones: material.observacion
         ? String(material.observacion).trim()
@@ -59,8 +54,8 @@ const normalizarMateriales = (materiales) => {
     .filter(
       (material) =>
         material.material_id > 0 &&
-        material.unidad_id > 0 &&
-        !Number.isNaN(material.cantidad)
+        !Number.isNaN(material.cantidad) &&
+        material.cantidad > 0
     )
 }
 
@@ -174,7 +169,6 @@ const updatePrendas = async (req, res) => {
         const valuesMedidas = medidasValidas.map((medida) => [
           clientePrendaId,
           medida.tipo_medida_id,
-          medida.unidad_id,
           medida.valor,
           new Date(),
           usuarioCreador
@@ -185,7 +179,6 @@ const updatePrendas = async (req, res) => {
             INSERT INTO cliente_prenda_medidas (
               cliente_prenda_id,
               tipo_medida_id,
-              unidad_id,
               valor,
               fecha_creado,
               usuario_creado
@@ -209,7 +202,6 @@ const updatePrendas = async (req, res) => {
         const valuesMateriales = materialesValidos.map((material) => [
           clientePrendaId,
           material.material_id,
-          material.unidad_id,
           material.cantidad,
           material.observaciones,
           new Date(),
@@ -221,7 +213,6 @@ const updatePrendas = async (req, res) => {
             INSERT INTO cliente_prenda_material (
               cliente_prenda_id,
               material_id,
-              unidad_id,
               cantidad,
               observaciones,
               fecha_creado,

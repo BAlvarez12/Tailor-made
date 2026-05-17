@@ -51,6 +51,12 @@ app.use('/api/materiales', require('./routes/materiales'));
 // 👥 CLIENTES (🔥 EL QUE ACABAMOS DE HACER)
 app.use('/api/clientes', require('./routes/clientes'));
 
+// 💰 COTIZACIONES
+app.use('/api/cotizaciones', require('./routes/cotizaciones'));
+
+// 💳 PAGOS
+app.use('/api/pagos', require('./routes/pagos'));
+
 // 📏 UNIDADES Y MEDIDAS
 app.use('/api/unidades', require('./routes/unidades'));
 app.use('/api/unidadesv2', require('./routes/unidades_medida'));
