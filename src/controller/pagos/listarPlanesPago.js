@@ -2,9 +2,10 @@ const db = require("../../config/db");
 
 const listarPlanesPago = async (req, res) => {
   try {
-    const { q, cliente_id } = req.query;
+    const { q, cliente_id, cotizacion_id } = req.query;
     const termino = q ? String(q).trim() : "";
     const clienteId = cliente_id ? Number(cliente_id) : null;
+    const cotizacionId = cotizacion_id ? Number(cotizacion_id) : null;
 
     let sql = `
       SELECT
@@ -25,7 +26,12 @@ const listarPlanesPago = async (req, res) => {
           SELECT COUNT(*)
           FROM pagos_cliente pc
           WHERE pc.plan_pago_id = pp.plan_pago_id
-        ) AS pagos_registrados
+        ) AS pagos_registrados,
+        (
+          SELECT MAX(pc.fecha_pago)
+          FROM pagos_cliente pc
+          WHERE pc.plan_pago_id = pp.plan_pago_id
+        ) AS ultima_fecha_pago
       FROM planes_pago pp
       WHERE pp.estado = 1
     `;
@@ -35,6 +41,11 @@ const listarPlanesPago = async (req, res) => {
     if (clienteId && !Number.isNaN(clienteId)) {
       sql += ` AND pp.cliente_id = ?`;
       params.push(clienteId);
+    }
+
+    if (cotizacionId && !Number.isNaN(cotizacionId)) {
+      sql += ` AND pp.cotizacion_id = ?`;
+      params.push(cotizacionId);
     }
 
     if (termino) {

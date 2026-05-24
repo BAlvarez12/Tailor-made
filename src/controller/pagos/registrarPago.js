@@ -1,5 +1,6 @@
 const db = require("../../config/db");
 const { generarCodigoRecibo } = require("../../utils/generarCodigoRecibo");
+const { normalizarFechaPago } = require("../../utils/normalizarFechaPago");
 const { recalcularTotalesPlan } = require("./pagosQueries");
 
 const registrarPago = async (req, res) => {
@@ -12,6 +13,7 @@ const registrarPago = async (req, res) => {
       numero_transferencia,
       tipo_pago,
       notas,
+      fecha_pago,
       usuario_creador,
     } = req.body;
 
@@ -32,6 +34,13 @@ const registrarPago = async (req, res) => {
     if (!String(numero_transferencia || "").trim()) {
       return res.status(400).json({
         message: "numero_transferencia es obligatorio",
+      });
+    }
+
+    const fechaPagoSql = normalizarFechaPago(fecha_pago);
+    if (!fechaPagoSql) {
+      return res.status(400).json({
+        message: "fecha_pago es obligatoria (formato YYYY-MM-DD)",
       });
     }
 
@@ -69,8 +78,9 @@ const registrarPago = async (req, res) => {
           numero_transferencia,
           tipo_pago,
           notas,
+          fecha_pago,
           usuario_creador
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `,
       [
         planPagoId,
@@ -79,6 +89,7 @@ const registrarPago = async (req, res) => {
         String(numero_transferencia).trim(),
         tipo,
         notas ? String(notas).trim() : null,
+        fechaPagoSql,
         usuarioCreador,
       ]
     );

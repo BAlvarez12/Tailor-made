@@ -7,19 +7,24 @@ const listarCotizaciones = async (req, res) => {
 
     let sql = `
       SELECT
-        cotizacion_id,
-        codigo_cotizacion,
-        cliente_id,
-        cliente_prenda_id,
-        titulo_prenda,
-        tipo_prenda_nombre,
-        cliente_nombre,
-        cliente_telefono,
-        valor_total,
-        notas,
-        fecha_creado
-      FROM cotizaciones
-      WHERE estado = 1
+        c.cotizacion_id,
+        c.codigo_cotizacion,
+        c.cliente_id,
+        c.cliente_prenda_id,
+        c.titulo_prenda,
+        c.tipo_prenda_nombre,
+        c.cliente_nombre,
+        c.cliente_telefono,
+        c.valor_total,
+        c.notas,
+        c.fecha_creado,
+        CASE WHEN pp.plan_pago_id IS NOT NULL THEN 1 ELSE 0 END AS tiene_plan_pago,
+        pp.plan_pago_id,
+        pp.codigo_plan
+      FROM cotizaciones c
+      LEFT JOIN planes_pago pp
+        ON pp.cotizacion_id = c.cotizacion_id AND pp.estado = 1
+      WHERE c.estado = 1
     `;
 
     const params = [];
@@ -28,16 +33,16 @@ const listarCotizaciones = async (req, res) => {
       const like = `%${termino}%`;
       sql += `
         AND (
-          codigo_cotizacion LIKE ?
-          OR cliente_nombre LIKE ?
-          OR cliente_telefono LIKE ?
-          OR REPLACE(cliente_telefono, ' ', '') LIKE REPLACE(?, ' ', '')
+          c.codigo_cotizacion LIKE ?
+          OR c.cliente_nombre LIKE ?
+          OR c.cliente_telefono LIKE ?
+          OR REPLACE(c.cliente_telefono, ' ', '') LIKE REPLACE(?, ' ', '')
         )
       `;
       params.push(like, like, like, like);
     }
 
-    sql += ` ORDER BY fecha_creado DESC, cotizacion_id DESC LIMIT 200`;
+    sql += ` ORDER BY c.fecha_creado DESC, c.cotizacion_id DESC LIMIT 200`;
 
     const [rows] = await db.query(sql, params);
 
