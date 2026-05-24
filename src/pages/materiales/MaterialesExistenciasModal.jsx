@@ -51,32 +51,76 @@ function MaterialesExistenciasModal({ open, onClose }) {
     });
   }, [materiales, busqueda]);
 
-  const cambios = useMemo(
-    () => materiales.filter((m) => Number(m.nuevoStock) !== 0),
-    [materiales]
-  );
+      const cambios = useMemo(
+      () =>
+        materiales.filter((m) => {
+          const cantidad = Number(m.nuevoStock);
+          return Number.isFinite(cantidad) && cantidad !== 0;
+        }),
+      [materiales]
+    );
 
-  const ajustarCantidad = (materialId, delta) => {
-    setMateriales((prev) =>
-      prev.map((m) =>
-        m.material_id === materialId
-          ? {
-              ...m,
-              nuevoStock: Math.max(0, (Number(m.nuevoStock) || 0) + delta),
+          const ajustarCantidad = (materialId, delta) => {
+      setMateriales((prev) =>
+        prev.map((m) => {
+          if (m.material_id !== materialId) return m;
+
+          const actual = Number(m.stock) || 0;
+          const cantidadActual = Number(m.nuevoStock);
+          const base = Number.isFinite(cantidadActual) ? cantidadActual : 0;
+
+          const nuevaCantidad = base + delta;
+
+          // No permite que el total después quede menor a 0
+          const cantidadAjustada = Math.max(nuevaCantidad, -actual);
+
+          return {
+            ...m,
+            nuevoStock: cantidadAjustada,
+          };
+        })
+      );
+    };
+
+            const setCantidadEntrada = (materialId, valor) => {
+        setMateriales((prev) =>
+          prev.map((m) => {
+            if (m.material_id !== materialId) return m;
+
+            // Permite borrar el 0 y dejar el input vacío mientras escribes
+            if (valor === "") {
+              return {
+                ...m,
+                nuevoStock: "",
+              };
             }
-          : m
-      )
-    );
-  };
 
-  const setCantidadEntrada = (materialId, valor) => {
-    const n = Math.max(0, parseInt(valor, 10) || 0);
-    setMateriales((prev) =>
-      prev.map((m) =>
-        m.material_id === materialId ? { ...m, nuevoStock: n } : m
-      )
-    );
-  };
+            // Permite escribir primero el signo negativo
+            if (valor === "-") {
+              return {
+                ...m,
+                nuevoStock: "-",
+              };
+            }
+
+            const cantidad = Number(valor);
+
+            if (!Number.isFinite(cantidad)) {
+              return m;
+            }
+
+            const actual = Number(m.stock) || 0;
+
+            // Evita que el total después quede negativo
+            const cantidadAjustada = Math.max(cantidad, -actual);
+
+            return {
+              ...m,
+              nuevoStock: cantidadAjustada,
+            };
+          })
+        );
+      };
 
   const guardarCambios = async () => {
     if (cambios.length === 0) return;
@@ -89,7 +133,7 @@ function MaterialesExistenciasModal({ open, onClose }) {
         cambios.map((mat) =>
           api.post("/materiales/movimientos-existencias", {
             material_id: mat.material_id,
-            cantidad: mat.nuevoStock,
+            cantidad: Number(mat.nuevoStock),
           })
         )
       );
@@ -130,9 +174,9 @@ function MaterialesExistenciasModal({ open, onClose }) {
                 <Layers size={22} />
               </div>
               <div>
-                <h2>Agregar existencia</h2>
+                <h2>Movimiento de existencia</h2>
                 <p className="tm-modal__subtitle">
-                  Registra entradas de stock por material. El total se actualiza al guardar.
+                  Registra entradas o salidas de stock por material. Usa valores positivos para sumar y negativos para restar.
                 </p>
               </div>
             </div>
@@ -178,14 +222,17 @@ function MaterialesExistenciasModal({ open, onClose }) {
                   <tr>
                     <th>Material</th>
                     <th>Actual</th>
-                    <th>Entrada</th>
+                    <th>Movimiento</th>
                     <th>Total después</th>
                   </tr>
                 </thead>
                 <tbody>
                   {materialesFiltrados.map((mat) => {
                     const actual = Number(mat.stock) || 0;
-                    const entrada = Number(mat.nuevoStock) || 0;
+                    const entrada =
+                      mat.nuevoStock === "" || mat.nuevoStock === "-"
+                        ? 0
+                        : Number(mat.nuevoStock) || 0;
                     const total = actual + entrada;
 
                     return (
@@ -209,16 +256,16 @@ function MaterialesExistenciasModal({ open, onClose }) {
                               −
                             </button>
                             <input
-                              type="number"
-                              min="0"
-                              value={entrada}
-                              onChange={(e) =>
-                                setCantidadEntrada(
-                                  mat.material_id,
-                                  e.target.value
-                                )
-                              }
-                            />
+                            type="number"
+                            step="1"
+                            value={mat.nuevoStock}
+                            onChange={(e) =>
+                              setCantidadEntrada(
+                                mat.material_id,
+                                e.target.value
+                              )
+                            }
+                          />
                             <button
                               type="button"
                               onClick={() =>
@@ -242,7 +289,7 @@ function MaterialesExistenciasModal({ open, onClose }) {
           <div className="mat-exist-footer">
             <p className="mat-exist-footer__hint">
               {cambios.length === 0
-                ? "Indica la cantidad a agregar en cada material."
+                ? "Indica la cantidad a mover: positivo suma y negativo resta."
                 : `${cambios.length} material(es) con cambios pendientes`}
             </p>
             <div className="tm-modal__actions" style={{ margin: 0, padding: 0, border: "none" }}>
