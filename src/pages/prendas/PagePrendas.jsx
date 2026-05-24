@@ -1,7 +1,8 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./PrendasPage.css";
 import { obtenerPrendas } from "../../services/Prendas";
+import { obtenerTiposPrendaActivosService } from "../../services/tipo_prendas";
 import PrendaFormulario from "./PrendaFormulario";
 import {
   obtenerImagenesPrenda,
@@ -9,12 +10,18 @@ import {
   cambiarImagenPrenda,
 } from "../../utils/Imagenes";
 
+const PAGE_SIZE = 10;
+
 function PrendasPage() {
   const navigate = useNavigate();
+  const loadMoreRef = useRef(null);
   const [prendas, setPrendas] = useState([]);
+  const [tiposPrenda, setTiposPrenda] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [search, setSearch] = useState("");
+  const [busquedaCliente, setBusquedaCliente] = useState("");
+  const [filtroTipoPrendaId, setFiltroTipoPrendaId] = useState("");
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [modoFormulario, setModoFormulario] = useState("create");
   const [prendaSeleccionadaId, setPrendaSeleccionadaId] = useState(null);
@@ -51,6 +58,19 @@ function PrendasPage() {
     cargarPrendas();
   }, [cargarPrendas]);
 
+  useEffect(() => {
+    obtenerTiposPrendaActivosService()
+      .then((data) => {
+        const lista = Array.isArray(data) ? data : [];
+        setTiposPrenda(lista);
+      })
+      .catch((err) => console.error("Error cargando tipos de prenda:", err));
+  }, []);
+
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [busquedaCliente, filtroTipoPrendaId]);
+
   const obtenerIdPrenda = (prenda) => {
     return prenda?.cliente_prenda_id || prenda?.id || null;
   };
@@ -86,11 +106,21 @@ function PrendasPage() {
     );
   };
 
+  const obtenerIdTipoPrenda = (prenda) => {
+    const id =
+      prenda?.tipo_prenda_id ??
+      prenda?.tipo_prenda?.tipo_prendas_id ??
+      prenda?.tipo_prenda?.id ??
+      null;
+    return id != null ? String(id) : "";
+  };
+
   const obtenerTipoPrenda = (prenda) => {
     return (
       prenda?.tipo_prenda?.nombre ||
       prenda?.tipoPrenda?.nombre ||
       prenda?.nombre_tipo_prenda ||
+      prenda?.tipo_prenda_nombre ||
       "Sin tipo de prenda"
     );
   };
@@ -113,26 +143,50 @@ function PrendasPage() {
   };
 
   const prendasFiltradas = useMemo(() => {
-    const term = search.toLowerCase().trim();
-
-    if (!term) return prendas;
+    const termCliente = busquedaCliente.toLowerCase().trim();
+    const tipoId = filtroTipoPrendaId ? String(filtroTipoPrendaId) : "";
 
     return prendas.filter((prenda) => {
+      if (tipoId && obtenerIdTipoPrenda(prenda) !== tipoId) {
+        return false;
+      }
+
+      if (!termCliente) return true;
+
       const nombreCliente = obtenerNombreCliente(prenda).toLowerCase();
       const telefono = obtenerTelefono(prenda).toLowerCase();
-      const tituloPrenda = obtenerTituloPrenda(prenda).toLowerCase();
-      const tipoPrenda = obtenerTipoPrenda(prenda).toLowerCase();
-      const estado = obtenerEstadoTexto(prenda?.estado).toLowerCase();
 
       return (
-        nombreCliente.includes(term) ||
-        telefono.includes(term) ||
-        tituloPrenda.includes(term) ||
-        tipoPrenda.includes(term) ||
-        estado.includes(term)
+        nombreCliente.includes(termCliente) || telefono.includes(termCliente)
       );
     });
-  }, [prendas, search]);
+  }, [prendas, busquedaCliente, filtroTipoPrendaId]);
+
+  const prendasVisibles = useMemo(
+    () => prendasFiltradas.slice(0, visibleCount),
+    [prendasFiltradas, visibleCount]
+  );
+
+  const hayMasPrendas = visibleCount < prendasFiltradas.length;
+
+  useEffect(() => {
+    const sentinel = loadMoreRef.current;
+    if (!sentinel || !hayMasPrendas) return undefined;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setVisibleCount((prev) =>
+            Math.min(prev + PAGE_SIZE, prendasFiltradas.length)
+          );
+        }
+      },
+      { root: null, rootMargin: "120px", threshold: 0.1 }
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hayMasPrendas, prendasFiltradas.length]);
 
   const formatearFecha = (fecha) => {
     if (!fecha) return "Sin fecha";
@@ -206,6 +260,48 @@ function PrendasPage() {
     navigate(`/home/prendas/${id}/imagenes`, { state: { prenda } });
   };
 
+  const obtenerCotizacionPrenda = (prenda) => {
+    if (prenda?.cotizacion?.cotizacion_id) {
+      return prenda.cotizacion;
+    }
+    if (prenda?.cotizacion_id) {
+      return {
+        cotizacion_id: prenda.cotizacion_id,
+        codigo_cotizacion: prenda.codigo_cotizacion,
+      };
+    }
+    return null;
+  };
+
+  const handleCotizacionPrenda = (prenda) => {
+    const prendaId = obtenerIdPrenda(prenda);
+    const clienteId = prenda?.cliente?.cliente_id ?? prenda?.cliente_id;
+    if (!prendaId || !clienteId) return;
+
+    const cotizacion = obtenerCotizacionPrenda(prenda);
+
+    if (cotizacion?.cotizacion_id) {
+      navigate("/home/cotizaciones", {
+        state: {
+          modo: "ver",
+          cotizacionId: cotizacion.cotizacion_id,
+          codigoCotizacion: cotizacion.codigo_cotizacion,
+          clienteId,
+          prendaId,
+        },
+      });
+      return;
+    }
+
+    navigate("/home/cotizaciones", {
+      state: {
+        modo: "crear",
+        clienteId,
+        prendaId,
+      },
+    });
+  };
+
   return (
     <div className="prendas-page">
       <div className="prendas-page__header">
@@ -217,14 +313,6 @@ function PrendasPage() {
         </div>
 
         <div className="prendas-page__header-actions">
-          <input
-            type="text"
-            className="prendas-page__search"
-            placeholder="Buscar por cliente, teléfono, prenda, tipo o estado..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-
           <button
             type="button"
             className="prendas-page__create-button"
@@ -233,6 +321,46 @@ function PrendasPage() {
             Crear prenda
           </button>
         </div>
+      </div>
+
+      <div className="prendas-page__filters">
+        <div className="prendas-page__filter-group">
+          <label htmlFor="filtro-cliente">Cliente</label>
+          <input
+            id="filtro-cliente"
+            type="search"
+            className="prendas-page__search"
+            placeholder="Nombre o teléfono del cliente"
+            value={busquedaCliente}
+            onChange={(e) => setBusquedaCliente(e.target.value)}
+          />
+        </div>
+
+        <div className="prendas-page__filter-group">
+          <label htmlFor="filtro-tipo">Tipo de prenda</label>
+          <select
+            id="filtro-tipo"
+            className="prendas-page__select"
+            value={filtroTipoPrendaId}
+            onChange={(e) => setFiltroTipoPrendaId(e.target.value)}
+          >
+            <option value="">Todos los tipos</option>
+            {tiposPrenda.map((tipo) => (
+              <option
+                key={tipo.tipo_prendas_id ?? tipo.id}
+                value={String(tipo.tipo_prendas_id ?? tipo.id)}
+              >
+                {tipo.nombre || tipo.nombre_tipo_prenda}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {!loading && !error && prendasFiltradas.length > 0 && (
+          <p className="prendas-page__results-meta">
+            Mostrando {prendasVisibles.length} de {prendasFiltradas.length} prendas
+          </p>
+        )}
       </div>
 
       {loading && (
@@ -257,8 +385,9 @@ function PrendasPage() {
       )}
 
       {!loading && !error && prendasFiltradas.length > 0 && (
+        <>
         <div className="prendas-page__grid">
-          {prendasFiltradas.map((prenda, index) => {
+          {prendasVisibles.map((prenda, index) => {
             const idPrenda = obtenerIdPrenda(prenda) || `temp-${index}`;
             const nombreCliente = obtenerNombreCliente(prenda);
             const telefono = obtenerTelefono(prenda);
@@ -269,6 +398,8 @@ function PrendasPage() {
             const imagenes = obtenerImagenesPrenda(prenda);
             const imagenActual = obtenerImagenActual(prenda);
             const currentIndex = imageIndexes[idPrenda] || 0;
+            const cotizacionPrenda = obtenerCotizacionPrenda(prenda);
+            const tieneCotizacion = Boolean(cotizacionPrenda?.cotizacion_id);
 
             return (
               <article className="prenda-card" key={idPrenda}>
@@ -351,6 +482,18 @@ function PrendasPage() {
                   <div className="prenda-card__actions">
                     <button
                       type="button"
+                      className={`prenda-card__button ${
+                        tieneCotizacion
+                          ? "prenda-card__button--cotizacion-ver"
+                          : "prenda-card__button--cotizacion"
+                      }`}
+                      onClick={() => handleCotizacionPrenda(prenda)}
+                    >
+                      {tieneCotizacion ? "Ver cotización" : "Cotización"}
+                    </button>
+
+                    <button
+                      type="button"
                       className="prenda-card__button prenda-card__button--primary"
                       onClick={() => abrirFormularioEditar(prenda)}
                     >
@@ -370,6 +513,13 @@ function PrendasPage() {
             );
           })}
         </div>
+
+        {hayMasPrendas && (
+          <div ref={loadMoreRef} className="prendas-page__load-more">
+            <span>Cargando más prendas...</span>
+          </div>
+        )}
+        </>
       )}
 
       <PrendaFormulario
