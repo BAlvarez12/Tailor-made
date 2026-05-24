@@ -1,6 +1,7 @@
 const db = require("../../config/db");
 const { generarCodigoPlanPago } = require("../../utils/generarCodigoPlanPago");
 const { generarCodigoRecibo } = require("../../utils/generarCodigoRecibo");
+const { normalizarFechaPago } = require("../../utils/normalizarFechaPago");
 const { recalcularTotalesPlan } = require("./pagosQueries");
 
 const crearPlanPago = async (req, res) => {
@@ -15,6 +16,7 @@ const crearPlanPago = async (req, res) => {
       numero_transferencia,
       notas,
       registrar_anticipo,
+      fecha_pago,
       usuario_creador,
     } = req.body;
 
@@ -46,6 +48,16 @@ const crearPlanPago = async (req, res) => {
       return res.status(400).json({
         message: "numero_transferencia es obligatorio al registrar el anticipo",
       });
+    }
+
+    let fechaPagoAnticipoSql = null;
+    if (debeRegistrarAnticipo) {
+      fechaPagoAnticipoSql = normalizarFechaPago(fecha_pago);
+      if (!fechaPagoAnticipoSql) {
+        return res.status(400).json({
+          message: "fecha_pago es obligatoria al registrar el anticipo",
+        });
+      }
     }
 
     const [cotizaciones] = await db.query(
@@ -138,8 +150,9 @@ const crearPlanPago = async (req, res) => {
             numero_transferencia,
             tipo_pago,
             notas,
+            fecha_pago,
             usuario_creador
-          ) VALUES (?, ?, ?, ?, 'anticipo', ?, ?)
+          ) VALUES (?, ?, ?, ?, 'anticipo', ?, ?, ?)
         `,
         [
           planPagoId,
@@ -147,6 +160,7 @@ const crearPlanPago = async (req, res) => {
           valorAnticipo,
           String(numero_transferencia).trim(),
           "Anticipo inicial del plan de pago",
+          fechaPagoAnticipoSql,
           usuarioCreador,
         ]
       );

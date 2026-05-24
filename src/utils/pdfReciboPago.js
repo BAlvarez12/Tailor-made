@@ -40,20 +40,35 @@ const obtenerTextoCuota = (plan, pago) => {
 
 const formatearFechaRecibo = (fecha) => {
   if (!fecha) return { fecha: "—", hora: "" };
-  const date = new Date(fecha);
+
+  const texto = String(fecha);
+  const soloFecha = texto.match(/^(\d{4}-\d{2}-\d{2})/);
+  const date = soloFecha
+    ? new Date(`${soloFecha[1]}T12:00:00`)
+    : new Date(fecha);
+
   if (Number.isNaN(date.getTime())) {
-    return { fecha: String(fecha), hora: "" };
+    return { fecha: texto, hora: "" };
   }
+
+  const fechaStr = date.toLocaleDateString("es-GT", {
+    year: "numeric",
+    month: "long",
+    day: "2-digit",
+  });
+
+  const esMedianoche =
+    soloFecha &&
+    (texto.includes("00:00:00") || !texto.match(/\d{2}:\d{2}/));
+
   return {
-    fecha: date.toLocaleDateString("es-GT", {
-      year: "numeric",
-      month: "long",
-      day: "2-digit",
-    }),
-    hora: date.toLocaleTimeString("es-GT", {
-      hour: "2-digit",
-      minute: "2-digit",
-    }),
+    fecha: fechaStr,
+    hora: esMedianoche
+      ? ""
+      : date.toLocaleTimeString("es-GT", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
   };
 };
 

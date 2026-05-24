@@ -50,3 +50,6 @@ CREATE TABLE IF NOT EXISTS `pagos_cliente` (
     FOREIGN KEY (`plan_pago_id`) REFERENCES `planes_pago` (`plan_pago_id`)
     ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- fecha_pago: fecha en que el cliente realizó el pago (se guarda desde el formulario).
+-- fecha_registro: momento en que se registró en el sistema.

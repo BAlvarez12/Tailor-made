@@ -17,7 +17,24 @@ const obtenerPrendas = async (req, res) => {
         tp.tipo_prendas_id,
         tp.nombre AS tipo_prenda_nombre,
 
-        cpi.url_img
+        cpi.url_img,
+
+        (
+          SELECT cot.cotizacion_id
+          FROM cotizaciones cot
+          WHERE cot.cliente_prenda_id = cp.cliente_prenda_id
+            AND cot.estado = 1
+          ORDER BY cot.fecha_creado DESC, cot.cotizacion_id DESC
+          LIMIT 1
+        ) AS cotizacion_id,
+        (
+          SELECT cot.codigo_cotizacion
+          FROM cotizaciones cot
+          WHERE cot.cliente_prenda_id = cp.cliente_prenda_id
+            AND cot.estado = 1
+          ORDER BY cot.fecha_creado DESC, cot.cotizacion_id DESC
+          LIMIT 1
+        ) AS codigo_cotizacion
 
       FROM cliente_prenda cp
       INNER JOIN clientes c
@@ -57,6 +74,13 @@ const obtenerPrendas = async (req, res) => {
             tipo_prendas_id: row.tipo_prendas_id,
             nombre: row.tipo_prenda_nombre
           },
+
+          cotizacion: row.cotizacion_id
+            ? {
+                cotizacion_id: row.cotizacion_id,
+                codigo_cotizacion: row.codigo_cotizacion
+              }
+            : null,
 
           imagen_principal: null,
           imagenes: []
