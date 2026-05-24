@@ -1,32 +1,374 @@
-/* Estilos específicos de Materiales (layout base en tmListPage.css) */
+.materiales-page {
+  width: 100%;
+}
 
-.materiales-material-info {
+.materiales-page__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.materiales-page__title {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: #18181b;
+}
+
+.materiales-page__subtitle {
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: #71717a;
+}
+
+.materiales-page__header-actions {
   display: flex;
   align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.materiales-page__btn-secondary {
+  height: 44px;
+  padding: 0 18px;
+  border-radius: 12px;
+  border: 1px solid #c4b5fd;
+  background: #f5f3ff;
+  color: #5b21b6;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.materiales-page__btn-secondary:hover {
+  background: #ede9fe;
+}
+
+.materiales-page__btn-create {
+  height: 44px;
+  padding: 0 20px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.materiales-page__btn-create:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(124, 58, 237, 0.28);
+}
+
+.materiales-page__filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px;
+  margin-bottom: 22px;
+  padding: 16px 18px;
+  background: #ffffff;
+  border: 1px solid #ececf3;
+  border-radius: 16px;
+}
+
+.materiales-page__filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 200px;
+  flex: 1;
+}
+
+.materiales-page__filter-group label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.materiales-page__search,
+.materiales-page__select {
+  width: 100%;
+  height: 46px;
+  padding: 0 14px;
+  border: 1px solid #dcdce5;
+  border-radius: 14px;
+  background: #ffffff;
+  font-size: 14px;
+  color: #18181b;
+  outline: none;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+
+.materiales-page__search:focus,
+.materiales-page__select:focus {
+  border-color: #7c3aed;
+  box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.12);
+}
+
+.materiales-page__results-meta {
+  margin: 0;
+  align-self: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.materiales-page__state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 180px;
+  border-radius: 20px;
+  background: #ffffff;
+  border: 1px solid #ececf3;
+  color: #52525b;
+  font-size: 15px;
+  font-weight: 500;
+  padding: 24px;
+}
+
+.materiales-page__state--error {
+  flex-direction: column;
   gap: 12px;
+  color: #b91c1c;
 }
 
-.materiales-carrusel-container {
-  width: 48px;
-  height: 48px;
-  flex-shrink: 0;
+.materiales-page__state--error button {
+  padding: 8px 16px;
   border-radius: 10px;
-  overflow: hidden;
-  border: 1px solid #e5e7eb;
-  background: #f9fafb;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-weight: 600;
+  cursor: pointer;
 }
 
-.materiales-carrusel-container img {
+.materiales-page__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+.material-card {
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border: 1px solid #ececf3;
+  border-radius: 18px;
+  overflow: hidden;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.material-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(24, 24, 27, 0.08);
+}
+
+.material-card__image-wrap {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  background: #f4f4f5;
+  overflow: hidden;
+}
+
+.material-card__image {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
-  cursor: pointer;
+  cursor: zoom-in;
 }
 
-.materiales-material-info span {
+.material-card__image-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #a1a1aa;
+  font-size: 13px;
   font-weight: 600;
-  color: #111827;
+}
+
+.material-card__image-placeholder img {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  opacity: 0.45;
+}
+
+.material-card__categoria {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #e4e4e7;
+  font-size: 11px;
+  font-weight: 700;
+  color: #5b21b6;
+  backdrop-filter: blur(4px);
+}
+
+.material-card__carousel-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  color: #18181b;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.material-card__carousel-btn--left {
+  left: 8px;
+}
+
+.material-card__carousel-btn--right {
+  right: 8px;
+}
+
+.material-card__dots {
+  position: absolute;
+  bottom: 10px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+.material-card__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.material-card__dot--active {
+  background: #ffffff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+}
+
+.material-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  flex: 1;
+}
+
+.material-card__title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: #18181b;
+  line-height: 1.3;
+}
+
+.material-card__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.material-card__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.material-card__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #71717a;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.material-card__precio {
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f766e;
+}
+
+.material-card__stock {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.material-card__stock--ok {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.material-card__stock--medio {
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.material-card__stock--bajo {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.material-card__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.material-card__btn {
+  flex: 1;
+  height: 40px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.material-card__btn--edit {
+  border: 1px solid #ddd6fe;
+  background: #f5f3ff;
+  color: #5b21b6;
+}
+
+.material-card__btn--edit:hover {
+  background: #ede9fe;
+}
+
+.material-card__btn--delete {
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.material-card__btn--delete:hover {
+  background: #fee2e2;
 }
 
 /* Modal vista previa de imágenes */
@@ -111,4 +453,19 @@
 
 .dot.active {
   background: white;
+}
+
+@media (max-width: 640px) {
+  .materiales-page__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .materiales-page__header-actions {
+    width: 100%;
+  }
+
+  .materiales-page__btn-secondary,
+  .materiales-page__btn-create {
+    flex: 1;
+  }
 }

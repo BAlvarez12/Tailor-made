@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import "../../styles/tmListPage.css";
 import "./Pagos.css";
 import { obtenerClientesActivosService } from "../../services/clienteService";
@@ -18,6 +19,10 @@ import {
   etiquetaTipoPago,
 } from "../../utils/pagosCalc";
 import {
+  obtenerFechaHoyInput,
+  formatearFechaPago,
+} from "../../utils/pagosFecha";
+import {
   normalizarCliente,
   formatearClienteDisplay,
   clienteCoincideBusqueda,
@@ -31,8 +36,8 @@ import {
   Wallet,
   X,
   Eye,
-  FileText,
 } from "lucide-react";
+import HistorialPagosModal from "./HistorialPagosModal";
 
 const normalizarRespuesta = (data) => {
   if (Array.isArray(data)) return data;
@@ -72,6 +77,10 @@ const obtenerUsuarioId = () => {
 };
 
 function Pagos() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const deepLinkAplicado = useRef(false);
+
   const [vista, setVista] = useState("crear");
   const [clientes, setClientes] = useState([]);
   const [clienteId, setClienteId] = useState("");
@@ -87,6 +96,7 @@ function Pagos() {
   const [cantidadPagos, setCantidadPagos] = useState("1");
   const [valorAnticipo, setValorAnticipo] = useState("");
   const [numeroTransferencia, setNumeroTransferencia] = useState("");
+  const [fechaPagoAnticipo, setFechaPagoAnticipo] = useState(obtenerFechaHoyInput);
   const [notas, setNotas] = useState("");
   const [registrarAnticipo, setRegistrarAnticipo] = useState(true);
 
@@ -103,6 +113,7 @@ function Pagos() {
   const [montoAbono, setMontoAbono] = useState("");
   const [transferenciaAbono, setTransferenciaAbono] = useState("");
   const [notasAbono, setNotasAbono] = useState("");
+  const [fechaPagoAbono, setFechaPagoAbono] = useState(obtenerFechaHoyInput);
   const [guardandoAbono, setGuardandoAbono] = useState(false);
   const [cargandoAbono, setCargandoAbono] = useState(false);
 
@@ -114,6 +125,62 @@ function Pagos() {
       .then((data) => setClientes(normalizarRespuesta(data).map(normalizarCliente)))
       .catch(console.error);
   }, []);
+
+  useEffect(() => {
+    if (deepLinkAplicado.current || clientes.length === 0) return;
+
+    const state = location.state;
+    if (state?.modo !== "crear" || !state?.clienteId || !state?.cotizacionId) {
+      return;
+    }
+
+    deepLinkAplicado.current = true;
+
+    const aplicarDesdeCotizaciones = async () => {
+      setVista("crear");
+      setError("");
+      setMensaje("");
+
+      const cliente = clientes.find(
+        (c) => String(c.cliente_id) === String(state.clienteId)
+      );
+
+      if (cliente) {
+        setClienteId(String(state.clienteId));
+        setClienteSearch(formatearClienteDisplay(cliente));
+      } else {
+        setClienteId(String(state.clienteId));
+      }
+
+      try {
+        setLoadingCotiz(true);
+        const data = await listarCotizacionesClientePagoService(state.clienteId);
+        const lista = normalizarRespuesta(data);
+        setCotizaciones(lista);
+
+        const cot = lista.find(
+          (c) => String(c.cotizacion_id) === String(state.cotizacionId)
+        );
+
+        if (cot && !Number(cot.tiene_plan_pago)) {
+          setCotizacionId(String(cot.cotizacion_id));
+          setValorACobrar(String(cot.valor_total ?? ""));
+        } else if (cot?.tiene_plan_pago) {
+          setMensaje("Esta cotización ya tiene un plan de pago registrado.");
+        }
+      } catch (err) {
+        console.error("Error al cargar cotización para plan de pago:", err);
+        setError("No se pudo cargar la cotización seleccionada.");
+      } finally {
+        setLoadingCotiz(false);
+      }
+
+      navigate(location.pathname, { replace: true, state: null });
+    };
+
+    aplicarDesdeCotizaciones();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clientes, location.state]);
 
   useEffect(() => {
     if (!clienteDropdownOpen) return;
@@ -200,6 +267,7 @@ function Pagos() {
     setMontoAbono("");
     setTransferenciaAbono("");
     setNotasAbono("");
+    setFechaPagoAbono(obtenerFechaHoyInput());
 
     try {
       const detalle = await obtenerPlanPagoService(planResumen.plan_pago_id);
@@ -231,6 +299,7 @@ function Pagos() {
     setMontoAbono("");
     setTransferenciaAbono("");
     setNotasAbono("");
+    setFechaPagoAbono(obtenerFechaHoyInput());
     setError("");
   };
 
@@ -249,15 +318,6 @@ function Pagos() {
   };
 
   const cerrarModalHistorial = () => setPlanHistorial(null);
-
-  const pagosDelHistorial = useMemo(() => {
-    if (!planHistorial?.pagos) return [];
-    return [...planHistorial.pagos].sort((a, b) => {
-      const fa = new Date(a.fecha_pago || a.fecha_registro).getTime();
-      const fb = new Date(b.fecha_pago || b.fecha_registro).getTime();
-      return fa - fb;
-    });
-  }, [planHistorial]);
 
   const cargarListado = async (termino = busquedaListado) => {
     try {
@@ -301,6 +361,11 @@ function Pagos() {
       return;
     }
 
+    if (registrarAnticipo && anticipo > 0 && !fechaPagoAnticipo) {
+      setError("Selecciona la fecha en que el cliente realizó el pago.");
+      return;
+    }
+
     try {
       setGuardando(true);
       const resultado = await crearPlanPagoService({
@@ -309,6 +374,7 @@ function Pagos() {
         cantidad_pagos: Number(cantidadPagos) || 1,
         valor_anticipo: anticipo,
         numero_transferencia: numeroTransferencia.trim(),
+        fecha_pago: fechaPagoAnticipo,
         notas: notas.trim(),
         registrar_anticipo: registrarAnticipo && anticipo > 0,
         usuario_creador: obtenerUsuarioId(),
@@ -329,6 +395,7 @@ function Pagos() {
       setCantidadPagos("1");
       setValorAnticipo("");
       setNumeroTransferencia("");
+      setFechaPagoAnticipo(obtenerFechaHoyInput());
       setNotas("");
     } catch (err) {
       const msg =
@@ -353,6 +420,11 @@ function Pagos() {
       return;
     }
 
+    if (!fechaPagoAbono) {
+      setError("Selecciona la fecha en que el cliente realizó el pago.");
+      return;
+    }
+
     try {
       setGuardandoAbono(true);
       setError("");
@@ -361,6 +433,7 @@ function Pagos() {
         monto,
         numero_transferencia: transferenciaAbono.trim(),
         tipo_pago: "abono",
+        fecha_pago: fechaPagoAbono,
         notas: notasAbono.trim(),
         usuario_creador: obtenerUsuarioId(),
       });
@@ -623,16 +696,32 @@ function Pagos() {
                 </div>
 
                 {registrarAnticipo && Number(valorAnticipo) > 0 && (
-                  <div className="pagos-field">
-                    <label htmlFor="num-transferencia">Número de transferencia</label>
-                    <input
-                      id="num-transferencia"
-                      type="text"
-                      value={numeroTransferencia}
-                      onChange={(e) => setNumeroTransferencia(e.target.value)}
-                      placeholder="Ej. 123456789"
-                    />
-                  </div>
+                  <>
+                    <div className="pagos-field">
+                      <label htmlFor="fecha-pago-anticipo">
+                        Fecha en que el cliente realizó el pago
+                      </label>
+                      <input
+                        id="fecha-pago-anticipo"
+                        type="date"
+                        className="pagos-input-date"
+                        value={fechaPagoAnticipo}
+                        onChange={(e) => setFechaPagoAnticipo(e.target.value)}
+                        max={obtenerFechaHoyInput()}
+                        required
+                      />
+                    </div>
+                    <div className="pagos-field">
+                      <label htmlFor="num-transferencia">Número de transferencia</label>
+                      <input
+                        id="num-transferencia"
+                        type="text"
+                        value={numeroTransferencia}
+                        onChange={(e) => setNumeroTransferencia(e.target.value)}
+                        placeholder="Ej. 123456789"
+                      />
+                    </div>
+                  </>
                 )}
 
                 <div className="pagos-field">
@@ -715,7 +804,8 @@ function Pagos() {
                     <th>Saldo</th>
                     <th>Cuotas</th>
                     <th>Monto agregado</th>
-                    <th>Fecha creado</th>
+                    <th>Último pago</th>
+                    <th>Fecha plan</th>
                     <th>Acciones</th>
                   </tr>
                 </thead>
@@ -736,7 +826,14 @@ function Pagos() {
                         </span>
                       </td>
                       <td>{formatearMoneda(p.valor_anticipo)}</td>
-                      <td className="pagos-table-fecha">{formatearFecha(p.fecha_creado)}</td>
+                      <td className="pagos-table-fecha">
+                        {p.ultima_fecha_pago
+                          ? formatearFechaPago(p.ultima_fecha_pago)
+                          : "—"}
+                      </td>
+                      <td className="pagos-table-fecha">
+                        {formatearFechaPago(p.fecha_creado)}
+                      </td>
                       <td>
                         <div className="tm-users__acciones pagos-acciones">
                           <button
@@ -769,101 +866,12 @@ function Pagos() {
         </section>
       )}
 
-      {(planHistorial || cargandoHistorial) && (
-        <div className="pagos-modal-overlay" onClick={cerrarModalHistorial}>
-          <div
-            className="pagos-modal pagos-modal--historial"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="pagos-modal__header">
-              <h3>Abonos registrados</h3>
-              <button
-                type="button"
-                className="pagos-modal__close"
-                onClick={cerrarModalHistorial}
-                aria-label="Cerrar"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            {cargandoHistorial && (
-              <p className="pagos-hint">Cargando historial de pagos...</p>
-            )}
-
-            {!cargandoHistorial && planHistorial && (
-              <>
-                <p className="pagos-modal__sub">
-                  Plan <strong>{planHistorial.codigo_plan}</strong> ·{" "}
-                  {planHistorial.cliente_nombre} · Cuotas{" "}
-                  {formatearCuotasPlan(planHistorial)}
-                </p>
-
-                {pagosDelHistorial.length === 0 ? (
-                  <p className="pagos-hint">Este plan aún no tiene pagos registrados.</p>
-                ) : (
-                  <div className="pagos-historial-table-wrap">
-                    <table className="pagos-historial-table">
-                      <thead>
-                        <tr>
-                          <th>Cuota</th>
-                          <th>Recibo</th>
-                          <th>Fecha</th>
-                          <th>Monto</th>
-                          <th>Tipo</th>
-                          <th>Transferencia</th>
-                          <th></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {pagosDelHistorial.map((pago, idx) => (
-                          <tr key={pago.pago_cliente_id}>
-                            <td>{textoCuotaPago(planHistorial, idx)}</td>
-                            <td>
-                              <strong>{pago.codigo_recibo}</strong>
-                            </td>
-                            <td className="pagos-table-fecha">
-                              {formatearFecha(pago.fecha_pago || pago.fecha_registro)}
-                            </td>
-                            <td>{formatearMoneda(pago.monto)}</td>
-                            <td>{etiquetaTipoPago(pago.tipo_pago)}</td>
-                            <td>{pago.numero_transferencia || "—"}</td>
-                            <td>
-                              <button
-                                type="button"
-                                className="pagos-btn-pdf-mini"
-                                onClick={() =>
-                                  abrirPdfRecibo(
-                                    pago.pago_cliente_id,
-                                    pago.codigo_recibo
-                                  )
-                                }
-                                title="Ver recibo PDF"
-                              >
-                                <FileText size={14} />
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-
-                <div className="pagos-modal__actions">
-                  <button
-                    type="button"
-                    className="pagos-btn-cancel"
-                    onClick={cerrarModalHistorial}
-                  >
-                    Cerrar
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
+      <HistorialPagosModal
+        open={Boolean(planHistorial || cargandoHistorial)}
+        loading={cargandoHistorial}
+        plan={planHistorial}
+        onClose={cerrarModalHistorial}
+      />
 
       {(planAbono || cargandoAbono) && (
         <div className="pagos-modal-overlay" onClick={cerrarModalAbono}>
@@ -934,6 +942,20 @@ function Pagos() {
                     required
                   />
                 </div>
+              </div>
+              <div className="pagos-field">
+                <label htmlFor="fecha-pago-abono">
+                  Fecha en que el cliente realizó el pago
+                </label>
+                <input
+                  id="fecha-pago-abono"
+                  type="date"
+                  className="pagos-input-date"
+                  value={fechaPagoAbono}
+                  onChange={(e) => setFechaPagoAbono(e.target.value)}
+                  max={obtenerFechaHoyInput()}
+                  required
+                />
               </div>
               <div className="pagos-field">
                 <label>Número de transferencia</label>

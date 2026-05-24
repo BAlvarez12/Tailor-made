@@ -2,8 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { getClientes } from "../../services/clienteService";
 import "../../styles/tmListPage.css";
 import "./clientes.css";
-import CrearCliente from "./CrearCliente";
-import EditarCliente from "./EditarCliente";
+import FormularioCliente from "./FormularioCliente";
 import ModalMedidas from "./ModalMedidas";
 import ModalActualizarMedidas from "./ModalActualizarMedidas";
 
@@ -15,8 +14,8 @@ function Clientes() {
   const [filtroEstado, setFiltroEstado] = useState(null);
   const [showFilterMenu, setShowFilterMenu] = useState(false);
 
-  const [showCrear, setShowCrear] = useState(false);
-  const [clienteEditar, setClienteEditar] = useState(null);
+  const [modalClienteAbierto, setModalClienteAbierto] = useState(false);
+  const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
   const [showMedidas, setShowMedidas] = useState(false);
   const [clienteMedidas, setClienteMedidas] = useState(null);
   const [showActualizar, setShowActualizar] = useState(false);
@@ -144,7 +143,10 @@ function Clientes() {
           <button
             type="button"
             className="tm-users__create-btn"
-            onClick={() => setShowCrear(true)}
+            onClick={() => {
+              setClienteSeleccionado(null);
+              setModalClienteAbierto(true);
+            }}
           >
             <span>Crear cliente</span>
           </button>
@@ -194,7 +196,10 @@ function Clientes() {
                         <button
                           type="button"
                           className="tm-users__btn-accion tm-users__btn-accion--editar"
-                          onClick={() => setClienteEditar(c)}
+                            onClick={() => {
+                              setClienteSeleccionado(c);
+                              setModalClienteAbierto(true);
+                            }}
                         >
                           Editar
                         </button>
@@ -218,32 +223,28 @@ function Clientes() {
         )}
       </div>
 
-      {showCrear && (
-        <CrearCliente
-          open={showCrear}
-          onClose={() => setShowCrear(false)}
-          onSuccess={(nuevoCliente) => {
-            cargarClientes();
-            setShowCrear(false);
-            setClienteMedidas(nuevoCliente);
+      <FormularioCliente
+        open={modalClienteAbierto}
+        cliente={clienteSeleccionado}
+        onClose={() => {
+          setModalClienteAbierto(false);
+          setClienteSeleccionado(null);
+        }}
+        onSuccess={async (result) => {
+          await cargarClientes();
+          setModalClienteAbierto(false);
+          setClienteSeleccionado(null);
+          if (result?.nuevoCliente) {
+            setClienteMedidas(result.nuevoCliente);
             setShowMedidas(true);
-          }}
-        />
-      )}
+          }
+        }}
+      />
 
       {showActualizar && (
         <ModalActualizarMedidas
           cliente={clienteActualizar}
           onClose={() => setShowActualizar(false)}
-        />
-      )}
-
-      {clienteEditar && (
-        <EditarCliente
-          isOpen={true}
-          cliente={clienteEditar}
-          onClose={() => setClienteEditar(null)}
-          onSuccess={cargarClientes}
         />
       )}
 

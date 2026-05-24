@@ -30,8 +30,37 @@
   gap: 12px;
 }
 
-.prendas-page__search {
-  width: 340px;
+.prendas-page__filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding: 16px 18px;
+  background: #ffffff;
+  border: 1px solid #ececf3;
+  border-radius: 16px;
+}
+
+.prendas-page__filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 200px;
+  flex: 1;
+}
+
+.prendas-page__filter-group label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.prendas-page__search,
+.prendas-page__select {
+  width: 100%;
   max-width: 100%;
   height: 46px;
   padding: 0 14px;
@@ -42,11 +71,33 @@
   font-size: 14px;
   color: #18181b;
   transition: all 0.2s ease;
+  box-sizing: border-box;
 }
 
-.prendas-page__search:focus {
+.prendas-page__search:focus,
+.prendas-page__select:focus {
   border-color: #7c3aed;
   box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.12);
+}
+
+.prendas-page__results-meta {
+  margin: 0;
+  align-self: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.prendas-page__load-more {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 56px;
+  margin-top: 8px;
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .prendas-page__state {
@@ -239,6 +290,27 @@
   background: #f1eeff;
 }
 
+.prenda-card__button--cotizacion {
+  border: none;
+  background: #0f766e;
+  color: #ffffff;
+}
+
+.prenda-card__button--cotizacion:hover {
+  background: #0d9488;
+  transform: translateY(-1px);
+}
+
+.prenda-card__button--cotizacion-ver {
+  border: 1px solid #0f766e;
+  background: #ecfdf5;
+  color: #0f766e;
+}
+
+.prenda-card__button--cotizacion-ver:hover {
+  background: #d1fae5;
+}
+
 @media (max-width: 768px) {
   .prendas-page__header {
     align-items: stretch;
@@ -248,8 +320,18 @@
     width: 100%;
   }
 
-  .prendas-page__search {
+  .prendas-page__filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .prendas-page__filter-group {
+    min-width: 0;
     width: 100%;
+  }
+
+  .prendas-page__results-meta {
+    white-space: normal;
   }
 
   .prendas-page__grid {

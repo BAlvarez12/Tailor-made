@@ -1,6 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import axios from "axios";
-import "../../styles/tmListPage.css";
 import "./Materiales.css";
 import logo from "../../assets/logo-tailor-made.png";
 import MaterialesExistenciasModal from "./MaterialesExistenciasModal";
@@ -8,9 +7,13 @@ import MaterialFormModal from "./MaterialFormModal";
 
 const API_BASE = "http://localhost:3000";
 
+const urlImagenMaterial = (nombreArchivo) =>
+  `${API_BASE}/uploads/materiales/${nombreArchivo}`;
+
 function Materiales() {
   const [materiales, setMateriales] = useState([]);
-  const [busqueda, setBusqueda] = useState("");
+  const [busquedaNombre, setBusquedaNombre] = useState("");
+  const [filtroCategoriaId, setFiltroCategoriaId] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -18,11 +21,12 @@ function Materiales() {
   const [mostrarModalCrear, setMostrarModalCrear] = useState(false);
   const [materialEditarId, setMaterialEditarId] = useState(null);
 
+  const [imageIndexes, setImageIndexes] = useState({});
   const [previewImagenes, setPreviewImagenes] = useState([]);
   const [previewIndex, setPreviewIndex] = useState(0);
   const [animando, setAnimando] = useState(false);
 
-  const fetchMateriales = async () => {
+  const fetchMateriales = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
@@ -35,11 +39,49 @@ function Materiales() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchMateriales();
-  }, []);
+  }, [fetchMateriales]);
+
+  const categoriasDisponibles = useMemo(() => {
+    const map = new Map();
+    materiales.forEach((m) => {
+      const id = m.categoria_id;
+      const nombre = m.nombre_categoria || "Sin categoría";
+      if (id != null && id !== "") {
+        map.set(String(id), nombre);
+      } else if (nombre) {
+        map.set(`nom:${nombre}`, nombre);
+      }
+    });
+    return Array.from(map.entries())
+      .map(([value, label]) => ({ value, label }))
+      .sort((a, b) => a.label.localeCompare(b.label, "es"));
+  }, [materiales]);
+
+  const materialesFiltrados = useMemo(() => {
+    const termNombre = busquedaNombre.trim().toLowerCase();
+    const catId = filtroCategoriaId;
+
+    return materiales.filter((m) => {
+      if (catId) {
+        const matchId = String(m.categoria_id) === catId;
+        const matchNom =
+          catId.startsWith("nom:") &&
+          (m.nombre_categoria || "Sin categoría") === catId.slice(4);
+        if (!matchId && !matchNom) return false;
+      }
+
+      if (termNombre) {
+        const nombre = (m.nombre_material || "").toLowerCase();
+        if (!nombre.includes(termNombre)) return false;
+      }
+
+      return true;
+    });
+  }, [materiales, busquedaNombre, filtroCategoriaId]);
 
   const handleDelete = async (id) => {
     if (!window.confirm("¿Eliminar material?")) return;
@@ -52,7 +94,32 @@ function Materiales() {
     }
   };
 
-  const cambiarImagen = (nuevoIndex) => {
+  const cambiarImagenCard = (materialId, total, direction) => {
+    if (total <= 1) return;
+    setImageIndexes((prev) => {
+      const current = prev[materialId] || 0;
+      const next =
+        direction === "next"
+          ? (current + 1) % total
+          : (current - 1 + total) % total;
+      return { ...prev, [materialId]: next };
+    });
+  };
+
+  const obtenerImagenActual = (mat) => {
+    const imgs = Array.isArray(mat.imagenes) ? mat.imagenes : [];
+    if (imgs.length === 0) return null;
+    const idx = imageIndexes[mat.material_id] || 0;
+    return imgs[idx] || imgs[0];
+  };
+
+  const abrirPreview = (imgs, index = 0) => {
+    if (!imgs?.length) return;
+    setPreviewImagenes(imgs);
+    setPreviewIndex(index);
+  };
+
+  const cambiarImagenPreview = (nuevoIndex) => {
     setAnimando(true);
     setTimeout(() => {
       setPreviewIndex(nuevoIndex);
@@ -60,146 +127,215 @@ function Materiales() {
     }, 150);
   };
 
-  const materialesFiltrados = useMemo(() => {
-    const texto = busqueda.trim().toLowerCase();
-    if (!texto) return materiales;
+  const formatearPrecio = (valor) =>
+    `Q ${Number(valor || 0).toLocaleString("es-GT", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
 
-    return materiales.filter((m) => {
-      const nombre = (m.nombre_material || "").toLowerCase();
-      const categoria = (m.nombre_categoria || "").toLowerCase();
-      return nombre.includes(texto) || categoria.includes(texto);
-    });
-  }, [materiales, busqueda]);
+  const obtenerClaseStock = (stock) => {
+    const n = Number(stock) || 0;
+    if (n <= 0) return "material-card__stock material-card__stock--bajo";
+    if (n <= 5) return "material-card__stock material-card__stock--medio";
+    return "material-card__stock material-card__stock--ok";
+  };
 
   return (
-    <div className="tm-users tm-users--materiales">
-      <header className="tm-users__header">
+    <div className="materiales-page">
+      <header className="materiales-page__header">
         <div>
-          <h1>Materiales</h1>
-          <p>Listado de materiales e insumos registrados en el sistema.</p>
+          <h1 className="materiales-page__title">Materiales</h1>
+          <p className="materiales-page__subtitle">
+            Catálogo visual de materiales e insumos con existencias y precios.
+          </p>
         </div>
 
-        <div className="search-filter-container">
-          <div className="group">
-            <svg className="icon" aria-hidden="true" viewBox="0 0 24 24">
-              <g>
-                <path d="M21.53 20.47l-3.66-3.66C19.195 15.24 20 13.214 20 11c0-4.97-4.03-9-9-9s-9 4.03-9 9 4.03 9 9 9c2.215 0 4.24-.804 5.808-2.13l3.66 3.66c.147.146.34.22.53.22s.385-.073.53-.22c.295-.293.295-.767.002-1.06zM3.5 11c0-4.135 3.365-7.5 7.5-7.5s7.5 3.365 7.5 7.5-3.365 7.5-7.5 7.5-7.5-3.365-7.5-7.5z" />
-              </g>
-            </svg>
-            <input
-              type="search"
-              className="input"
-              placeholder="Buscar material o categoría"
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <div className="tm-users__buttons">
+        <div className="materiales-page__header-actions">
           <button
             type="button"
-            className="tm-users__btn-secondary"
+            className="materiales-page__btn-secondary"
             onClick={() => setMostrarModalExistencias(true)}
           >
             + Existencia
           </button>
           <button
             type="button"
-            className="tm-users__create-btn"
+            className="materiales-page__btn-create"
             onClick={() => {
               setMaterialEditarId(null);
               setMostrarModalCrear(true);
             }}
           >
-            <span>Crear material</span>
+            Crear material
           </button>
         </div>
       </header>
 
-      <div className="tm-users__card">
-        {loading && <p className="tm-users__state">Cargando materiales...</p>}
+      <div className="materiales-page__filters">
+        <div className="materiales-page__filter-group">
+          <label htmlFor="filtro-nombre">Nombre del material</label>
+          <input
+            id="filtro-nombre"
+            type="search"
+            className="materiales-page__search"
+            placeholder="Buscar por nombre..."
+            value={busquedaNombre}
+            onChange={(e) => setBusquedaNombre(e.target.value)}
+          />
+        </div>
 
-        {error && <p className="tm-users__error">{error}</p>}
+        <div className="materiales-page__filter-group">
+          <label htmlFor="filtro-categoria">Categoría</label>
+          <select
+            id="filtro-categoria"
+            className="materiales-page__select"
+            value={filtroCategoriaId}
+            onChange={(e) => setFiltroCategoriaId(e.target.value)}
+          >
+            <option value="">Todas las categorías</option>
+            {categoriasDisponibles.map((cat) => (
+              <option key={cat.value} value={cat.value}>
+                {cat.label}
+              </option>
+            ))}
+          </select>
+        </div>
 
-        {!loading && !error && materialesFiltrados.length === 0 && (
-          <p className="tm-users__state">No hay materiales para mostrar.</p>
-        )}
-
-        {!loading && !error && materialesFiltrados.length > 0 && (
-          <div className="tm-users__table-wrapper">
-            <table className="tm-users__table">
-              <thead>
-                <tr>
-                  <th>Material</th>
-                  <th>Categoría</th>
-                  <th>Precio</th>
-                  <th>Existencia</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {materialesFiltrados.map((mat) => {
-                  const imgs = Array.isArray(mat.imagenes) ? mat.imagenes : [];
-                  const primeraImg = imgs[0] || null;
-
-                  return (
-                    <tr key={mat.material_id}>
-                      <td>
-                        <div className="materiales-material-info">
-                          <div className="materiales-carrusel-container">
-                            {primeraImg ? (
-                              <img
-                                src={`${API_BASE}/uploads/materiales/${primeraImg}`}
-                                alt=""
-                                onClick={() => {
-                                  setPreviewImagenes(imgs);
-                                  setPreviewIndex(0);
-                                }}
-                              />
-                            ) : (
-                              <img src={logo} alt="" />
-                            )}
-                          </div>
-                          <span>{mat.nombre_material}</span>
-                        </div>
-                      </td>
-                      <td>{mat.nombre_categoria || "—"}</td>
-                      <td>Q {Number(mat.precio_unitario || 0).toFixed(2)}</td>
-                      <td>
-                        <span className="tm-users__badge tm-users__badge--stock">
-                          {mat.stock ?? 0}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="tm-users__acciones">
-                          <button
-                            type="button"
-                            className="tm-users__btn-accion tm-users__btn-accion--editar"
-                            onClick={() => {
-                              setMaterialEditarId(mat.material_id);
-                              setMostrarModalCrear(true);
-                            }}
-                          >
-                            Editar
-                          </button>
-                          <button
-                            type="button"
-                            className="tm-users__btn-accion tm-users__btn-accion--eliminar"
-                            onClick={() => handleDelete(mat.material_id)}
-                          >
-                            Eliminar
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+        {!loading && !error && (
+          <p className="materiales-page__results-meta">
+            {materialesFiltrados.length} de {materiales.length} materiales
+          </p>
         )}
       </div>
+
+      {loading && (
+        <div className="materiales-page__state">Cargando materiales...</div>
+      )}
+
+      {error && (
+        <div className="materiales-page__state materiales-page__state--error">
+          <span>{error}</span>
+          <button type="button" onClick={fetchMateriales}>
+            Reintentar
+          </button>
+        </div>
+      )}
+
+      {!loading && !error && materialesFiltrados.length === 0 && (
+        <div className="materiales-page__state">
+          No hay materiales que coincidan con los filtros.
+        </div>
+      )}
+
+      {!loading && !error && materialesFiltrados.length > 0 && (
+        <div className="materiales-page__grid">
+          {materialesFiltrados.map((mat) => {
+            const imgs = Array.isArray(mat.imagenes) ? mat.imagenes : [];
+            const imagenActual = obtenerImagenActual(mat);
+            const currentIndex = imageIndexes[mat.material_id] || 0;
+            const stock = Number(mat.stock) || 0;
+
+            return (
+              <article className="material-card" key={mat.material_id}>
+                <div className="material-card__image-wrap">
+                  {imagenActual ? (
+                    <>
+                      <img
+                        src={urlImagenMaterial(imagenActual)}
+                        alt={mat.nombre_material}
+                        className="material-card__image"
+                        onClick={() => abrirPreview(imgs, currentIndex)}
+                      />
+                      {imgs.length > 1 && (
+                        <>
+                          <button
+                            type="button"
+                            className="material-card__carousel-btn material-card__carousel-btn--left"
+                            onClick={() =>
+                              cambiarImagenCard(mat.material_id, imgs.length, "prev")
+                            }
+                            aria-label="Imagen anterior"
+                          >
+                            ‹
+                          </button>
+                          <button
+                            type="button"
+                            className="material-card__carousel-btn material-card__carousel-btn--right"
+                            onClick={() =>
+                              cambiarImagenCard(mat.material_id, imgs.length, "next")
+                            }
+                            aria-label="Imagen siguiente"
+                          >
+                            ›
+                          </button>
+                          <div className="material-card__dots">
+                            {imgs.map((_, i) => (
+                              <span
+                                key={i}
+                                className={`material-card__dot ${
+                                  i === currentIndex ? "material-card__dot--active" : ""
+                                }`}
+                              />
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    <div className="material-card__image-placeholder">
+                      <img src={logo} alt="" />
+                      <span>Sin imagen</span>
+                    </div>
+                  )}
+
+                  {mat.nombre_categoria && (
+                    <span className="material-card__categoria">
+                      {mat.nombre_categoria}
+                    </span>
+                  )}
+                </div>
+
+                <div className="material-card__body">
+                  <h2 className="material-card__title">{mat.nombre_material}</h2>
+
+                  <div className="material-card__meta">
+                    <div className="material-card__row">
+                      <span className="material-card__label">Precio</span>
+                      <span className="material-card__precio">
+                        {formatearPrecio(mat.precio_unitario)}
+                      </span>
+                    </div>
+                    <div className="material-card__row">
+                      <span className="material-card__label">Existencia</span>
+                      <span className={obtenerClaseStock(stock)}>{stock}</span>
+                    </div>
+                  </div>
+
+                  <div className="material-card__actions">
+                    <button
+                      type="button"
+                      className="material-card__btn material-card__btn--edit"
+                      onClick={() => {
+                        setMaterialEditarId(mat.material_id);
+                        setMostrarModalCrear(true);
+                      }}
+                    >
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      className="material-card__btn material-card__btn--delete"
+                      onClick={() => handleDelete(mat.material_id)}
+                    >
+                      Eliminar
+                    </button>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      )}
 
       <MaterialesExistenciasModal
         open={mostrarModalExistencias}
@@ -238,7 +374,7 @@ function Materiales() {
             </button>
 
             <img
-              src={`${API_BASE}/uploads/materiales/${previewImagenes[previewIndex]}`}
+              src={urlImagenMaterial(previewImagenes[previewIndex])}
               alt="Vista previa"
               className={`modal-img ${animando ? "fade-out" : "fade-in"}`}
             />
@@ -248,10 +384,10 @@ function Materiales() {
                 <span
                   key={i}
                   className={`dot ${i === previewIndex ? "active" : ""}`}
-                  onClick={() => cambiarImagen(i)}
+                  onClick={() => cambiarImagenPreview(i)}
                   role="button"
                   tabIndex={0}
-                  onKeyDown={(e) => e.key === "Enter" && cambiarImagen(i)}
+                  onKeyDown={(e) => e.key === "Enter" && cambiarImagenPreview(i)}
                   aria-label={`Imagen ${i + 1}`}
                 />
               ))}
@@ -263,7 +399,7 @@ function Materiales() {
                   type="button"
                   className="carrusel-btn left"
                   onClick={() =>
-                    cambiarImagen(
+                    cambiarImagenPreview(
                       (previewIndex - 1 + previewImagenes.length) %
                         previewImagenes.length
                     )
@@ -275,7 +411,9 @@ function Materiales() {
                   type="button"
                   className="carrusel-btn right"
                   onClick={() =>
-                    cambiarImagen((previewIndex + 1) % previewImagenes.length)
+                    cambiarImagenPreview(
+                      (previewIndex + 1) % previewImagenes.length
+                    )
                   }
                 >
                   ›

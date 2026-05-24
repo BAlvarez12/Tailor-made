@@ -127,6 +127,45 @@
   background: #fce7f3;
 }
 
+.cotiz-table__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.cotiz-table__pagos,
+.cotiz-table__plan {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.cotiz-table__pagos {
+  border: 1px solid #a5b4fc;
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+.cotiz-table__pagos:hover {
+  background: #e0e7ff;
+}
+
+.cotiz-table__plan {
+  border: 1px solid #fcd34d;
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.cotiz-table__plan:hover {
+  background: #fef3c7;
+}
+
 .cotiz-page__eyebrow {
   display: inline-flex;
   padding: 6px 10px;
@@ -470,6 +509,102 @@
   color: #15803d;
   font-size: 0.92rem;
   font-weight: 600;
+}
+
+.cotiz-existing-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid #99f6e4;
+  background: #ecfdf5;
+}
+
+.cotiz-existing-banner strong {
+  display: block;
+  font-size: 1rem;
+  color: #0f766e;
+}
+
+.cotiz-existing-banner span {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.88rem;
+  color: #115e59;
+}
+
+.cotiz-existing-banner__pdf {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 10px;
+  background: #0f766e;
+  color: #ffffff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cotiz-existing-banner__pdf:hover {
+  background: #0d9488;
+}
+
+.cotiz-existing-banner__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 148px;
+}
+
+.cotiz-existing-banner__pdf,
+.cotiz-existing-banner__pagos,
+.cotiz-existing-banner__plan {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cotiz-existing-banner__pagos {
+  border: 1px solid #6366f1;
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+.cotiz-existing-banner__pagos:hover {
+  background: #e0e7ff;
+}
+
+.cotiz-existing-banner__plan {
+  border: 1px solid #f59e0b;
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.cotiz-existing-banner__plan:hover {
+  background: #fef3c7;
+}
+
+.cotiz-existing-banner__loading {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 10px 16px;
+  font-size: 0.88rem;
+  color: #115e59;
 }
 
 .cotiz-detail-grid {

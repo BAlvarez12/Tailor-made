@@ -203,6 +203,11 @@
   cursor: not-allowed;
 }
 
+.pagos-hint--error {
+  color: #b91c1c;
+  font-weight: 600;
+}
+
 .pagos-hint {
   margin: 0;
   padding: 16px;

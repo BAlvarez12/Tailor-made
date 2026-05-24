@@ -1,10 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import "./Cotizaciones.css";
 import { obtenerClientesActivosService } from "../../services/clienteService";
 import { obtenerPrendas, obtenerPrendaPorId } from "../../services/Prendas";
 import {
   crearCotizacionService,
   listarCotizacionesService,
+  obtenerCotizacionPorIdService,
   abrirPdfCotizacion,
 } from "../../services/cotizacionesService";
 import {
@@ -29,7 +31,14 @@ import {
   Printer,
   List,
   Plus,
+  Wallet,
+  CircleDollarSign,
 } from "lucide-react";
+import HistorialPagosModal from "../pagos/HistorialPagosModal";
+import {
+  listarPlanesPagoService,
+  obtenerPlanPagoService,
+} from "../../services/pagosService";
 
 const obtenerUsuarioId = () => {
   try {
@@ -66,6 +75,11 @@ const IconoQuetzal = ({ size = 18 }) => (
 );
 
 function Cotizaciones() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const deepLinkAplicado = useRef(false);
+  const prendaSeleccionadaRef = useRef(null);
+
   const [clientes, setClientes] = useState([]);
   const [prendas, setPrendas] = useState([]);
   const [loadingInicial, setLoadingInicial] = useState(true);
@@ -92,6 +106,16 @@ function Cotizaciones() {
   const [busquedaListado, setBusquedaListado] = useState("");
   const [loadingListado, setLoadingListado] = useState(false);
   const [errorListado, setErrorListado] = useState("");
+  const [cotizacionEnVista, setCotizacionEnVista] = useState(null);
+  const [historialPagosAbierto, setHistorialPagosAbierto] = useState(false);
+  const [cargandoHistorialPagos, setCargandoHistorialPagos] = useState(false);
+  const [planHistorialPagos, setPlanHistorialPagos] = useState(null);
+  const [errorHistorialPagos, setErrorHistorialPagos] = useState("");
+  const [planPagoActivo, setPlanPagoActivo] = useState(null);
+  const [cargandoPlanPago, setCargandoPlanPago] = useState(false);
+
+  const cotizacionTienePlanPago = (item) =>
+    Number(item?.tiene_plan_pago) === 1 || Boolean(item?.plan_pago_id);
 
   const cargarDatos = useCallback(async () => {
     try {
@@ -129,6 +153,56 @@ function Cotizaciones() {
   useEffect(() => {
     cargarDatos();
   }, [cargarDatos]);
+
+  useEffect(() => {
+    if (loadingInicial || deepLinkAplicado.current) return;
+
+    const state = location.state;
+    if (!state?.modo && !state?.clienteId) return;
+
+    deepLinkAplicado.current = true;
+
+    const aplicarNavegacionDesdePrendas = async () => {
+      if (
+        (state.modo === "ver" && state.cotizacionId) ||
+        (state.clienteId && state.prendaId)
+      ) {
+        setVista("crear");
+        setMensajeExito("");
+        setErrorDetalle("");
+        setCotizacionEnVista(null);
+
+        const cliente = clientes.find(
+          (c) => String(c.cliente_id) === String(state.clienteId)
+        );
+
+        if (cliente) {
+          setClienteId(String(state.clienteId));
+          setClienteSearch(formatearClienteDisplay(cliente));
+        } else {
+          setClienteId(String(state.clienteId));
+        }
+
+        setPrendaId(String(state.prendaId));
+        await cargarDetallePrenda(state.prendaId);
+
+        if (state.modo === "ver" && state.cotizacionId) {
+          try {
+            const cot = await obtenerCotizacionPorIdService(state.cotizacionId);
+            aplicarCotizacionEnVista(cot);
+          } catch (err) {
+            console.error("Error al cargar cotización desde prendas:", err);
+            setErrorDetalle("No se pudo cargar la cotización de esta prenda.");
+          }
+        }
+      }
+
+      navigate(location.pathname, { replace: true, state: null });
+    };
+
+    aplicarNavegacionDesdePrendas();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadingInicial, location.state, clientes]);
 
   useEffect(() => {
     if (vista === "listado") {
@@ -197,14 +271,72 @@ function Cotizaciones() {
     }
   };
 
+  const aplicarCotizacionEnVista = (cot) => {
+    if (!cot?.cotizacion_id) return;
+
+    setCotizacionEnVista({
+      cotizacion_id: cot.cotizacion_id,
+      codigo_cotizacion: cot.codigo_cotizacion,
+      cliente_prenda_id: cot.cliente_prenda_id,
+      cliente_id: cot.cliente_id,
+      fecha_creado: cot.fecha_creado,
+    });
+    setValorCotizacion(String(cot.valor_total ?? ""));
+    setNotas(cot.notas || "");
+    setMensajeExito(
+      `Cotización ${cot.codigo_cotizacion || ""} de esta prenda.`
+    );
+  };
+
+  const limpiarCotizacionEnVista = () => {
+    setCotizacionEnVista(null);
+    setValorCotizacion("");
+    setNotas("");
+    setPlanPagoActivo(null);
+  };
+
+  const cargarPlanPagoCotizacion = useCallback(async (cotizacionId) => {
+    if (!cotizacionId) {
+      setPlanPagoActivo(null);
+      return;
+    }
+
+    try {
+      setCargandoPlanPago(true);
+      const planes = normalizarRespuesta(
+        await listarPlanesPagoService({ cotizacion_id: cotizacionId })
+      );
+      setPlanPagoActivo(planes[0] || null);
+    } catch (err) {
+      console.error("Error al consultar plan de pago:", err);
+      setPlanPagoActivo(null);
+    } finally {
+      setCargandoPlanPago(false);
+    }
+  }, []);
+
   const limpiarPrenda = () => {
     setPrendaId("");
     setDetallePrenda(null);
     setErrorDetalle("");
-    setValorCotizacion("");
-    setNotas("");
+    limpiarCotizacionEnVista();
     setMensajeExito("");
   };
+
+  const cotizacionActivaParaPrenda = useMemo(() => {
+    if (!cotizacionEnVista || !prendaId) return null;
+    return String(cotizacionEnVista.cliente_prenda_id) === String(prendaId)
+      ? cotizacionEnVista
+      : null;
+  }, [cotizacionEnVista, prendaId]);
+
+  useEffect(() => {
+    if (!cotizacionActivaParaPrenda?.cotizacion_id) {
+      setPlanPagoActivo(null);
+      return;
+    }
+    cargarPlanPagoCotizacion(cotizacionActivaParaPrenda.cotizacion_id);
+  }, [cotizacionActivaParaPrenda?.cotizacion_id, cargarPlanPagoCotizacion]);
 
   const limpiarCliente = () => {
     setClienteId("");
@@ -223,11 +355,36 @@ function Cotizaciones() {
   const seleccionarPrenda = async (prenda) => {
     const id = obtenerIdPrenda(prenda);
     if (!id) return;
-    if (id === prendaId && detallePrenda) return;
+    if (id === prendaId && detallePrenda && cotizacionActivaParaPrenda) return;
+    if (id === prendaId && detallePrenda && !prenda?.cotizacion?.cotizacion_id) {
+      return;
+    }
+
     setPrendaId(id);
     setMensajeExito("");
+    limpiarCotizacionEnVista();
     await cargarDetallePrenda(id);
+
+    const cotizacionPrenda = prenda?.cotizacion;
+    if (cotizacionPrenda?.cotizacion_id) {
+      try {
+        const cot = await obtenerCotizacionPorIdService(
+          cotizacionPrenda.cotizacion_id
+        );
+        aplicarCotizacionEnVista(cot);
+      } catch (err) {
+        console.error("Error al cargar cotización de la prenda:", err);
+      }
+    }
   };
+
+  useEffect(() => {
+    if (!prendaId || !detallePrenda) return;
+    prendaSeleccionadaRef.current?.scrollIntoView({
+      block: "nearest",
+      behavior: "smooth",
+    });
+  }, [prendaId, detallePrenda, clienteId]);
 
   useEffect(() => {
     if (!clienteDropdownOpen) return;
@@ -249,6 +406,13 @@ function Cotizaciones() {
   const handleGuardar = async (e) => {
     e.preventDefault();
     setMensajeExito("");
+
+    if (cotizacionActivaParaPrenda) {
+      setErrorDetalle(
+        "Esta prenda ya tiene una cotización. Usa «Ver PDF» para reimprimirla."
+      );
+      return;
+    }
 
     if (!clienteId) {
       setErrorDetalle("Selecciona un cliente.");
@@ -305,6 +469,51 @@ function Cotizaciones() {
       console.error("Error al abrir PDF:", err);
       setErrorListado("No se pudo generar el PDF.");
     }
+  };
+
+  const cerrarHistorialPagos = () => {
+    setHistorialPagosAbierto(false);
+    setCargandoHistorialPagos(false);
+    setPlanHistorialPagos(null);
+    setErrorHistorialPagos("");
+  };
+
+  const abrirHistorialPagos = async (origen = null) => {
+    const planResumen =
+      origen?.plan_pago_id != null
+        ? origen
+        : planPagoActivo?.plan_pago_id
+          ? planPagoActivo
+          : null;
+
+    if (!planResumen?.plan_pago_id) return;
+
+    setHistorialPagosAbierto(true);
+    setCargandoHistorialPagos(true);
+    setPlanHistorialPagos(null);
+    setErrorHistorialPagos("");
+
+    try {
+      const detalle = await obtenerPlanPagoService(planResumen.plan_pago_id);
+      setPlanHistorialPagos({ ...planResumen, ...detalle });
+    } catch (err) {
+      console.error("Error al cargar pagos de la cotización:", err);
+      setErrorHistorialPagos("No se pudo cargar el historial de pagos.");
+    } finally {
+      setCargandoHistorialPagos(false);
+    }
+  };
+
+  const irAGenerarPlanPago = (cot) => {
+    if (!cot?.cotizacion_id || !cot?.cliente_id) return;
+
+    navigate("/home/pagos", {
+      state: {
+        modo: "crear",
+        clienteId: cot.cliente_id,
+        cotizacionId: cot.cotizacion_id,
+      },
+    });
   };
 
   return (
@@ -397,15 +606,34 @@ function Cotizaciones() {
                           ? new Date(item.fecha_creado).toLocaleDateString("es-GT")
                           : "—"}
                       </td>
-                      <td>
+                      <td className="cotiz-table__acciones">
                         <button
                           type="button"
                           className="cotiz-table__pdf"
                           onClick={() => handleImprimirPdf(item)}
                         >
                           <Printer size={16} />
-                          Ver / Reimprimir PDF
+                          PDF
                         </button>
+                        {cotizacionTienePlanPago(item) ? (
+                          <button
+                            type="button"
+                            className="cotiz-table__pagos"
+                            onClick={() => abrirHistorialPagos(item)}
+                          >
+                            <Wallet size={16} />
+                            Ver pagos
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            className="cotiz-table__plan"
+                            onClick={() => irAGenerarPlanPago(item)}
+                          >
+                            <CircleDollarSign size={16} />
+                            Generar plan
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -537,7 +765,10 @@ function Cotizaciones() {
                       "Sin tipo";
 
                     return (
-                      <li key={id}>
+                      <li
+                        key={id}
+                        ref={isSelected ? prendaSeleccionadaRef : null}
+                      >
                         <button
                           type="button"
                           role="option"
@@ -697,6 +928,60 @@ function Cotizaciones() {
               <h2>Valor de la cotización</h2>
             </div>
 
+            {cotizacionActivaParaPrenda && (
+              <div className="cotiz-existing-banner" role="status">
+                <div>
+                  <strong>{cotizacionActivaParaPrenda.codigo_cotizacion}</strong>
+                  <span>
+                    Cotización registrada para esta prenda
+                    {cotizacionActivaParaPrenda.fecha_creado
+                      ? ` · ${new Date(
+                          cotizacionActivaParaPrenda.fecha_creado
+                        ).toLocaleDateString("es-GT")}`
+                      : ""}
+                  </span>
+                </div>
+                <div className="cotiz-existing-banner__actions">
+                  <button
+                    type="button"
+                    className="cotiz-existing-banner__pdf"
+                    onClick={() => handleImprimirPdf(cotizacionActivaParaPrenda)}
+                  >
+                    <Printer size={16} />
+                    Ver PDF
+                  </button>
+                  {cargandoPlanPago ? (
+                    <span className="cotiz-existing-banner__loading">
+                      Consultando plan...
+                    </span>
+                  ) : planPagoActivo ? (
+                    <button
+                      type="button"
+                      className="cotiz-existing-banner__pagos"
+                      onClick={() => abrirHistorialPagos()}
+                    >
+                      <Wallet size={16} />
+                      Ver pagos
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="cotiz-existing-banner__plan"
+                      onClick={() =>
+                        irAGenerarPlanPago({
+                          ...cotizacionActivaParaPrenda,
+                          cliente_id: clienteId,
+                        })
+                      }
+                    >
+                      <CircleDollarSign size={16} />
+                      Generar plan de pagos
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
             <div className="cotiz-valor-row">
               <label htmlFor="valor-cotizacion">Monto (quetzales)</label>
               <div className="cotiz-input-icon">
@@ -709,7 +994,10 @@ function Cotizaciones() {
                   value={valorCotizacion}
                   onChange={(e) => setValorCotizacion(e.target.value)}
                   placeholder="0.00"
-                  disabled={!detallePrenda || guardando}
+                  disabled={
+                    !detallePrenda || guardando || Boolean(cotizacionActivaParaPrenda)
+                  }
+                  readOnly={Boolean(cotizacionActivaParaPrenda)}
                 />
               </div>
               {valorCotizacion && !Number.isNaN(Number(valorCotizacion)) && (
@@ -728,21 +1016,33 @@ function Cotizaciones() {
                 onChange={(e) => setNotas(e.target.value)}
                 placeholder="Detalles adicionales de la cotización..."
                 rows={3}
-                disabled={!detallePrenda || guardando}
+                disabled={
+                  !detallePrenda || guardando || Boolean(cotizacionActivaParaPrenda)
+                }
+                readOnly={Boolean(cotizacionActivaParaPrenda)}
               />
             </div>
 
-            <button
-              type="submit"
-              className="cotiz-save"
-              disabled={!detallePrenda || guardando}
-            >
-              <Save size={18} />
-              {guardando ? "Guardando..." : "Guardar cotización"}
-            </button>
+            {!cotizacionActivaParaPrenda && (
+              <button
+                type="submit"
+                className="cotiz-save"
+                disabled={!detallePrenda || guardando}
+              >
+                <Save size={18} />
+                {guardando ? "Guardando..." : "Guardar cotización"}
+              </button>
+            )}
           </section>
         </form>
       )}
+      <HistorialPagosModal
+        open={historialPagosAbierto}
+        loading={cargandoHistorialPagos}
+        plan={planHistorialPagos}
+        mensajeError={errorHistorialPagos}
+        onClose={cerrarHistorialPagos}
+      />
     </div>
   );
 }
