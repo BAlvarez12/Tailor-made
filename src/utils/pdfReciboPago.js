@@ -19,6 +19,12 @@ const COLORS = {
 
 const contentWidth = (doc) => doc.page.width - MARGIN * 2;
 
+const truncarTexto = (texto, max = 120) => {
+  const s = String(texto || "").trim();
+  if (s.length <= max) return s;
+  return `${s.slice(0, max - 3)}...`;
+};
+
 const etiquetaTipoPago = (tipo) => {
   const map = { anticipo: "Anticipo", abono: "Abono", otro: "Pago" };
   return map[tipo] || "Pago";
@@ -282,7 +288,7 @@ const dibujarResumenPlan = (doc, y, plan, pago) => {
     ["Cuotas planificadas", String(plan.cantidad_pagos ?? "—")],
   ];
 
-  const notas = pago.notas ? String(pago.notas).trim() : "";
+  const notas = pago.notas ? truncarTexto(pago.notas, 200) : "";
   const tituloH = 22;
   let filasH = 0;
   items.forEach(([label, val]) => {
@@ -345,6 +351,7 @@ const dibujarPie = (doc) => {
     .text("powered by Ingeniosos S.A", MARGIN, pieY + 12, {
       width: cw,
       align: "center",
+      lineBreak: false,
     });
 };
 
@@ -353,8 +360,7 @@ const generarPdfReciboPago = (plan, pago) =>
     try {
       const doc = new PDFDocument({
         size: "LETTER",
-        margin: MARGIN,
-        bufferPages: true,
+        margins: { top: 0, bottom: 0, left: 0, right: 0 },
       });
       const chunks = [];
 

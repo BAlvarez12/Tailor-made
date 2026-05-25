@@ -4,8 +4,6 @@ exports.guardarMedidas = async (req, res) => {
   try {
     const { cliente_id, usuario, medidas } = req.body;
 
-    //console.log("BODY GUARDAR MEDIDAS:", req.body);
-
     if (!cliente_id) {
       return res.status(400).json({
         message: "cliente_id es obligatorio"

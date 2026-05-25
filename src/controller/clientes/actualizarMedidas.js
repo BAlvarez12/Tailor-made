@@ -4,8 +4,6 @@ const actualizarMedidas = async (req, res) => {
   try {
     const { cliente_id, usuario, medidas } = req.body;
 
-    //console.log("BODY ACTUALIZAR MEDIDAS:", req.body);
-
     if (!cliente_id) {
       return res.status(400).json({ error: "cliente_id es obligatorio" });
     }

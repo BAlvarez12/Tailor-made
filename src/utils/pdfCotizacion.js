@@ -255,6 +255,14 @@ const dibujarTotal = (doc, valorTotal, y) => {
       lineBreak: false,
     });
 
+  doc
+  .fontSize(8)
+    .text("Cotizacion sujeta a cambios", MARGIN + 14, boxY + 55, {
+      width: cw - 5,
+      align: "center",
+      lineBreak: false,
+    });
+
   return boxY + boxH;
 };
 
