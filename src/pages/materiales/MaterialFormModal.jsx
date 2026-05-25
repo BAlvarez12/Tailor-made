@@ -16,7 +16,8 @@ import {
   XCircle,
 } from "lucide-react";
 
-const API_UPLOADS = "http://localhost:3000/uploads/materiales";
+const getApiUploadsMateriales = () =>
+  `${import.meta.env.VITE_BACKEND_URL}/uploads/materiales`;
 
 const FORM_VACIO = {
   nombre_material: "",
@@ -181,7 +182,7 @@ function MaterialFormModal({ open, materialId, onClose }) {
     <div className="tm-modal-form">
       <div className="tm-modal-overlay" onClick={handleCerrar}>
         <div
-          className="tm-modal tm-modal--md"
+          className="tm-modal tm-modal--md mat-modal--scroll"
           onClick={(e) => e.stopPropagation()}
           role="dialog"
           aria-modal="true"
@@ -217,7 +218,7 @@ function MaterialFormModal({ open, materialId, onClose }) {
             <p className="mat-modal__loading">Cargando material...</p>
           ) : categorias.length === 0 ? (
             <p className="mat-modal__error">
-              No hay categorías disponibles. Configura categorías antes de continuar.
+              No hay categorías disponibles. Usa «Agregar categorías» en la pantalla de materiales.
             </p>
           ) : (
             <form className="tm-modal__form" onSubmit={handleSubmit}>
@@ -394,7 +395,7 @@ function MaterialFormModal({ open, materialId, onClose }) {
                     {imagenesExistentes.map((img) => (
                       <img
                         key={img}
-                        src={`${API_UPLOADS}/${img}`}
+                        src={`${getApiUploadsMateriales()}/${img}`}
                         alt=""
                       />
                     ))}

@@ -4,11 +4,11 @@ import "./Materiales.css";
 import logo from "../../assets/logo-tailor-made.png";
 import MaterialesExistenciasModal from "./MaterialesExistenciasModal";
 import MaterialFormModal from "./MaterialFormModal";
-
-const API_BASE = "http://localhost:3000";
+import CategoriasMaterialModal from "./CategoriasMaterialModal";
+import { Layers } from "lucide-react";
 
 const urlImagenMaterial = (nombreArchivo) =>
-  `${API_BASE}/uploads/materiales/${nombreArchivo}`;
+  `${import.meta.env.VITE_BACKEND_URL}/uploads/materiales/${nombreArchivo}`;
 
 function Materiales() {
   const [materiales, setMateriales] = useState([]);
@@ -18,13 +18,25 @@ function Materiales() {
   const [error, setError] = useState("");
 
   const [mostrarModalExistencias, setMostrarModalExistencias] = useState(false);
+  const [mostrarModalCategorias, setMostrarModalCategorias] = useState(false);
   const [mostrarModalCrear, setMostrarModalCrear] = useState(false);
   const [materialEditarId, setMaterialEditarId] = useState(null);
+  const [categoriasCatalogo, setCategoriasCatalogo] = useState([]);
 
   const [imageIndexes, setImageIndexes] = useState({});
   const [previewImagenes, setPreviewImagenes] = useState([]);
   const [previewIndex, setPreviewIndex] = useState(0);
   const [animando, setAnimando] = useState(false);
+
+  const fetchCategorias = useCallback(async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/api/materiales/categorias`);
+      setCategoriasCatalogo(Array.isArray(res.data) ? res.data : []);
+    } catch (err) {
+      console.error(err);
+      setCategoriasCatalogo([]);
+    }
+  }, []);
 
   const fetchMateriales = useCallback(async () => {
     try {
@@ -43,9 +55,19 @@ function Materiales() {
 
   useEffect(() => {
     fetchMateriales();
-  }, [fetchMateriales]);
+    fetchCategorias();
+  }, [fetchMateriales, fetchCategorias]);
 
   const categoriasDisponibles = useMemo(() => {
+    if (categoriasCatalogo.length > 0) {
+      return categoriasCatalogo
+        .map((cat) => ({
+          value: String(cat.categoria_id),
+          label: cat.nombre_categoria || "Sin nombre",
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label, "es"));
+    }
+
     const map = new Map();
     materiales.forEach((m) => {
       const id = m.categoria_id;
@@ -59,7 +81,7 @@ function Materiales() {
     return Array.from(map.entries())
       .map(([value, label]) => ({ value, label }))
       .sort((a, b) => a.label.localeCompare(b.label, "es"));
-  }, [materiales]);
+  }, [categoriasCatalogo, materiales]);
 
   const materialesFiltrados = useMemo(() => {
     const termNombre = busquedaNombre.trim().toLowerCase();
@@ -153,10 +175,18 @@ function Materiales() {
         <div className="materiales-page__header-actions">
           <button
             type="button"
+            className="materiales-page__btn-secondary materiales-page__btn-secondary--icon"
+            onClick={() => setMostrarModalCategorias(true)}
+          >
+            <Layers size={16} />
+            Agregar categorías
+          </button>
+          <button
+            type="button"
             className="materiales-page__btn-secondary"
             onClick={() => setMostrarModalExistencias(true)}
           >
-            + Existencia
+            Existencia
           </button>
           <button
             type="button"
@@ -341,6 +371,15 @@ function Materiales() {
         open={mostrarModalExistencias}
         onClose={() => {
           setMostrarModalExistencias(false);
+          fetchMateriales();
+        }}
+      />
+
+      <CategoriasMaterialModal
+        open={mostrarModalCategorias}
+        onClose={() => {
+          setMostrarModalCategorias(false);
+          fetchCategorias();
           fetchMateriales();
         }}
       />

@@ -1,14 +1,20 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../../utils/api";
 import "./clientes.css";
 import { getTiposMedida } from "../../services/tipoMedidasService2";
 import { toast } from "react-toastify";
 import { Pencil, User, Phone, ToggleLeft, Save, XCircle, FileText, Ruler, ScanLine } from "lucide-react";
 
-function ModalActualizarMedidas({ cliente, onClose }) {
+function ModalActualizarMedidas({
+  cliente,
+  onClose,
+  onGuardado,
+  sinMedidasRegistradas = false,
+}) {
   const [medidas, setMedidas] = useState([]);
   const [valores, setValores] = useState({});
   const [loading, setLoading] = useState(false);
+  const [esRegistroInicial, setEsRegistroInicial] = useState(sinMedidasRegistradas);
 
   useEffect(() => {
     cargarMedidas();
@@ -17,13 +23,11 @@ function ModalActualizarMedidas({ cliente, onClose }) {
   const cargarMedidas = async () => {
     try {
       const [resMedidas, tiposActivos] = await Promise.all([
-        axios.get(
-          `http://localhost:3000/api/clientes/medidas/cliente/${cliente.cliente_id}`
-        ),
+        api.get(`/clientes/medidas/cliente/${cliente.cliente_id}`),
         getTiposMedida()
       ]);
 
-      const medidasExistentes = resMedidas.data || [];
+      const medidasExistentes = resMedidas.data?.data ?? resMedidas.data ?? [];
 
       const mapaExistentes = {};
       medidasExistentes.forEach((m) => {
@@ -44,6 +48,10 @@ function ModalActualizarMedidas({ cliente, onClose }) {
 
       setMedidas(medidasCompletas);
       setValores(valoresIniciales);
+      const tieneRegistradas = medidasExistentes.some(
+        (m) => m.valor !== "" && m.valor !== null && m.valor !== undefined
+      );
+      setEsRegistroInicial(sinMedidasRegistradas || !tieneRegistradas);
 
     } catch (error) {
       console.error("Error cargando medidas:", error);
@@ -74,13 +82,28 @@ function ModalActualizarMedidas({ cliente, onClose }) {
           valor: valores[id]
         }));
 
-      await axios.put("http://localhost:3000/api/clientes/medidas", {
+      if (data.length === 0) {
+        toast.error("Debes ingresar al menos una medida");
+        return;
+      }
+
+      const payload = {
         cliente_id: cliente.cliente_id,
         usuario: 1,
-        medidas: data
-      });
+        medidas: data,
+      };
 
-      toast.success("Medidas del cliente actualizadas con éxito");
+      if (esRegistroInicial) {
+        await api.post("/clientes/medidas", payload);
+        toast.success("Medidas del cliente registradas con éxito");
+      } else {
+        await api.put("/clientes/medidas", payload);
+        toast.success("Medidas del cliente actualizadas con éxito");
+      }
+
+      if (onGuardado) {
+        await onGuardado();
+      }
       onClose();
     } catch (error) {
       console.error("Error actualizando medidas:", error);
@@ -102,7 +125,7 @@ function ModalActualizarMedidas({ cliente, onClose }) {
             <Ruler size={22} />
           </div>
           <div>
-            <h2>Actualizar Medidas</h2>
+            <h2>{esRegistroInicial ? "Registrar medidas" : "Actualizar medidas"}</h2>
             <p className="tm-modal__subtitle">
               {cliente.nombre_cliente} {cliente.apellido_cliente}
             </p>
@@ -115,10 +138,19 @@ function ModalActualizarMedidas({ cliente, onClose }) {
       </div>
 
       <div className="tm-modal__form tm-modal__scroll">
+        {esRegistroInicial && (
+          <p className="tm-modal__aviso">
+            Este cliente no cuenta con medidas registradas. Ingresa las medidas
+            necesarias y guarda para continuar con la prenda.
+          </p>
+        )}
+
         <div className="tm-modal__section">
           <p className="tm-modal__section-title">
             <ScanLine size={16} />
-            Medidas activas del cliente
+            {esRegistroInicial
+              ? "Registro de medidas del cliente"
+              : "Medidas activas del cliente"}
           </p>
 
           <div className="tm-medidas-grid-4">
@@ -154,7 +186,11 @@ function ModalActualizarMedidas({ cliente, onClose }) {
             disabled={loading}
           >
             <Save size={16} />
-            {loading ? "Guardando..." : "Actualizar"}
+            {loading
+              ? "Guardando..."
+              : esRegistroInicial
+                ? "Guardar medidas"
+                : "Actualizar"}
           </button>
         </div>
       </div>

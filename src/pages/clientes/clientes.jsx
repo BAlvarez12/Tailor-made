@@ -14,6 +14,9 @@ function Clientes() {
   const [filtroEstado, setFiltroEstado] = useState(null);
   const [showFilterMenu, setShowFilterMenu] = useState(false);
 
+  const [paginaActual, setPaginaActual] = useState(1);
+  const clientesPorPagina = 10;
+
   const [modalClienteAbierto, setModalClienteAbierto] = useState(false);
   const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
   const [showMedidas, setShowMedidas] = useState(false);
@@ -54,13 +57,26 @@ function Clientes() {
       const nombre = (c.nombre_cliente || "").toLowerCase();
       const apellido = (c.apellido_cliente || "").toLowerCase();
       const telefono = (c.telefono || "").toLowerCase();
+      const dpi = (c.dpi || "").toLowerCase();
+
       return (
         nombre.includes(texto) ||
         apellido.includes(texto) ||
-        telefono.includes(texto)
+        telefono.includes(texto) ||
+        dpi.includes(texto)
       );
     });
   }, [clientes, busqueda, filtroEstado]);
+
+  const totalPaginas = Math.ceil(clientesFiltrados.length / clientesPorPagina);
+
+  const indiceInicial = (paginaActual - 1) * clientesPorPagina;
+  const indiceFinal = indiceInicial + clientesPorPagina;
+
+  const clientesPaginados = clientesFiltrados.slice(
+    indiceInicial,
+    indiceFinal
+  );
 
   return (
     <div className="tm-users">
@@ -77,12 +93,16 @@ function Clientes() {
                 <path d="M21.53 20.47l-3.66-3.66C19.195 15.24 20 13.214 20 11c0-4.97-4.03-9-9-9s-9 4.03-9 9 4.03 9 9 9c2.215 0 4.24-.804 5.808-2.13l3.66 3.66c.147.146.34.22.53.22s.385-.073.53-.22c.295-.293.295-.767.002-1.06zM3.5 11c0-4.135 3.365-7.5 7.5-7.5s7.5 3.365 7.5 7.5-3.365 7.5-7.5 7.5-7.5-3.365-7.5-7.5z" />
               </g>
             </svg>
+
             <input
               type="search"
               className="input"
-              placeholder="Buscar por nombre o teléfono"
+              placeholder="Buscar por nombre, teléfono o DPI"
               value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
+              onChange={(e) => {
+                setBusqueda(e.target.value);
+                setPaginaActual(1);
+              }}
             />
           </div>
 
@@ -104,32 +124,44 @@ function Clientes() {
                 />
               </svg>
             </button>
+
             <div className={`filter-menu ${showFilterMenu ? "active" : ""}`}>
               <button
                 type="button"
-                className={`filter-option ${filtroEstado === null ? "active" : ""}`}
+                className={`filter-option ${
+                  filtroEstado === null ? "active" : ""
+                }`}
                 onClick={() => {
                   setFiltroEstado(null);
+                  setPaginaActual(1);
                   setShowFilterMenu(false);
                 }}
               >
                 Todos
               </button>
+
               <button
                 type="button"
-                className={`filter-option ${filtroEstado === 1 ? "active" : ""}`}
+                className={`filter-option ${
+                  filtroEstado === 1 ? "active" : ""
+                }`}
                 onClick={() => {
                   setFiltroEstado(1);
+                  setPaginaActual(1);
                   setShowFilterMenu(false);
                 }}
               >
                 Activos
               </button>
+
               <button
                 type="button"
-                className={`filter-option ${filtroEstado === 0 ? "active" : ""}`}
+                className={`filter-option ${
+                  filtroEstado === 0 ? "active" : ""
+                }`}
                 onClick={() => {
                   setFiltroEstado(0);
+                  setPaginaActual(1);
                   setShowFilterMenu(false);
                 }}
               >
@@ -170,16 +202,20 @@ function Clientes() {
                   <th>Nombre</th>
                   <th>Apellido</th>
                   <th>Teléfono</th>
+                  <th>DPI</th>
                   <th>Estado</th>
                   <th>Acciones</th>
                 </tr>
               </thead>
+
               <tbody>
-                {clientesFiltrados.map((c) => (
+                {clientesPaginados.map((c) => (
                   <tr key={c.cliente_id}>
                     <td>{c.nombre_cliente}</td>
                     <td>{c.apellido_cliente}</td>
                     <td>{c.telefono || "—"}</td>
+                    <td>{c.dpi || "—"}</td>
+
                     <td>
                       <span
                         className={`tm-users__badge ${
@@ -191,18 +227,20 @@ function Clientes() {
                         {Number(c.estado) === 1 ? "Activo" : "Inactivo"}
                       </span>
                     </td>
+
                     <td>
                       <div className="tm-users__acciones">
                         <button
                           type="button"
                           className="tm-users__btn-accion tm-users__btn-accion--editar"
-                            onClick={() => {
-                              setClienteSeleccionado(c);
-                              setModalClienteAbierto(true);
-                            }}
+                          onClick={() => {
+                            setClienteSeleccionado(c);
+                            setModalClienteAbierto(true);
+                          }}
                         >
                           Editar
                         </button>
+
                         <button
                           type="button"
                           className="tm-users__btn-accion tm-users__btn-accion--secundario"
@@ -219,6 +257,40 @@ function Clientes() {
                 ))}
               </tbody>
             </table>
+
+            {totalPaginas > 1 && (
+              <div className="tm-pagination">
+                <span className="tm-pagination__results">
+                  Mostrando {indiceInicial + 1}-
+                  {Math.min(indiceFinal, clientesFiltrados.length)} de{" "}
+                  {clientesFiltrados.length} clientes
+                </span>
+
+                <div className="tm-pagination__controls">
+                  <button
+                    type="button"
+                    className="tm-pagination__btn"
+                    disabled={paginaActual === 1}
+                    onClick={() => setPaginaActual((prev) => prev - 1)}
+                  >
+                    Anterior
+                  </button>
+
+                  <span className="tm-pagination__info">
+                    Página {paginaActual} de {totalPaginas}
+                  </span>
+
+                  <button
+                    type="button"
+                    className="tm-pagination__btn"
+                    disabled={paginaActual === totalPaginas}
+                    onClick={() => setPaginaActual((prev) => prev + 1)}
+                  >
+                    Siguiente
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -232,8 +304,10 @@ function Clientes() {
         }}
         onSuccess={async (result) => {
           await cargarClientes();
+          setPaginaActual(1);
           setModalClienteAbierto(false);
           setClienteSeleccionado(null);
+
           if (result?.nuevoCliente) {
             setClienteMedidas(result.nuevoCliente);
             setShowMedidas(true);

@@ -512,6 +512,9 @@
 }
 
 .crear-prenda-form__mini-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   border: 1px solid var(--cp-border);
   background: var(--cp-surface-soft);
   color: var(--cp-text);
@@ -949,6 +952,126 @@
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 16px;
+}
+
+.crear-prenda-medidas-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.crear-prenda-form__mini-button.is-active {
+  border-color: #111827;
+  background: #f8fafc;
+  color: var(--cp-text);
+}
+
+.crear-prenda-form__mini-button.is-active svg {
+  flex-shrink: 0;
+}
+
+.crear-prenda-medidas-hint {
+  margin: 0 0 14px;
+  font-size: 0.88rem;
+  color: var(--cp-muted);
+  line-height: 1.45;
+}
+
+.crear-prenda-medidas-sin-registro {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  text-align: left;
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px dashed var(--cp-border-strong);
+  background: var(--cp-surface-soft);
+}
+
+.crear-prenda-medidas-sin-registro p {
+  margin: 0;
+  color: var(--cp-text-soft);
+  line-height: 1.45;
+}
+
+.crear-prenda-medidas-edit-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.crear-prenda-medida-edit-item {
+  border: 1px solid var(--cp-border);
+  border-radius: 16px;
+  padding: 12px 14px;
+  background: #fff;
+}
+
+.crear-prenda-medida-edit-item label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 0.84rem;
+  color: var(--cp-muted);
+  font-weight: 600;
+}
+
+.crear-prenda-medida-edit-item__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.crear-prenda-medida-edit-item input {
+  flex: 1;
+  min-width: 0;
+  height: 42px;
+  border: 1px solid var(--cp-border);
+  border-radius: 12px;
+  padding: 0 12px;
+  font-size: 1rem;
+  color: var(--cp-text);
+  background: var(--cp-surface-soft);
+}
+
+.crear-prenda-medida-edit-item input:focus {
+  outline: none;
+  border-color: #111827;
+  background: #fff;
+}
+
+.crear-prenda-medida-edit-item__unit {
+  font-size: 0.88rem;
+  color: var(--cp-text-soft);
+  white-space: nowrap;
+}
+
+.crear-prenda-medida-edit-item__remove {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--cp-border);
+  background: #fff;
+  color: var(--cp-muted);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: 0.2s ease;
+}
+
+.crear-prenda-medida-edit-item__remove:hover:not(:disabled) {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: var(--cp-danger-text);
+}
+
+.crear-prenda-medida-edit-item__remove:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .crear-prenda-medidas-title {

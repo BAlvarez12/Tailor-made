@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import "./clientes.css";
-import axios from "axios";
+import api from "../../utils/api";
 import { getTiposMedida } from "../../services/tipoMedidasService2";
 import { toast } from "react-toastify";
 import { Ruler, Save, XCircle, ScanLine } from "lucide-react";
@@ -48,7 +48,7 @@ function ModalMedidas({ cliente, onClose }) {
           valor: valores[id]
         }));
 
-      await axios.post("http://localhost:3000/api/clientes/medidas", {
+      await api.post("/clientes/medidas", {
         cliente_id: cliente.cliente_id,
         usuario: 1,
         medidas

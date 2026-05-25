@@ -48,6 +48,12 @@
   background: #ede9fe;
 }
 
+.materiales-page__btn-secondary--icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .materiales-page__btn-create {
   height: 44px;
   padding: 0 20px;

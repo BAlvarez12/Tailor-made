@@ -31,13 +31,16 @@ function HistorialPagosModal({ open, loading, plan, mensajeError, onClose }) {
   if (!open) return null;
 
   return (
-    <div className="pagos-modal-overlay" onClick={onClose}>
+    <div className="pagos-modal-overlay pagos-modal-overlay--historial" onClick={onClose}>
       <div
         className="pagos-modal pagos-modal--historial"
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="historial-pagos-title"
       >
         <div className="pagos-modal__header">
-          <h3>Abonos registrados</h3>
+          <h3 id="historial-pagos-title">Abonos registrados</h3>
           <button
             type="button"
             className="pagos-modal__close"
@@ -48,89 +51,96 @@ function HistorialPagosModal({ open, loading, plan, mensajeError, onClose }) {
           </button>
         </div>
 
-        {loading && (
-          <p className="pagos-hint">Cargando historial de pagos...</p>
-        )}
+        <div className="pagos-modal__body pagos-modal__body--historial">
+          {loading && (
+            <p className="pagos-hint">Cargando historial de pagos...</p>
+          )}
 
-        {!loading && mensajeError && (
-          <p className="pagos-hint pagos-hint--error">{mensajeError}</p>
-        )}
+          {!loading && mensajeError && (
+            <p className="pagos-hint pagos-hint--error">{mensajeError}</p>
+          )}
 
-        {!loading && !mensajeError && plan && (
-          <>
-            <p className="pagos-modal__sub">
-              Plan <strong>{plan.codigo_plan}</strong> · {plan.cliente_nombre} ·
-              Cuotas {formatearCuotasPlan(plan)}
-            </p>
-
-            {pagosDelHistorial.length === 0 ? (
-              <p className="pagos-hint">
-                Este plan aún no tiene pagos registrados.
+          {!loading && !mensajeError && plan && (
+            <>
+              <p className="pagos-modal__sub pagos-modal__sub--historial">
+                <span>
+                  Plan <strong>{plan.codigo_plan}</strong>
+                </span>
+                <span>{plan.cliente_nombre}</span>
+                <span>Cuotas {formatearCuotasPlan(plan)}</span>
               </p>
-            ) : (
-              <div className="pagos-historial-table-wrap">
-                <table className="pagos-historial-table">
-                  <thead>
-                    <tr>
-                      <th>Cuota</th>
-                      <th>Recibo</th>
-                      <th>Fecha del pago</th>
-                      <th>Monto</th>
-                      <th>Tipo</th>
-                      <th>Transferencia</th>
-                      <th></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pagosDelHistorial.map((pago, idx) => (
-                      <tr key={pago.pago_cliente_id}>
-                        <td>{textoCuotaPago(plan, idx)}</td>
-                        <td>
-                          <strong>{pago.codigo_recibo}</strong>
-                        </td>
-                        <td className="pagos-table-fecha">
-                          {formatearFechaPago(pago.fecha_pago || pago.fecha_registro)}
-                        </td>
-                        <td>{formatearMoneda(pago.monto)}</td>
-                        <td>{etiquetaTipoPago(pago.tipo_pago)}</td>
-                        <td>{pago.numero_transferencia || "—"}</td>
-                        <td>
-                          <button
-                            type="button"
-                            className="pagos-btn-pdf-mini"
-                            onClick={() =>
-                              abrirPdfRecibo(
-                                pago.pago_cliente_id,
-                                pago.codigo_recibo
-                              )
-                            }
-                            title="Ver recibo PDF"
-                          >
-                            <FileText size={14} />
-                          </button>
-                        </td>
+
+              {pagosDelHistorial.length === 0 ? (
+                <p className="pagos-hint">
+                  Este plan aún no tiene pagos registrados.
+                </p>
+              ) : (
+                <div className="pagos-historial-table-wrap">
+                  <table className="pagos-historial-table">
+                    <thead>
+                      <tr>
+                        <th>Cuota</th>
+                        <th>Recibo</th>
+                        <th>Fecha del pago</th>
+                        <th>Monto</th>
+                        <th>Tipo</th>
+                        <th>Transferencia</th>
+                        <th>PDF</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                    </thead>
+                    <tbody>
+                      {pagosDelHistorial.map((pago, idx) => (
+                        <tr key={pago.pago_cliente_id}>
+                          <td data-label="Cuota">{textoCuotaPago(plan, idx)}</td>
+                          <td data-label="Recibo">
+                            <strong>{pago.codigo_recibo}</strong>
+                          </td>
+                          <td
+                            className="pagos-table-fecha"
+                            data-label="Fecha del pago"
+                          >
+                            {formatearFechaPago(
+                              pago.fecha_pago || pago.fecha_registro
+                            )}
+                          </td>
+                          <td data-label="Monto">{formatearMoneda(pago.monto)}</td>
+                          <td data-label="Tipo">
+                            {etiquetaTipoPago(pago.tipo_pago)}
+                          </td>
+                          <td data-label="Transferencia">
+                            {pago.numero_transferencia || "—"}
+                          </td>
+                          <td data-label="Recibo PDF" className="pagos-historial-table__pdf">
+                            <button
+                              type="button"
+                              className="pagos-btn-pdf-mini"
+                              onClick={() =>
+                                abrirPdfRecibo(
+                                  pago.pago_cliente_id,
+                                  pago.codigo_recibo
+                                )
+                              }
+                              title="Ver recibo PDF"
+                            >
+                              <FileText size={14} />
+                              <span>Ver PDF</span>
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          )}
+        </div>
 
-            <div className="pagos-modal__actions">
-              <button type="button" className="pagos-btn-cancel" onClick={onClose}>
-                Cerrar
-              </button>
-            </div>
-          </>
-        )}
-
-        {!loading && (mensajeError || !plan) && (
-          <div className="pagos-modal__actions">
-            <button type="button" className="pagos-btn-cancel" onClick={onClose}>
-              Cerrar
-            </button>
-          </div>
-        )}
+        <div className="pagos-modal__actions pagos-modal__actions--historial">
+          <button type="button" className="pagos-btn-cancel" onClick={onClose}>
+            Cerrar
+          </button>
+        </div>
       </div>
     </div>
   );
