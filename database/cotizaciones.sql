@@ -1,9 +1,7 @@
 -- ============================================================
 -- Script: Tablas de cotizaciones - BeautyBell / Tailor-Made
--- Ejecutar en la base de datos: beautybell
+-- Ejecutar en la base de datos del proyecto (p. ej. tailor_made)
 -- ============================================================
-
-USE beautybell;
 
 -- ------------------------------------------------------------
 -- Tabla principal de cotizaciones

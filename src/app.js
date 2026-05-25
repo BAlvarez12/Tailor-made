@@ -6,16 +6,20 @@ const tipoMedidas2Routes = require("./routes/tipo_medidas2");
 const app = express();
 
 
-// 🌐 CONFIGURACIÓN CORS
-// MIDDLEWARES
+
+const corsOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean)
+
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: corsOrigins.length > 1 ? corsOrigins : corsOrigins[0],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true
-}));
+  credentials: true,
+}))
 
 
-// 🧠 MIDDLEWARE
+
 app.use(express.json());
 
 
