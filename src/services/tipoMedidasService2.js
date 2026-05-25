@@ -1,8 +1,6 @@
-import axios from "axios";
-
-const API = "http://localhost:3000/api/tipo_medidas2";
+import api from '../utils/api'
 
 export const getTiposMedida = async () => {
-  const res = await axios.get(API);
-  return res.data;
-};
+  const res = await api.get('/tipo_medidas2')
+  return res.data
+}

@@ -128,3 +128,241 @@
 .formularioUsuarios .formularioUsuarios__footer button:disabled::before {
   display: none;
 }
+
+.formularioUsuarios__required {
+  color: #b91c1c;
+  font-weight: 700;
+}
+
+.formularioUsuarios .tm-modal__field--full {
+  grid-column: 1 / -1;
+}
+
+.formularioUsuarios__password-wrap input {
+  padding-right: 44px !important;
+}
+
+.formularioUsuarios__password-toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #64748b;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.formularioUsuarios__password-toggle:hover:not(:disabled) {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.formularioUsuarios__password-toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.formularioUsuarios__strength {
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.formularioUsuarios__strength-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-size: 0.86rem;
+  color: #64748b;
+}
+
+.formularioUsuarios__strength-header strong {
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.formularioUsuarios__strength--debil .formularioUsuarios__strength-header strong {
+  color: #b91c1c;
+}
+
+.formularioUsuarios__strength--media .formularioUsuarios__strength-header strong {
+  color: #b45309;
+}
+
+.formularioUsuarios__strength--alta .formularioUsuarios__strength-header strong {
+  color: #15803d;
+}
+
+.formularioUsuarios__strength-track {
+  height: 8px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.formularioUsuarios__strength-fill {
+  height: 100%;
+  border-radius: inherit;
+  transition: width 0.25s ease;
+}
+
+.formularioUsuarios__strength--debil .formularioUsuarios__strength-fill {
+  background: linear-gradient(90deg, #f87171, #ef4444);
+}
+
+.formularioUsuarios__strength--media .formularioUsuarios__strength-fill {
+  background: linear-gradient(90deg, #fbbf24, #f59e0b);
+}
+
+.formularioUsuarios__strength--alta .formularioUsuarios__strength-fill {
+  background: linear-gradient(90deg, #4ade80, #16a34a);
+}
+
+.formularioUsuarios__strength-rules {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 6px 12px;
+}
+
+.formularioUsuarios__strength-rules li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.84rem;
+  color: #64748b;
+}
+
+.formularioUsuarios__strength-rules li.is-ok {
+  color: #166534;
+}
+
+.formularioUsuarios__strength-rules li.is-ok svg {
+  color: #16a34a;
+  flex-shrink: 0;
+}
+
+.formularioUsuarios__strength-rules li .is-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #cbd5e1;
+  flex-shrink: 0;
+}
+
+.formularioUsuarios__required {
+  color: #dc2626;
+}
+
+.formularioUsuarios__hint {
+  margin: 4px 0 0;
+  font-size: 0.82rem;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.formularioUsuarios__label-block {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.formularioUsuarios__usuario-preview-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #0f172a;
+}
+
+.formularioUsuarios__usuario-preview-box strong {
+  font-size: 1.05rem;
+  letter-spacing: 0.02em;
+}
+
+.formularioUsuarios__modo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.formularioUsuarios__modo-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  text-align: left;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 2px solid #e2e8f0;
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.formularioUsuarios__modo-card svg {
+  color: #64748b;
+}
+
+.formularioUsuarios__modo-card strong {
+  font-size: 0.92rem;
+  color: #0f172a;
+}
+
+.formularioUsuarios__modo-card span {
+  font-size: 0.8rem;
+  color: #64748b;
+  line-height: 1.35;
+}
+
+.formularioUsuarios__modo-card:hover:not(:disabled) {
+  border-color: #94a3b8;
+}
+
+.formularioUsuarios__modo-card.is-active {
+  border-color: #2563eb;
+  background: #eff6ff;
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.15);
+}
+
+.formularioUsuarios__modo-card.is-active svg {
+  color: #2563eb;
+}
+
+.formularioUsuarios__modo-card:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.formularioUsuarios .btn-reenviar-invitacion {
+  color: #fff;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 55%, #4338ca 100%);
+  border: none;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+}
+
+.formularioUsuarios .btn-reenviar-invitacion::before {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.formularioUsuarios .btn-reenviar-invitacion:hover:not(:disabled) {
+  filter: brightness(1.06);
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.38);
+}

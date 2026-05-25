@@ -2,10 +2,12 @@
   display: flex;
   min-height: 100vh;
   background: #f8f8fb;
+  overflow-x: hidden;
 }
 
 .tm-layout__content {
   flex: 1;
+  min-width: 0;
   padding: 24px;
   box-sizing: border-box;
   overflow-y: visible;

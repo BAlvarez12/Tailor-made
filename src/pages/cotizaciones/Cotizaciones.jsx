@@ -8,6 +8,7 @@ import {
   listarCotizacionesService,
   obtenerCotizacionPorIdService,
   abrirPdfCotizacion,
+  enviarCotizacionPorWhatsApp,
 } from "../../services/cotizacionesService";
 import {
   obtenerDetallePrenda,
@@ -17,6 +18,8 @@ import {
 import {
   normalizarCliente,
   formatearClienteDisplay,
+  formatearNombreCliente,
+  obtenerTelefonoCliente,
   clienteCoincideBusqueda,
 } from "../../utils/clienteDisplay";
 import {
@@ -33,6 +36,7 @@ import {
   Plus,
   Wallet,
   CircleDollarSign,
+  MessageCircle,
 } from "lucide-react";
 import HistorialPagosModal from "../pagos/HistorialPagosModal";
 import {
@@ -113,6 +117,7 @@ function Cotizaciones() {
   const [errorHistorialPagos, setErrorHistorialPagos] = useState("");
   const [planPagoActivo, setPlanPagoActivo] = useState(null);
   const [cargandoPlanPago, setCargandoPlanPago] = useState(false);
+  const [enviandoWhatsAppId, setEnviandoWhatsAppId] = useState(null);
 
   const cotizacionTienePlanPago = (item) =>
     Number(item?.tiene_plan_pago) === 1 || Boolean(item?.plan_pago_id);
@@ -125,8 +130,17 @@ function Cotizaciones() {
         obtenerClientesActivosService(),
         obtenerPrendas(),
       ]);
-      setClientes(normalizarRespuesta(clientesResp).map(normalizarCliente));
-      setPrendas(normalizarRespuesta(prendasResp));
+      const prendasLista = normalizarRespuesta(prendasResp);
+      const idsClientesConPrenda = new Set(
+        prendasLista.map((p) =>
+          String(p.cliente?.cliente_id ?? p.cliente_id)
+        )
+      );
+      const clientesConPrenda = normalizarRespuesta(clientesResp)
+        .map(normalizarCliente)
+        .filter((c) => idsClientesConPrenda.has(String(c.cliente_id)));
+      setClientes(clientesConPrenda);
+      setPrendas(prendasLista);
     } catch (err) {
       console.error("Error al cargar cotizaciones:", err);
       setErrorCarga("No se pudo cargar la información inicial.");
@@ -279,6 +293,10 @@ function Cotizaciones() {
       codigo_cotizacion: cot.codigo_cotizacion,
       cliente_prenda_id: cot.cliente_prenda_id,
       cliente_id: cot.cliente_id,
+      cliente_nombre: cot.cliente_nombre,
+      cliente_telefono: cot.cliente_telefono,
+      tipo_prenda_nombre: cot.tipo_prenda_nombre,
+      valor_total: cot.valor_total,
       fecha_creado: cot.fecha_creado,
     });
     setValorCotizacion(String(cot.valor_total ?? ""));
@@ -459,6 +477,51 @@ function Cotizaciones() {
     }
   };
 
+  const resolverTelefonoCotizacion = useCallback(
+    (cotizacion) => {
+      const telefonoDirecto = String(cotizacion?.cliente_telefono || "").trim();
+      if (telefonoDirecto) return telefonoDirecto;
+
+      if (
+        clienteSeleccionado &&
+        String(clienteSeleccionado.cliente_id) === String(cotizacion?.cliente_id)
+      ) {
+        return obtenerTelefonoCliente(clienteSeleccionado);
+      }
+
+      const cliente = clientes.find(
+        (c) => String(c.cliente_id) === String(cotizacion?.cliente_id)
+      );
+      if (cliente) return obtenerTelefonoCliente(cliente);
+
+      return (
+        detallePrenda?.telefono ||
+        detallePrenda?.cliente?.telefono ||
+        ""
+      );
+    },
+    [clientes, clienteSeleccionado, detallePrenda]
+  );
+
+  const resolverNombreClienteCotizacion = useCallback(
+    (cotizacion) => {
+      if (cotizacion?.cliente_nombre) return cotizacion.cliente_nombre;
+
+      if (
+        clienteSeleccionado &&
+        String(clienteSeleccionado.cliente_id) === String(cotizacion?.cliente_id)
+      ) {
+        return formatearNombreCliente(clienteSeleccionado);
+      }
+
+      const cliente = clientes.find(
+        (c) => String(c.cliente_id) === String(cotizacion?.cliente_id)
+      );
+      return formatearNombreCliente(cliente);
+    },
+    [clientes, clienteSeleccionado]
+  );
+
   const handleImprimirPdf = async (cotizacion) => {
     try {
       await abrirPdfCotizacion(
@@ -467,7 +530,45 @@ function Cotizaciones() {
       );
     } catch (err) {
       console.error("Error al abrir PDF:", err);
-      setErrorListado("No se pudo generar el PDF.");
+      const mensaje = "No se pudo generar el PDF.";
+      if (vista === "listado") setErrorListado(mensaje);
+      else setErrorDetalle(mensaje);
+    }
+  };
+
+  const handleEnviarWhatsApp = async (cotizacion, origen = "listado") => {
+    const telefono = resolverTelefonoCotizacion(cotizacion);
+
+    if (!telefono) {
+      const mensaje =
+        "El cliente no tiene teléfono registrado. Actualiza sus datos en Clientes.";
+      if (origen === "listado") setErrorListado(mensaje);
+      else setErrorDetalle(mensaje);
+      return;
+    }
+
+    try {
+      setEnviandoWhatsAppId(cotizacion.cotizacion_id);
+      if (origen === "listado") setErrorListado("");
+      else setErrorDetalle("");
+
+      await enviarCotizacionPorWhatsApp({
+        ...cotizacion,
+        cliente_telefono: telefono,
+        cliente_nombre: resolverNombreClienteCotizacion(cotizacion),
+        tipo_prenda_nombre:
+          cotizacion.tipo_prenda_nombre || tipoPrendaNombre || "",
+      });
+
+      setMensajeExito("WhatsApp abierto con el detalle de la cotización.");
+    } catch (err) {
+      console.error("Error al enviar por WhatsApp:", err);
+      const mensaje =
+        err?.message || "No se pudo preparar el envío por WhatsApp.";
+      if (origen === "listado") setErrorListado(mensaje);
+      else setErrorDetalle(mensaje);
+    } finally {
+      setEnviandoWhatsAppId(null);
     }
   };
 
@@ -614,6 +715,25 @@ function Cotizaciones() {
                         >
                           <Printer size={16} />
                           PDF
+                        </button>
+                        <button
+                          type="button"
+                          className="cotiz-table__whatsapp"
+                          onClick={() => handleEnviarWhatsApp(item, "listado")}
+                          disabled={
+                            enviandoWhatsAppId === item.cotizacion_id ||
+                            !resolverTelefonoCotizacion(item)
+                          }
+                          title={
+                            resolverTelefonoCotizacion(item)
+                              ? "Enviar cotización por WhatsApp"
+                              : "Sin teléfono registrado"
+                          }
+                        >
+                          <MessageCircle size={16} />
+                          {enviandoWhatsAppId === item.cotizacion_id
+                            ? "Enviando..."
+                            : "WhatsApp"}
                         </button>
                         {cotizacionTienePlanPago(item) ? (
                           <button
@@ -949,6 +1069,28 @@ function Cotizaciones() {
                   >
                     <Printer size={16} />
                     Ver PDF
+                  </button>
+                  <button
+                    type="button"
+                    className="cotiz-existing-banner__whatsapp"
+                    onClick={() =>
+                      handleEnviarWhatsApp(cotizacionActivaParaPrenda, "crear")
+                    }
+                    disabled={
+                      enviandoWhatsAppId ===
+                        cotizacionActivaParaPrenda.cotizacion_id ||
+                      !resolverTelefonoCotizacion(cotizacionActivaParaPrenda)
+                    }
+                    title={
+                      resolverTelefonoCotizacion(cotizacionActivaParaPrenda)
+                        ? "Enviar cotización por WhatsApp"
+                        : "Sin teléfono registrado"
+                    }
+                  >
+                    <MessageCircle size={16} />
+                    {enviandoWhatsAppId === cotizacionActivaParaPrenda.cotizacion_id
+                      ? "Enviando..."
+                      : "WhatsApp"}
                   </button>
                   {cargandoPlanPago ? (
                     <span className="cotiz-existing-banner__loading">

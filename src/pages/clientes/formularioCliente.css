@@ -62,3 +62,75 @@
   pointer-events: none;
   opacity: 0.85;
 }
+
+.formularioCliente__dpi-hint {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* Modal secundario: mismo sistema, menor tamaño y encima del formulario */
+.formularioCliente .tm-modal--sm {
+  max-width: 560px;
+}
+
+.formularioCliente .tm-modal__field--full {
+  grid-column: 1 / -1;
+}
+
+.formularioCliente .tm-modal__readonly {
+  width: 100%;
+  min-height: 48px;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  padding: 0 14px 0 42px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #111827;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  line-height: 1.35;
+}
+
+.formularioCliente .tm-modal__title-icon--alert {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  box-shadow: 0 10px 20px rgba(217, 119, 6, 0.25);
+}
+
+/* Jerarquía: el modal de cliente queda atrás atenuado */
+.formularioCliente--dpi-open .formularioCliente__modal-overlay {
+  pointer-events: none;
+}
+
+.formularioCliente--dpi-open .formularioCliente__modal-overlay .tm-modal {
+  transform: scale(0.985);
+  opacity: 0.72;
+  filter: blur(1px);
+  transition: transform 0.2s ease, opacity 0.2s ease, filter 0.2s ease;
+}
+
+.formularioCliente__dpi-overlay {
+  z-index: 10000000;
+  background: rgba(15, 23, 42, 0.38);
+  backdrop-filter: blur(3px);
+  pointer-events: auto;
+}
+
+.formularioCliente__dpi-overlay .tm-modal {
+  box-shadow:
+    0 28px 56px rgba(15, 23, 42, 0.28),
+    0 12px 24px rgba(15, 23, 42, 0.12);
+}
+
+@media (max-width: 640px) {
+  .formularioCliente__dpi-overlay .tm-modal__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .formularioCliente--dpi-open .formularioCliente__modal-overlay .tm-modal {
+    transform: none;
+  }
+}

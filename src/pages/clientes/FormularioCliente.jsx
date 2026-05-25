@@ -11,14 +11,19 @@ import {
   Save,
   XCircle,
   FileText,
+  CreditCard,
+  AlertTriangle,
 } from "lucide-react";
 
 const INITIAL_FORM = {
   nombre: "",
   apellido: "",
   telefono: "",
+  dpi: "",
   estado: 1,
 };
+
+const normalizarDpiInput = (valor) => String(valor ?? "").replace(/\D/g, "").slice(0, 13);
 
 function FormularioCliente({ open, cliente, onClose, onSuccess }) {
   const isEditMode = Boolean(cliente?.cliente_id);
@@ -26,10 +31,12 @@ function FormularioCliente({ open, cliente, onClose, onSuccess }) {
   const [form, setForm] = useState(INITIAL_FORM);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [clienteDpiDuplicado, setClienteDpiDuplicado] = useState(null);
 
   const resetForm = () => {
     setForm(INITIAL_FORM);
     setError("");
+    setClienteDpiDuplicado(null);
   };
 
   const handleClose = () => {
@@ -40,8 +47,10 @@ function FormularioCliente({ open, cliente, onClose, onSuccess }) {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    const nextValue = name === "dpi" ? normalizarDpiInput(value) : value;
+    setForm((prev) => ({ ...prev, [name]: nextValue }));
     if (error) setError("");
+    if (clienteDpiDuplicado) setClienteDpiDuplicado(null);
   };
 
   useEffect(() => {
@@ -52,6 +61,7 @@ function FormularioCliente({ open, cliente, onClose, onSuccess }) {
         nombre: cliente.nombre_cliente || "",
         apellido: cliente.apellido_cliente || "",
         telefono: cliente.telefono || "",
+        dpi: normalizarDpiInput(cliente.dpi || ""),
         estado:
           cliente.estado !== undefined && cliente.estado !== null
             ? Number(cliente.estado)
@@ -61,6 +71,7 @@ function FormularioCliente({ open, cliente, onClose, onSuccess }) {
       setForm(INITIAL_FORM);
     }
     setError("");
+    setClienteDpiDuplicado(null);
   }, [open, cliente, isEditMode]);
 
   const obtenerMensajeError = (err, defecto) =>
@@ -88,6 +99,18 @@ function FormularioCliente({ open, cliente, onClose, onSuccess }) {
       toast.error(msg);
       return false;
     }
+    if (!form.dpi.trim()) {
+      const msg = "El DPI es obligatorio.";
+      setError(msg);
+      toast.error(msg);
+      return false;
+    }
+    if (form.dpi.length !== 13) {
+      const msg = "El DPI debe tener exactamente 13 dígitos.";
+      setError(msg);
+      toast.error(msg);
+      return false;
+    }
     return true;
   };
 
@@ -95,6 +118,7 @@ function FormularioCliente({ open, cliente, onClose, onSuccess }) {
     nombre: form.nombre.trim(),
     apellido: form.apellido.trim(),
     telefono: form.telefono.trim(),
+    dpi: form.dpi.trim(),
     ...(isEditMode && {
       estado:
         estadoOverride !== null ? Number(estadoOverride) : Number(form.estado),
@@ -110,6 +134,19 @@ function FormularioCliente({ open, cliente, onClose, onSuccess }) {
     }
   };
 
+  const manejarErrorGuardado = (err, defecto) => {
+    const data = err?.response?.data;
+
+    if (data?.dpiDuplicado && data?.clienteExistente) {
+      setClienteDpiDuplicado(data.clienteExistente);
+      return;
+    }
+
+    const msg = obtenerMensajeError(err, defecto);
+    setError(msg);
+    toast.error(msg);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validar()) return;
@@ -117,6 +154,7 @@ function FormularioCliente({ open, cliente, onClose, onSuccess }) {
     try {
       setLoading(true);
       setError("");
+      setClienteDpiDuplicado(null);
 
       if (isEditMode) {
         await updateCliente(cliente.cliente_id, construirPayload());
@@ -134,19 +172,18 @@ function FormularioCliente({ open, cliente, onClose, onSuccess }) {
             nombre: form.nombre.trim(),
             apellido: form.apellido.trim(),
             telefono: form.telefono.trim(),
+            dpi: form.dpi.trim(),
           },
         });
       }
     } catch (err) {
       console.error(err);
-      const msg = obtenerMensajeError(
+      manejarErrorGuardado(
         err,
         isEditMode
           ? "No se pudo actualizar el cliente."
           : "No se pudo crear el cliente."
       );
-      setError(msg);
-      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -157,12 +194,13 @@ function FormularioCliente({ open, cliente, onClose, onSuccess }) {
 
     try {
       setLoading(true);
+      setClienteDpiDuplicado(null);
       await updateCliente(cliente.cliente_id, construirPayload(0));
       toast.success("Cliente inactivado con éxito");
       await finalizar();
     } catch (err) {
       console.error(err);
-      toast.error(obtenerMensajeError(err, "No se pudo inactivar el cliente."));
+      manejarErrorGuardado(err, "No se pudo inactivar el cliente.");
     } finally {
       setLoading(false);
     }
@@ -173,12 +211,13 @@ function FormularioCliente({ open, cliente, onClose, onSuccess }) {
 
     try {
       setLoading(true);
+      setClienteDpiDuplicado(null);
       await updateCliente(cliente.cliente_id, construirPayload(1));
       toast.success("Cliente activado con éxito");
       await finalizar();
     } catch (err) {
       console.error(err);
-      toast.error(obtenerMensajeError(err, "No se pudo activar el cliente."));
+      manejarErrorGuardado(err, "No se pudo activar el cliente.");
     } finally {
       setLoading(false);
     }
@@ -187,8 +226,10 @@ function FormularioCliente({ open, cliente, onClose, onSuccess }) {
   if (!open) return null;
 
   return (
-    <div className="formularioCliente">
-      <div className="tm-modal-overlay" onClick={handleClose}>
+    <div
+      className={`formularioCliente${clienteDpiDuplicado ? " formularioCliente--dpi-open" : ""}`}
+    >
+      <div className="tm-modal-overlay formularioCliente__modal-overlay" onClick={handleClose}>
         <div className="tm-modal" onClick={(e) => e.stopPropagation()}>
           <div className="tm-modal__header">
             <div className="tm-modal__title-wrap">
@@ -278,6 +319,29 @@ function FormularioCliente({ open, cliente, onClose, onSuccess }) {
                     />
                   </div>
                 </div>
+
+                <div className="tm-modal__field tm-modal__field--icon">
+                  <label htmlFor="cliente-dpi">DPI</label>
+                  <div className="tm-input-wrap">
+                    <CreditCard size={16} className="tm-input-icon" />
+                    <input
+                      id="cliente-dpi"
+                      type="text"
+                      name="dpi"
+                      inputMode="numeric"
+                      autoComplete="off"
+                      value={form.dpi}
+                      onChange={handleChange}
+                      placeholder="13 dígitos"
+                      maxLength={13}
+                      disabled={loading}
+                      required
+                    />
+                  </div>
+                  <span className="formularioCliente__dpi-hint">
+                    {form.dpi.length}/13 dígitos
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -335,6 +399,105 @@ function FormularioCliente({ open, cliente, onClose, onSuccess }) {
           </form>
         </div>
       </div>
+
+      {clienteDpiDuplicado && (
+        <div
+          className="tm-modal-overlay formularioCliente__dpi-overlay"
+          onClick={() => setClienteDpiDuplicado(null)}
+        >
+          <div
+            className="tm-modal tm-modal--sm"
+            role="alertdialog"
+            aria-labelledby="dpi-duplicado-titulo"
+            aria-modal="true"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="tm-modal__header">
+              <div className="tm-modal__title-wrap">
+                <div
+                  className="tm-modal__title-icon formularioCliente__title-icon--alert"
+                  aria-hidden
+                >
+                  <AlertTriangle size={22} />
+                </div>
+                <div>
+                  <h2 id="dpi-duplicado-titulo">DPI ya registrado</h2>
+                  <p className="tm-modal__subtitle">
+                    Ya existe un cliente con este DPI en el sistema
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="tm-modal__close"
+                onClick={() => setClienteDpiDuplicado(null)}
+                aria-label="Cerrar"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="tm-modal__form">
+              <div className="tm-modal__section">
+                <p className="tm-modal__section-title">
+                  <User size={16} />
+                  Cliente registrado
+                </p>
+
+                <div className="tm-modal__grid">
+                  <div className="tm-modal__field tm-modal__field--icon tm-modal__field--full">
+                    <label htmlFor="dpi-dup-nombre">Nombre completo</label>
+                    <div className="tm-input-wrap">
+                      <User size={16} className="tm-input-icon" />
+                      <div
+                        id="dpi-dup-nombre"
+                        className="tm-modal__readonly"
+                        role="text"
+                      >
+                        {clienteDpiDuplicado.nombre_completo || "—"}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="tm-modal__field tm-modal__field--icon">
+                    <label htmlFor="dpi-dup-telefono">Teléfono</label>
+                    <div className="tm-input-wrap">
+                      <Phone size={16} className="tm-input-icon" />
+                      <div
+                        id="dpi-dup-telefono"
+                        className="tm-modal__readonly"
+                        role="text"
+                      >
+                        {clienteDpiDuplicado.telefono || "—"}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="tm-modal__field tm-modal__field--icon">
+                    <label htmlFor="dpi-dup-dpi">DPI</label>
+                    <div className="tm-input-wrap">
+                      <CreditCard size={16} className="tm-input-icon" />
+                      <div id="dpi-dup-dpi" className="tm-modal__readonly" role="text">
+                        {clienteDpiDuplicado.dpi || "—"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="formularioCliente__footer tm-modal__actions">
+                <button
+                  type="button"
+                  className="btn-guardar"
+                  onClick={() => setClienteDpiDuplicado(null)}
+                >
+                  Entendido
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

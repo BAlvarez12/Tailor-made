@@ -19,3 +19,8 @@ export const obtenerUsuarioPorId = async (usuarioId) => {
   const response = await api.get(`/usuarios/obtener/${usuarioId}`);
   return response.data;
 };
+
+export const reenviarInvitacionUsuarioService = async (usuarioId) => {
+  const response = await api.post(`/usuarios/reenviar-invitacion/${usuarioId}`);
+  return response.data;
+};

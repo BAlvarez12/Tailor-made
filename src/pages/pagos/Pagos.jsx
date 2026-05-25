@@ -792,8 +792,8 @@ function Pagos() {
           )}
 
           {!loadingListado && planes.length > 0 && (
-            <div className="tm-users__table-wrapper">
-              <table className="tm-users__table">
+            <div className="tm-users__table-wrapper pagos-planes-table-wrap">
+              <table className="tm-users__table pagos-planes-table">
                 <thead>
                   <tr>
                     <th>Plan</th>

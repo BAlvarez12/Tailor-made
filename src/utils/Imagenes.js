@@ -1,3 +1,11 @@
+const urlArchivoBackend = (ruta) => {
+  const base = import.meta.env.VITE_BACKEND_URL || ''
+  if (!ruta) return ''
+  if (ruta.startsWith('http://') || ruta.startsWith('https://')) return ruta
+  const path = ruta.startsWith('/') ? ruta : `/${ruta}`
+  return `${base.replace(/\/$/, '')}${path}`
+}
+
 export const normalizarRespuestaPrenda = (data) => {
   if (Array.isArray(data)) return data;
   if (Array.isArray(data?.data)) return data.data;
@@ -47,23 +55,15 @@ export const obtenerImagenesPrenda = (prenda) => {
 export const construirUrlImagenPrenda = (url) => {
   if (!url) return "";
 
-  if (url.startsWith("http://") || url.startsWith("https://")) {
-    return url;
-  }
-
-  const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
-  const backendBase = apiUrl.replace(/\/api\/?$/, "");
-
   if (url.startsWith("/")) {
-    return `${backendBase}${url}`;
+    return urlArchivoBackend(url);
   }
 
-  // Assume relative paths are under /uploads/prendas/
   if (!url.includes("/")) {
-    return `${backendBase}/uploads/prendas/${url}`;
+    return urlArchivoBackend(`/uploads/prendas/${url}`);
   }
 
-  return `${backendBase}/${url}`;
+  return urlArchivoBackend(url);
 };
 
 export const obtenerImagenActualPrenda = (prenda, imageIndexes, obtenerIdPrenda) => {

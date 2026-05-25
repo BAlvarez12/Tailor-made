@@ -11,6 +11,7 @@ import {
 } from "../../services/Prendas";
 import { obtenerMedidasPorCliente } from "../../services/Prendas";
 import { construirUrlImagenPrenda } from "../../utils/Imagenes";
+import ModalActualizarMedidas from "../clientes/ModalActualizarMedidas";
 import { Save, XCircle, X, Plus, Minus, Check, Edit3, Ruler, Scissors, PencilRuler, Tag, Search, User } from "lucide-react";
 
 const MAX_IMAGENES = 3;
@@ -142,6 +143,13 @@ const normalizarMedidaCliente = (item) => ({
   simbolo_unidad: String(item.simbolo_unidad ?? ""),
 });
 
+const obtenerKeyMedida = (item) =>
+  String(
+    item.cliente_medida_id ||
+      item.tipo_medida_id ||
+      `${item.tipo_medida_id}-${item.unidad_id}-${item.valor}`
+  );
+
 const mapearMedidasExistentes = (detalle) => {
   const posibles =
     detalle?.medidas ||
@@ -247,6 +255,9 @@ function PrendaFormulario({
   const [loadingMedidasCliente, setLoadingMedidasCliente] = useState(false);
   const [errorMedidasCliente, setErrorMedidasCliente] = useState("");
   const [mostrarSelectorMedidas, setMostrarSelectorMedidas] = useState(!isEdit);
+  const [editandoValoresMedidas, setEditandoValoresMedidas] = useState(false);
+  const [modalMedidasAbierto, setModalMedidasAbierto] = useState(false);
+  const [clienteParaMedidas, setClienteParaMedidas] = useState(null);
 
   const [mostrarSelectorMateriales, setMostrarSelectorMateriales] = useState(!isEdit);
 
@@ -291,14 +302,12 @@ function PrendaFormulario({
   );
 
   const medidasSeleccionadasIds = useMemo(() => {
-    return new Set(
-      form.medidas.map((item) =>
-        String(
-          item.cliente_medida_id ||
-            `${item.tipo_medida_id}-${item.unidad_id}-${item.valor}`
-        )
-      )
-    );
+    const ids = new Set();
+    form.medidas.forEach((item) => {
+      ids.add(obtenerKeyMedida(item));
+      if (item.tipo_medida_id) ids.add(String(item.tipo_medida_id));
+    });
+    return ids;
   }, [form.medidas]);
 
   const materialesSeleccionadosIds = useMemo(() => {
@@ -318,6 +327,9 @@ function PrendaFormulario({
     setLoadingMedidasCliente(false);
     setErrorMedidasCliente("");
     setMostrarSelectorMedidas(!isEdit);
+    setEditandoValoresMedidas(false);
+    setModalMedidasAbierto(false);
+    setClienteParaMedidas(null);
     setMostrarSelectorMateriales(!isEdit);
   };
 
@@ -336,26 +348,51 @@ function PrendaFormulario({
     };
   }, [form.imagenesNuevas, open]);
 
-  const cargarMedidasCliente = async (clienteId) => {
+  const abrirModalMedidasCliente = (cliente) => {
+    if (!cliente) return;
+    setClienteParaMedidas(cliente);
+    setModalMedidasAbierto(true);
+  };
+
+  const cerrarModalMedidasCliente = () => {
+    setModalMedidasAbierto(false);
+    setClienteParaMedidas(null);
+  };
+
+  const cargarMedidasCliente = async (clienteId, opciones = {}) => {
     try {
       setLoadingMedidasCliente(true);
       setErrorMedidasCliente("");
 
       if (!clienteId) {
         setMedidasCliente([]);
-        return;
+        return [];
       }
 
       const response = await obtenerMedidasPorCliente(clienteId);
       const lista = normalizarRespuesta(response).map(normalizarMedidaCliente);
       setMedidasCliente(lista);
+
+      if (opciones.abrirModalSiVacio && lista.length === 0 && opciones.cliente) {
+        abrirModalMedidasCliente(opciones.cliente);
+      }
+
+      return lista;
     } catch (error) {
       console.error("Error al cargar medidas del cliente:", error);
       setMedidasCliente([]);
       setErrorMedidasCliente("No se pudieron cargar las medidas del cliente.");
+      return [];
     } finally {
       setLoadingMedidasCliente(false);
     }
+  };
+
+  const handleMedidasClienteGuardadas = async () => {
+    if (!form.cliente_id) return;
+    await cargarMedidasCliente(form.cliente_id);
+    setMostrarSelectorMedidas(true);
+    setEditandoValoresMedidas(false);
   };
 
   const llenarFormulario = async (
@@ -408,6 +445,7 @@ function PrendaFormulario({
 
     setTipoPrendaDropdownOpen(false);
     setMostrarSelectorMedidas(medidasGuardadas.length === 0);
+    setEditandoValoresMedidas(false);
     setMostrarSelectorMateriales(materialesGuardados.length === 0);
   };
 
@@ -521,7 +559,11 @@ function PrendaFormulario({
     setClienteDropdownOpen(false);
     setErrorFormulario("");
     setMostrarSelectorMedidas(true);
-    await cargarMedidasCliente(clienteId);
+    setEditandoValoresMedidas(false);
+    await cargarMedidasCliente(clienteId, {
+      abrirModalSiVacio: true,
+      cliente,
+    });
   };
 
   const limpiarClienteSeleccion = () => {
@@ -535,6 +577,8 @@ function PrendaFormulario({
     setMedidasCliente([]);
     setErrorMedidasCliente("");
     setMostrarSelectorMedidas(true);
+    setEditandoValoresMedidas(false);
+    cerrarModalMedidasCliente();
     setErrorFormulario("");
   };
 
@@ -559,6 +603,8 @@ function PrendaFormulario({
       setMedidasCliente([]);
       setErrorMedidasCliente("");
       setMostrarSelectorMedidas(true);
+      setEditandoValoresMedidas(false);
+      cerrarModalMedidasCliente();
     }
   };
 
@@ -615,30 +661,15 @@ function PrendaFormulario({
   };
 
   const toggleMedidaCliente = (medida) => {
-    const key = String(
-      medida.cliente_medida_id ||
-        `${medida.tipo_medida_id}-${medida.unidad_id}-${medida.valor}`
-    );
+    const key = obtenerKeyMedida(medida);
 
     setForm((prev) => {
-      const existe = prev.medidas.some(
-        (item) =>
-          String(
-            item.cliente_medida_id ||
-              `${item.tipo_medida_id}-${item.unidad_id}-${item.valor}`
-          ) === key
-      );
+      const existe = prev.medidas.some((item) => obtenerKeyMedida(item) === key);
 
       if (existe) {
         return {
           ...prev,
-          medidas: prev.medidas.filter(
-            (item) =>
-              String(
-                item.cliente_medida_id ||
-                  `${item.tipo_medida_id}-${item.unidad_id}-${item.valor}`
-              ) !== key
-          ),
+          medidas: prev.medidas.filter((item) => obtenerKeyMedida(item) !== key),
         };
       }
 
@@ -647,6 +678,32 @@ function PrendaFormulario({
         medidas: [...prev.medidas, normalizarMedidaCliente(medida)],
       };
     });
+  };
+
+  const actualizarValorMedidaPrenda = (key, valor) => {
+    setForm((prev) => ({
+      ...prev,
+      medidas: prev.medidas.map((item) =>
+        obtenerKeyMedida(item) === String(key) ? { ...item, valor: String(valor) } : item
+      ),
+    }));
+    setErrorFormulario("");
+  };
+
+  const quitarMedidaPrenda = (key) => {
+    setForm((prev) => ({
+      ...prev,
+      medidas: prev.medidas.filter((item) => obtenerKeyMedida(item) !== String(key)),
+    }));
+  };
+
+  const activarEdicionValoresMedidas = () => {
+    setEditandoValoresMedidas(true);
+    setMostrarSelectorMedidas(false);
+  };
+
+  const desactivarEdicionValoresMedidas = () => {
+    setEditandoValoresMedidas(false);
   };
 
   const toggleMaterial = (material) => {
@@ -776,6 +833,13 @@ function PrendaFormulario({
     if (!form.cliente_id) return "Debes seleccionar un cliente.";
     if (!form.tipo_prenda_id) return "Debes seleccionar un tipo de prenda.";
     if (!form.medidas.length) return "Debes seleccionar al menos una medida del cliente.";
+
+    for (const medida of form.medidas) {
+      const valor = Number(medida.valor);
+      if (medida.valor === "" || Number.isNaN(valor)) {
+        return `La medida "${medida.nombre_tipo_medida}" debe tener un valor numérico válido.`;
+      }
+    }
 
     for (const material of form.materiales) {
       if (!material.material_id || Number(material.cantidad) <= 0) {
@@ -1171,14 +1235,38 @@ function PrendaFormulario({
                     </div>
 
                     {!!clienteSeleccionado && (
-                      <button
-                        type="button"
-                        className="crear-prenda-form__mini-button"
-                        onClick={() => setMostrarSelectorMedidas((prev) => !prev)}
-                        disabled={saving || loadingMedidasCliente}
-                      >
-                        {mostrarSelectorMedidas ? "Ocultar" : "Agregar más"}
-                      </button>
+                      <div className="crear-prenda-medidas-actions">
+                        {form.medidas.length > 0 && (
+                          <button
+                            type="button"
+                            className={`crear-prenda-form__mini-button ${
+                              editandoValoresMedidas ? "is-active" : ""
+                            }`}
+                            onClick={
+                              editandoValoresMedidas
+                                ? desactivarEdicionValoresMedidas
+                                : activarEdicionValoresMedidas
+                            }
+                            disabled={saving || loadingMedidasCliente}
+                          >
+                            <Edit3 size={14} />
+                            {editandoValoresMedidas ? "Listo" : "Modificar valores"}
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          className="crear-prenda-form__mini-button"
+                          onClick={() => {
+                            setMostrarSelectorMedidas((prev) => !prev);
+                            if (!mostrarSelectorMedidas) {
+                              setEditandoValoresMedidas(false);
+                            }
+                          }}
+                          disabled={saving || loadingMedidasCliente}
+                        >
+                          {mostrarSelectorMedidas ? "Ocultar" : "Agregar más"}
+                        </button>
+                      </div>
                     )}
                   </div>
 
@@ -1200,53 +1288,122 @@ function PrendaFormulario({
                     !loadingMedidasCliente &&
                     !errorMedidasCliente && (
                       <>
-                        <div className="crear-prenda-medidas-seleccionadas">
-                          {form.medidas.length > 0 ? (
-                            form.medidas.map((item) => {
-                              const key = String(
-                                item.cliente_medida_id ||
-                                  `${item.tipo_medida_id}-${item.unidad_id}-${item.valor}`
-                              );
+                        {editandoValoresMedidas && form.medidas.length > 0 && (
+                          <p className="crear-prenda-medidas-hint">
+                            Ajusta los valores de esta prenda. Los cambios se guardan al
+                            actualizar el formulario.
+                          </p>
+                        )}
+
+                        {editandoValoresMedidas ? (
+                          <div className="crear-prenda-medidas-edit-grid">
+                            {form.medidas.map((item) => {
+                              const key = obtenerKeyMedida(item);
+                              const unidad =
+                                item.simbolo_unidad || item.nombre_unidad || "";
 
                               return (
-                                <button
-                                  key={key}
-                                  type="button"
-                                  className={`crear-prenda-medida-chip is-selected ${
-                                    mostrarSelectorMedidas ? "" : "is-locked"
-                                  }`}
-                                  onClick={
-                                    mostrarSelectorMedidas
-                                      ? () => toggleMedidaCliente(item)
-                                      : undefined
-                                  }
-                                  disabled={saving || !mostrarSelectorMedidas}
-                                >
-                                  <span className="crear-prenda-medida-chip__name">
+                                <div key={key} className="crear-prenda-medida-edit-item">
+                                  <label htmlFor={`medida-valor-${key}`}>
                                     {item.nombre_tipo_medida}
-                                  </span>
-                                  <span className="crear-prenda-medida-chip__value">
-                                    {item.valor}{" "}
-                                    {item.simbolo_unidad || item.nombre_unidad || ""}
-                                  </span>
-                                </button>
+                                  </label>
+                                  <div className="crear-prenda-medida-edit-item__row">
+                                    <input
+                                      id={`medida-valor-${key}`}
+                                      type="number"
+                                      inputMode="decimal"
+                                      step="any"
+                                      min="0"
+                                      value={item.valor}
+                                      onChange={(e) =>
+                                        actualizarValorMedidaPrenda(key, e.target.value)
+                                      }
+                                      disabled={saving}
+                                    />
+                                    {unidad && (
+                                      <span className="crear-prenda-medida-edit-item__unit">
+                                        {unidad}
+                                      </span>
+                                    )}
+                                    <button
+                                      type="button"
+                                      className="crear-prenda-medida-edit-item__remove"
+                                      onClick={() => quitarMedidaPrenda(key)}
+                                      disabled={saving}
+                                      aria-label={`Quitar ${item.nombre_tipo_medida}`}
+                                    >
+                                      <X size={14} />
+                                    </button>
+                                  </div>
+                                </div>
                               );
-                            })
-                          ) : (
-                            <div className="crear-prenda-form__empty crear-prenda-form__empty--soft">
-                              Elige medidas
-                            </div>
-                          )}
-                        </div>
+                            })}
+                          </div>
+                        ) : (
+                          <div className="crear-prenda-medidas-seleccionadas">
+                            {form.medidas.length > 0 ? (
+                              form.medidas.map((item) => {
+                                const key = obtenerKeyMedida(item);
 
-                        {mostrarSelectorMedidas && (
+                                return (
+                                  <button
+                                    key={key}
+                                    type="button"
+                                    className={`crear-prenda-medida-chip is-selected ${
+                                      mostrarSelectorMedidas ? "" : "is-locked"
+                                    }`}
+                                    onClick={
+                                      mostrarSelectorMedidas
+                                        ? () => toggleMedidaCliente(item)
+                                        : undefined
+                                    }
+                                    disabled={saving || !mostrarSelectorMedidas}
+                                  >
+                                    <span className="crear-prenda-medida-chip__name">
+                                      {item.nombre_tipo_medida}
+                                    </span>
+                                    <span className="crear-prenda-medida-chip__value">
+                                      {item.valor}{" "}
+                                      {item.simbolo_unidad || item.nombre_unidad || ""}
+                                    </span>
+                                  </button>
+                                );
+                              })
+                            ) : (
+                              <div className="crear-prenda-form__empty crear-prenda-form__empty--soft">
+                                Elige medidas
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {mostrarSelectorMedidas && !editandoValoresMedidas && (
+                          <>
+                          {medidasCliente.length === 0 ? (
+                            <div className="crear-prenda-form__empty crear-prenda-medidas-sin-registro">
+                              <p>
+                                Este cliente no tiene medidas registradas. Regístralas
+                                para poder asociarlas a la prenda.
+                              </p>
+                              <button
+                                type="button"
+                                className="crear-prenda-form__mini-button"
+                                onClick={() =>
+                                  abrirModalMedidasCliente(clienteSeleccionado)
+                                }
+                                disabled={saving}
+                              >
+                                <Ruler size={14} />
+                                Registrar medidas del cliente
+                              </button>
+                            </div>
+                          ) : (
                           <div className="crear-prenda-medidas-grid">
                             {medidasCliente.map((item) => {
-                              const key = String(
-                                item.cliente_medida_id ||
-                                  `${item.tipo_medida_id}-${item.unidad_id}-${item.valor}`
-                              );
-                              const activo = medidasSeleccionadasIds.has(key);
+                              const key = obtenerKeyMedida(item);
+                              const activo =
+                                medidasSeleccionadasIds.has(key) ||
+                                medidasSeleccionadasIds.has(String(item.tipo_medida_id));
 
                               return (
                                 <button
@@ -1273,6 +1430,8 @@ function PrendaFormulario({
                               );
                             })}
                           </div>
+                          )}
+                          </>
                         )}
                       </>
                     )}
@@ -1430,6 +1589,15 @@ function PrendaFormulario({
           </form>
         )}
       </div>
+
+      {modalMedidasAbierto && clienteParaMedidas && (
+        <ModalActualizarMedidas
+          cliente={clienteParaMedidas}
+          sinMedidasRegistradas
+          onClose={cerrarModalMedidasCliente}
+          onGuardado={handleMedidasClienteGuardadas}
+        />
+      )}
     </div>
   );
 }

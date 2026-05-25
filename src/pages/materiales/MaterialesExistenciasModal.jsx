@@ -163,7 +163,7 @@ function MaterialesExistenciasModal({ open, onClose }) {
     <div className="tm-modal-form">
       <div className="tm-modal-overlay" onClick={onClose}>
         <div
-          className="tm-modal tm-modal--lg"
+          className="tm-modal tm-modal--lg mat-modal--scroll"
           onClick={(e) => e.stopPropagation()}
           role="dialog"
           aria-modal="true"
