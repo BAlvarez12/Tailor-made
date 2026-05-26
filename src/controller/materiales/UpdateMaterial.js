@@ -1,4 +1,5 @@
 const db = require('../../config/db')
+const { registrar, fromReq } = require('../../services/logOperaciones')
 
 const updateMaterial = async (req, res) => {
   try {
@@ -13,6 +14,14 @@ const updateMaterial = async (req, res) => {
       stock
     } = req.body
 
+    const nombreLimpio = (nombre_material || '').trim()
+
+    if (!nombreLimpio || !categoria_id) {
+      return res.status(400).json({
+        message: 'Nombre y categoría son obligatorios.'
+      })
+    }
+
     await db.query(
       `CALL sp_update_material(?, ?, ?, ?, ?, ?, ?)`,
       [
@@ -25,6 +34,19 @@ const updateMaterial = async (req, res) => {
         stock
       ]
     )
+
+    registrar({
+      ...fromReq(req),
+      accion: 'editar',
+      entidad: 'material',
+      entidadId: Number(id),
+      descripcion: `Material "${nombreLimpio}" editado`,
+      datosDespues: {
+        nombre_material: nombreLimpio,
+        categoria_id,
+        precio_unitario,
+      },
+    })
 
     res.json({ message: 'Material actualizado correctamente' })
 

@@ -1,4 +1,5 @@
 const db = require('../../config/db')
+const { registrar, fromReq } = require('../../services/logOperaciones')
 
 const archiveTipo = async (req, res) => {
   try {
@@ -8,6 +9,14 @@ const archiveTipo = async (req, res) => {
       'CALL sp_tipo_medidas_archive(?)',
       [id]
     )
+
+    registrar({
+      ...fromReq(req),
+      accion: 'archivar',
+      entidad: 'tipo_medida',
+      entidadId: Number(id),
+      descripcion: `Tipo de medida #${id} archivado`,
+    })
 
     res.json({ message: 'Archivado' })
 

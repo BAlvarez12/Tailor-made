@@ -598,4 +598,5 @@ module.exports = {
   restablecerPassword,
   activarCuentaInvitacion,
   validarReglasPassword,
+  crearYEnviarCodigo,
 };

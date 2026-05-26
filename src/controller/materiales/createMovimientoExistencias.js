@@ -1,4 +1,5 @@
 const db = require('../../config/db')
+const { registrar, fromReq } = require('../../services/logOperaciones')
 
 const createMovimientoExistencias = async (req, res) => {
   try {
@@ -18,6 +19,17 @@ const createMovimientoExistencias = async (req, res) => {
         usuario
       ]
     )
+
+    const cant = Number(cantidad)
+    const verbo = cant >= 0 ? 'ingreso' : 'salida'
+    registrar({
+      ...fromReq(req),
+      accion: 'editar',
+      entidad: 'existencia_material',
+      entidadId: Number(material_id),
+      descripcion: `Movimiento de existencias (${verbo} de ${Math.abs(cant)}) en material #${material_id}`,
+      datosDespues: { material_id, cantidad: cant },
+    })
 
     res.json({ message: 'Movimiento registrado correctamente' })
 

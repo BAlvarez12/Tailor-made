@@ -1,8 +1,11 @@
 const db = require("../../config/db");
 
-const obtenerCotizacionCompleta = async (cotizacionId) => {
+const obtenerCotizacionCompleta = async (cotizacionId, opts = {}) => {
+  const { incluirAnuladas = false } = opts;
+
+  const filtroEstado = incluirAnuladas ? "" : "AND estado = 1";
   const [cotizaciones] = await db.query(
-    `SELECT * FROM cotizaciones WHERE cotizacion_id = ? AND estado = 1 LIMIT 1`,
+    `SELECT * FROM cotizaciones WHERE cotizacion_id = ? ${filtroEstado} LIMIT 1`,
     [cotizacionId]
   );
 
@@ -26,10 +29,19 @@ const obtenerCotizacionCompleta = async (cotizacionId) => {
     [cotizacionId]
   );
 
+  const [planRows] = await db.query(
+    `SELECT plan_pago_id, codigo_plan, valor_a_cobrar, total_abonado, saldo_pendiente
+       FROM planes_pago
+      WHERE cotizacion_id = ? AND estado = 1
+      LIMIT 1`,
+    [cotizacionId]
+  );
+
   return {
     ...cotizacion,
     medidas,
     materiales,
+    plan_pago: planRows[0] || null,
   };
 };
 

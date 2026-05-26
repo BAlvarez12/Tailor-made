@@ -2,6 +2,7 @@ const db = require("../../config/db");
 const { generarCodigoRecibo } = require("../../utils/generarCodigoRecibo");
 const { normalizarFechaPago } = require("../../utils/normalizarFechaPago");
 const { recalcularTotalesPlan } = require("./pagosQueries");
+const { registrar, fromReq } = require("../../services/logOperaciones");
 
 const registrarPago = async (req, res) => {
   let connection;
@@ -14,12 +15,15 @@ const registrarPago = async (req, res) => {
       tipo_pago,
       notas,
       fecha_pago,
-      usuario_creador,
     } = req.body;
+
+    const usuarioCreador = req.user?.usuario_id;
+    if (!usuarioCreador) {
+      return res.status(401).json({ message: "No autorizado." });
+    }
 
     const planPagoId = Number(plan_pago_id);
     const montoPago = Number(monto);
-    const usuarioCreador = usuario_creador ? Number(usuario_creador) : null;
     const tipo =
       tipo_pago && ["anticipo", "abono", "otro"].includes(tipo_pago)
         ? tipo_pago
@@ -97,6 +101,22 @@ const registrarPago = async (req, res) => {
     const totales = await recalcularTotalesPlan(planPagoId, connection);
 
     await connection.commit();
+
+    registrar({
+      ...fromReq(req),
+      accion: "crear",
+      entidad: "pago",
+      entidadId: insertPago.insertId,
+      descripcion: `Pago ${codigoRecibo} registrado (Q ${Number(montoPago).toFixed(2)}, saldo: Q ${Number(totales.saldoPendiente).toFixed(2)})`,
+      datosDespues: {
+        codigo_recibo: codigoRecibo,
+        plan_pago_id: planPagoId,
+        monto: Number(montoPago),
+        tipo,
+        total_abonado: totales.totalAbonado,
+        saldo_pendiente: totales.saldoPendiente,
+      },
+    });
 
     return res.status(201).json({
       message: "Pago registrado correctamente",

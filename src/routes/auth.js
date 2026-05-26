@@ -1,13 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const { login } = require('../controller/Login/auth.js');
+const { login } = require('../controller/login/auth.js');
 const {
   solicitarRecuperacion,
   reenviarRecuperacion,
   verificarCodigo,
   restablecerConCodigo,
-} = require('../controller/Login/passwordReset.js');
-const { activarCuenta } = require('../controller/Login/activarCuenta.js');
+} = require('../controller/login/passwordReset.js');
+const { activarCuenta } = require('../controller/login/activarCuenta.js');
 const { verificarBloqueoLogin } = require('../middleware/loginAttempts');
 
 router.post('/login', verificarBloqueoLogin, login);

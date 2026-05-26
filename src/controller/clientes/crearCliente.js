@@ -3,16 +3,36 @@ const {
   validarFormatoDpi,
   buscarClientePorDpi,
 } = require("../../utils/validarDpiCliente");
+const { registrar, fromReq } = require("../../services/logOperaciones");
 
 exports.crearCliente = async (req, res) => {
   try {
-    const { nombre, apellido, telefono, dpi, usuario } = req.body;
+    const { nombre, apellido, telefono, dpi } = req.body;
+    const usuario = req.user?.usuario_id;
 
-    if (!nombre?.trim() || !apellido?.trim() || !telefono?.trim()) {
+    if (!usuario) {
+      return res.status(401).json({ message: "No autorizado." });
+    }
+
+    if (!nombre?.trim() || !apellido?.trim()) {
       return res.status(400).json({
-        message: "Nombre, apellido y teléfono son obligatorios.",
+        message: "Nombre y apellido son obligatorios.",
       });
     }
+
+    // Teléfono opcional, pero si viene debe ser solo dígitos (7-15)
+    const telefonoLimpio = String(telefono ?? "").replace(/\D/g, "").trim();
+    if (telefono && telefonoLimpio !== String(telefono).trim()) {
+      return res.status(400).json({
+        message: "El teléfono solo puede contener números.",
+      });
+    }
+    if (telefonoLimpio && (telefonoLimpio.length < 7 || telefonoLimpio.length > 15)) {
+      return res.status(400).json({
+        message: "El teléfono debe tener entre 7 y 15 dígitos.",
+      });
+    }
+    const telefonoNormalizado = telefonoLimpio || null;
 
     const formato = validarFormatoDpi(dpi);
     if (!formato.ok) {
@@ -37,13 +57,27 @@ exports.crearCliente = async (req, res) => {
       [
         nombre.trim(),
         apellido.trim(),
-        telefono.trim(),
+        telefonoNormalizado,
         busqueda.normalizado,
         usuario,
       ]
     );
 
     const cliente_id = resultCliente[0][0].cliente_id;
+
+    registrar({
+      ...fromReq(req),
+      accion: "crear",
+      entidad: "cliente",
+      entidadId: cliente_id,
+      descripcion: `Cliente ${nombre.trim()} ${apellido.trim()} creado`,
+      datosDespues: {
+        nombre: nombre.trim(),
+        apellido: apellido.trim(),
+        dpi: busqueda.normalizado,
+        telefono: telefonoNormalizado,
+      },
+    });
 
     res.json({
       message: "Cliente creado correctamente",

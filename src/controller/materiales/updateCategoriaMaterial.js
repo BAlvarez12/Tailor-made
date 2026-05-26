@@ -1,4 +1,5 @@
 const db = require('../../config/db');
+const { registrar, fromReq } = require('../../services/logOperaciones');
 
 const updateCategoriaMaterial = async (req, res) => {
   try {
@@ -13,6 +14,14 @@ const updateCategoriaMaterial = async (req, res) => {
     const descripcion = descripcion_categoria
       ? String(descripcion_categoria).trim()
       : null;
+
+    if (nombre.length > 50) {
+      return res.status(400).json({ error: 'El nombre no puede exceder 50 caracteres.' });
+    }
+
+    if (descripcion && descripcion.length > 255) {
+      return res.status(400).json({ error: 'La descripción no puede exceder 255 caracteres.' });
+    }
 
     const [categoriaActual] = await db.query(
       `SELECT categoria_id FROM categorias_material WHERE categoria_id = ? LIMIT 1`,
@@ -40,6 +49,15 @@ const updateCategoriaMaterial = async (req, res) => {
        WHERE categoria_id = ?`,
       [nombre, descripcion, id]
     );
+
+    registrar({
+      ...fromReq(req),
+      accion: 'editar',
+      entidad: 'categoria_material',
+      entidadId: Number(id),
+      descripcion: `Categoría de material "${nombre}" editada`,
+      datosDespues: { nombre, descripcion },
+    });
 
     return res.json({
       categoria_id: Number(id),

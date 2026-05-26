@@ -9,6 +9,8 @@ const {
   parsearNombreCompleto,
 } = require('../../utils/generarUsuarioLogin');
 const { ESTADO_USUARIO, esEstadoUsuarioValido } = require('../../utils/estadosUsuario');
+const { invalidarUsuario } = require('../../services/permisosCache');
+const { registrar, fromReq } = require('../../services/logOperaciones');
 
 const actualizarUsuario = async (req, res) => {
   try {
@@ -128,12 +130,51 @@ const actualizarUsuario = async (req, res) => {
 
     await pool.query(sql, values);
 
+    // Invalida el cache de permisos del usuario actualizado.
+    // Si cambió de rol, la próxima request leerá los permisos correctos.
+    invalidarUsuario(id);
+
+    const accion =
+      Number(estadoFinal) === 0
+        ? 'inactivar'
+        : Number(estadoFinal) === 1
+          ? 'activar'
+          : 'editar';
+
+    registrar({
+      ...fromReq(req),
+      accion,
+      entidad: 'usuario',
+      entidadId: Number(id),
+      descripcion: `Usuario "${usuarioLimpio}" ${accion === 'editar' ? 'editado' : accion + 'do'}`,
+      datosDespues: {
+        usuario: usuarioLimpio,
+        nombre: nombreLimpio,
+        apellido: apellidoLimpio,
+        email: emailLimpio,
+        rol_id: Number(rol_id),
+        estado: estadoFinal,
+      },
+    });
+
     return res.status(200).json({
       message: 'Usuario actualizado correctamente.',
       usuario_id: Number(id),
     });
   } catch (error) {
     console.error('Error al actualizar usuario:', error);
+
+    if (error.code === 'ER_DUP_ENTRY') {
+      const campo = error.message?.includes('uk_usuarios_email')
+        ? 'correo electrónico'
+        : error.message?.includes('uk_usuarios_usuario')
+          ? 'nombre de usuario'
+          : 'dato único';
+      return res.status(409).json({
+        message: `Ya existe un usuario con ese ${campo}.`,
+      });
+    }
+
     return res.status(500).json({
       message: 'Error interno del servidor al actualizar el usuario.',
     });

@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken')
+const { obtenerPermisosUsuario } = require('../services/permisosCache')
 
-const auth = (req, res, next) => {
+const auth = async (req, res, next) => {
   try {
     const token = req.headers.authorization?.split(' ')[1]
 
@@ -10,7 +11,14 @@ const auth = (req, res, next) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET)
 
-    req.user = decoded
+    // Los permisos NO se leen del JWT (puede estar desactualizado si el admin
+    // cambió el rol después del login).  Siempre vienen de BD vía cache 60s.
+    const permisos = await obtenerPermisosUsuario(decoded.usuario_id)
+
+    req.user = {
+      ...decoded,
+      permisos: Array.from(permisos),
+    }
 
     next()
   } catch (error) {
@@ -18,4 +26,4 @@ const auth = (req, res, next) => {
   }
 }
 
-module.exports = auth   
+module.exports = auth
