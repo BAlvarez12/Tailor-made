@@ -3,18 +3,23 @@ import { toast } from 'react-toastify'
 import {
   obtenerUsuariosService,
   reenviarInvitacionUsuarioService,
-} from '../../services/usuarios'
+  reiniciarPasswordUsuarioService,
+} from '../../services/usuariosService'
 import {
   ESTADO_USUARIO,
   etiquetaEstadoUsuario,
   claseBadgeEstadoUsuario,
 } from '../../utils/estadoUsuario'
 import Createusuarios from './formularioUsuarios'
+import SiPermiso from '../../components/SiPermiso'
+import ConfirmacionModal from '../../components/ConfirmacionModal'
 import '../../styles/tmListPage.css'
 import './paginaUsuarios.css'
 
 const nombreCompletoUsuario = (user) =>
   `${user.nombre_usuario || ''} ${user.apellido_usuario || ''}`.trim()
+
+const OPCIONES_POR_PAGINA = [10, 25, 50]
 
 function PageUsuarios() {
   const [usuarios, setUsuarios] = useState([])
@@ -23,9 +28,13 @@ function PageUsuarios() {
   const [openModal, setOpenModal] = useState(false)
   const [usuarioEditarId, setUsuarioEditarId] = useState(null)
   const [reenviandoId, setReenviandoId] = useState(null)
+  const [usuarioReset, setUsuarioReset] = useState(null)
+  const [reseteandoId, setReseteandoId] = useState(null)
   const [busqueda, setBusqueda] = useState('')
   const [filtroEstado, setFiltroEstado] = useState(ESTADO_USUARIO.ACTIVO)
   const [showFilterMenu, setShowFilterMenu] = useState(false)
+  const [pagina, setPagina] = useState(1)
+  const [porPagina, setPorPagina] = useState(OPCIONES_POR_PAGINA[0])
 
   const cargarUsuarios = async () => {
     try {
@@ -73,6 +82,16 @@ function PageUsuarios() {
     })
   }, [usuarios, busqueda, filtroEstado])
 
+  useEffect(() => {
+    setPagina(1)
+  }, [busqueda, filtroEstado, porPagina, usuarios.length])
+
+  const totalPaginas = Math.max(1, Math.ceil(usuariosFiltrados.length / porPagina))
+  const paginaSegura = Math.min(pagina, totalPaginas)
+  const inicio = (paginaSegura - 1) * porPagina
+  const fin = Math.min(inicio + porPagina, usuariosFiltrados.length)
+  const usuariosPagina = usuariosFiltrados.slice(inicio, fin)
+
   const abrirCrearUsuario = () => {
     setUsuarioEditarId(null)
     setOpenModal(true)
@@ -101,6 +120,24 @@ function PageUsuarios() {
       toast.error(mensaje)
     } finally {
       setReenviandoId(null)
+    }
+  }
+
+  const confirmarReiniciarPassword = async () => {
+    if (!usuarioReset) return
+    try {
+      setReseteandoId(usuarioReset.usuario_id)
+      const res = await reiniciarPasswordUsuarioService(usuarioReset.usuario_id)
+      toast.success(res?.message || 'Correo de reinicio enviado.')
+      setUsuarioReset(null)
+    } catch (err) {
+      const mensaje =
+        err?.response?.data?.message ||
+        err?.response?.data?.mensaje ||
+        'No se pudo enviar el correo de reinicio.'
+      toast.error(mensaje)
+    } finally {
+      setReseteandoId(null)
     }
   }
 
@@ -203,13 +240,15 @@ function PageUsuarios() {
         </div>
 
         <div className="tm-users__buttons">
-          <button
-            type="button"
-            className="tm-users__create-btn"
-            onClick={abrirCrearUsuario}
-          >
-            <span>Crear usuario</span>
-          </button>
+          <SiPermiso codigo="crear_usuarios">
+            <button
+              type="button"
+              className="tm-users__create-btn"
+              onClick={abrirCrearUsuario}
+            >
+              <span>Crear usuario</span>
+            </button>
+          </SiPermiso>
         </div>
       </header>
 
@@ -236,7 +275,7 @@ function PageUsuarios() {
                 </tr>
               </thead>
               <tbody>
-                {usuariosFiltrados.map((user) => (
+                {usuariosPagina.map((user) => (
                   <tr key={user.usuario_id}>
                     <td>{nombreCompletoUsuario(user) || '—'}</td>
                     <td>{user.usuario || '—'}</td>
@@ -263,19 +302,80 @@ function PageUsuarios() {
                               : 'Reenviar invitación'}
                           </button>
                         )}
-                        <button
-                          type="button"
-                          className="tm-users__btn-accion tm-users__btn-accion--editar"
-                          onClick={() => abrirEditarUsuario(user.usuario_id)}
-                        >
-                          Editar
-                        </button>
+                        <SiPermiso codigo="editar_usuarios">
+                          <button
+                            type="button"
+                            className="tm-users__btn-accion tm-users__btn-accion--editar"
+                            onClick={() => abrirEditarUsuario(user.usuario_id)}
+                          >
+                            Editar
+                          </button>
+                        </SiPermiso>
+                        {Number(user.estado) === ESTADO_USUARIO.ACTIVO &&
+                          (user.correo || user.email) && (
+                            <SiPermiso codigo="editar_usuarios">
+                              <button
+                                type="button"
+                                className="tm-users__btn-accion tm-users__btn-accion--reset"
+                                onClick={() => setUsuarioReset(user)}
+                                disabled={reseteandoId === user.usuario_id}
+                              >
+                                {reseteandoId === user.usuario_id
+                                  ? 'Enviando...'
+                                  : 'Reiniciar contraseña'}
+                              </button>
+                            </SiPermiso>
+                          )}
                       </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+
+            <div className="tm-users__pagination">
+              <span className="tm-users__pagination-info">
+                Mostrar
+              </span>
+              <select
+                className="tm-users__pagination-select"
+                value={porPagina}
+                onChange={(e) => setPorPagina(Number(e.target.value))}
+                aria-label="Filas por página"
+              >
+                {OPCIONES_POR_PAGINA.map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+              <span className="tm-users__pagination-info">
+                {usuariosFiltrados.length === 0
+                  ? '0 de 0'
+                  : `${inicio + 1}–${fin} de ${usuariosFiltrados.length}`}
+              </span>
+              <button
+                type="button"
+                className="tm-users__pagination-icon-btn"
+                onClick={() => setPagina((p) => Math.max(1, p - 1))}
+                disabled={paginaSegura <= 1}
+                aria-label="Página anterior"
+              >
+                ‹
+              </button>
+              <span className="tm-users__pagination-info">
+                {paginaSegura} / {totalPaginas}
+              </span>
+              <button
+                type="button"
+                className="tm-users__pagination-icon-btn"
+                onClick={() => setPagina((p) => Math.min(totalPaginas, p + 1))}
+                disabled={paginaSegura >= totalPaginas}
+                aria-label="Página siguiente"
+              >
+                ›
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -288,6 +388,25 @@ function PageUsuarios() {
           cargarUsuarios()
         }}
         usuarioEditarId={usuarioEditarId}
+      />
+
+      <ConfirmacionModal
+        open={Boolean(usuarioReset)}
+        titulo="¿Reiniciar contraseña?"
+        mensaje={
+          usuarioReset
+            ? `Se enviará un código de un solo uso a ${
+                usuarioReset.correo || usuarioReset.email
+              } para que ${nombreCompletoUsuario(usuarioReset) || usuarioReset.usuario}
+                 pueda establecer una nueva contraseña desde la pantalla de inicio.`
+            : ''
+        }
+        detalle="El código vence en 5 minutos. La contraseña actual seguirá funcionando hasta que el usuario complete el cambio."
+        tono="advertencia"
+        textoConfirmar="Enviar correo"
+        onConfirmar={confirmarReiniciarPassword}
+        onCancelar={() => !reseteandoId && setUsuarioReset(null)}
+        procesando={Boolean(reseteandoId)}
       />
     </div>
   )

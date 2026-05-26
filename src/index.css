@@ -1,3 +1,6 @@
+@import "./styles/theme.css";
+@import "./styles/dark-overrides.css";
+
 * {
   margin: 0;
   padding: 0;
@@ -13,5 +16,6 @@ body,
 
 body {
   font-family: Arial, Helvetica, sans-serif;
-  background-color: #f5f7fb;
+  background-color: var(--color-bg);
+  color: var(--color-text);
 }

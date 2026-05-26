@@ -1,7 +1,7 @@
 .tm-layout {
   display: flex;
   min-height: 100vh;
-  background: #f8f8fb;
+  background: var(--color-bg);
   overflow-x: hidden;
 }
 

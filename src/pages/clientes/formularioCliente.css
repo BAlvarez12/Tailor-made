@@ -70,6 +70,21 @@
   color: #64748b;
 }
 
+.formularioCliente__required {
+  color: #dc2626;
+  font-weight: 700;
+  margin-left: 2px;
+}
+
+.formularioCliente__required-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 12px 0 0;
+  font-size: 12px;
+  color: #64748b;
+}
+
 /* Modal secundario: mismo sistema, menor tamaño y encima del formulario */
 .formularioCliente .tm-modal--sm {
   max-width: 560px;

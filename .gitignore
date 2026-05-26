@@ -1,3 +1,39 @@
+# Dependencias
 node_modules/
+.npm/
+.pnpm-store/
+
+# Build / cache de Vite
 dist/
+dist-ssr/
+.vite/
+
+# Variables de entorno (NUNCA subir secretos)
 .env
+.env.local
+.env.*.local
+# .env.example SÍ se sube (plantilla pública sin secretos)
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE / editores
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+
+# Otros
+*.local

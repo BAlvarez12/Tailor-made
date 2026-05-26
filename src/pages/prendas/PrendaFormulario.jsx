@@ -1,17 +1,17 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./PrendaFormulario.css";
 import { obtenerClientesActivosService } from "../../services/clienteService";
-import { obtenerTiposPrendaActivosService } from "../../services/tipo_prendas";
-import { obtenerMaterialesActivosService } from "../../services/materiales";
+import { obtenerTiposPrendaActivosService } from "../../services/tipoPrendasService";
+import { obtenerMaterialesActivosService } from "../../services/materialesService";
 import {
   obtenerPrendaPorId,
   subirImagenesPrendaService,
   crearPrendas,
   updatePrendas,
-} from "../../services/Prendas";
-import { obtenerMedidasPorCliente } from "../../services/Prendas";
+} from "../../services/prendasService";
+import { obtenerMedidasPorCliente } from "../../services/prendasService";
 import { construirUrlImagenPrenda } from "../../utils/Imagenes";
-import ModalActualizarMedidas from "../clientes/ModalActualizarMedidas";
+import ModalMedidas from "../clientes/ModalMedidas";
 import { Save, XCircle, X, Plus, Minus, Check, Edit3, Ruler, Scissors, PencilRuler, Tag, Search, User } from "lucide-react";
 
 const MAX_IMAGENES = 3;
@@ -870,7 +870,6 @@ function PrendaFormulario({
     cliente_id: Number(form.cliente_id),
     tipo_prenda_id: Number(form.tipo_prenda_id),
     titulo: tituloLimpio,
-    usuario_creador: 1,
     imagenes: [
       ...form.imagenesExistentes.map((img) => img.valor),
       ...imagenesSubidas,
@@ -1064,7 +1063,7 @@ function PrendaFormulario({
                 <div className="crear-prenda-card">
                   <div className="crear-prenda-form__grid crear-prenda-form__grid--top">
                     <div className="crear-prenda-form__group crear-prenda-form__group--full">
-                      <label>Título</label>
+                      <label>Título <span className="tm-required">*</span></label>
                       <div className="crear-prenda-input-icon">
                         <Tag size={18} />
                         <input
@@ -1083,7 +1082,7 @@ function PrendaFormulario({
                       className="crear-prenda-form__group crear-prenda-form__group--full crear-prenda-autocomplete"
                       ref={clienteAutocompleteRef}
                     >
-                      <label>Cliente</label>
+                      <label>Cliente <span className="tm-required">*</span></label>
                       <div className="crear-prenda-input-icon crear-prenda-autocomplete__trigger">
                         {form.cliente_id ? <User size={18} /> : <Search size={18} />}
                         <input
@@ -1153,7 +1152,7 @@ function PrendaFormulario({
                       className="crear-prenda-form__group crear-prenda-form__group--full crear-prenda-autocomplete"
                       ref={tipoPrendaAutocompleteRef}
                     >
-                      <label>Tipo de prenda</label>
+                      <label>Tipo de prenda <span className="tm-required">*</span></label>
                       <div className="crear-prenda-input-icon crear-prenda-autocomplete__trigger">
                         {form.tipo_prenda_id ? <Scissors size={18} /> : <Search size={18} />}
                         <input
@@ -1562,6 +1561,10 @@ function PrendaFormulario({
               </section>
             </div>
 
+            <p className="tm-required-note">
+              <span className="tm-required">*</span> Campos obligatorios
+            </p>
+
             <div className="crear-prenda-form__footer">
               <button
                 type="button"
@@ -1591,7 +1594,7 @@ function PrendaFormulario({
       </div>
 
       {modalMedidasAbierto && clienteParaMedidas && (
-        <ModalActualizarMedidas
+        <ModalMedidas
           cliente={clienteParaMedidas}
           sinMedidasRegistradas
           onClose={cerrarModalMedidasCliente}

@@ -22,6 +22,7 @@ import {
   obtenerFechaHoyInput,
   formatearFechaPago,
 } from "../../utils/pagosFecha";
+import SiPermiso from "../../components/SiPermiso";
 import {
   normalizarCliente,
   formatearClienteDisplay,
@@ -65,15 +66,6 @@ const formatearFecha = (fecha) => {
     hour: "2-digit",
     minute: "2-digit",
   });
-};
-
-const obtenerUsuarioId = () => {
-  try {
-    const u = JSON.parse(localStorage.getItem("usuario")) || {};
-    return u.usuario_id ?? u.id ?? null;
-  } catch {
-    return null;
-  }
 };
 
 function Pagos() {
@@ -377,7 +369,6 @@ function Pagos() {
         fecha_pago: fechaPagoAnticipo,
         notas: notas.trim(),
         registrar_anticipo: registrarAnticipo && anticipo > 0,
-        usuario_creador: obtenerUsuarioId(),
       });
 
       setMensaje(
@@ -435,7 +426,6 @@ function Pagos() {
         tipo_pago: "abono",
         fecha_pago: fechaPagoAbono,
         notas: notasAbono.trim(),
-        usuario_creador: obtenerUsuarioId(),
       });
 
       await abrirPdfRecibo(resultado.pago_cliente_id, resultado.codigo_recibo);
@@ -475,14 +465,16 @@ function Pagos() {
         </div>
 
         <div className="pagos-page__tabs">
-          <button
-            type="button"
-            className={`pagos-page__tabs-btn ${vista === "crear" ? "is-active" : ""}`}
-            onClick={() => setVista("crear")}
-          >
-            <Plus size={18} />
-            Nuevo plan
-          </button>
+          <SiPermiso codigo="crear_plan_pagos">
+            <button
+              type="button"
+              className={`pagos-page__tabs-btn ${vista === "crear" ? "is-active" : ""}`}
+              onClick={() => setVista("crear")}
+            >
+              <Plus size={18} />
+              Nuevo plan
+            </button>
+          </SiPermiso>
           <button
             type="button"
             className={`pagos-page__tabs-btn ${vista === "listado" ? "is-active" : ""}`}
@@ -506,12 +498,14 @@ function Pagos() {
               ref={clienteRef}
               style={{ position: "relative" }}
             >
-              <label>Buscar cliente</label>
+              <label>Buscar cliente <span className="tm-required">*</span></label>
               <div className="cotiz-input-icon cotiz-autocomplete__trigger" style={{
                 display: "flex",
                 alignItems: "center",
                 gap: 10,
-                border: "1px solid #e2e8f0",
+                border: "1px solid var(--color-border)",
+                background: "var(--color-surface)",
+                color: "var(--color-text)",
                 borderRadius: 14,
                 padding: "0 12px",
                 minHeight: 48,
@@ -528,7 +522,13 @@ function Pagos() {
                   onFocus={() => setClienteDropdownOpen(true)}
                   placeholder="Nombre o teléfono"
                   autoComplete="off"
-                  style={{ border: "none", flex: 1, outline: "none" }}
+                  style={{
+                    border: "none",
+                    flex: 1,
+                    outline: "none",
+                    background: "transparent",
+                    color: "var(--color-text)",
+                  }}
                 />
                 {clienteId && (
                   <button type="button" onClick={limpiarCliente} aria-label="Quitar">
@@ -543,24 +543,28 @@ function Pagos() {
                   left: 0,
                   right: 0,
                   zIndex: 20,
-                  background: "#fff",
-                  border: "1px solid #e2e8f0",
+                  background: "var(--color-surface)",
+                  color: "var(--color-text)",
+                  border: "1px solid var(--color-border)",
                   borderRadius: 12,
                   margin: "6px 0 0",
                   padding: 6,
                   listStyle: "none",
                   maxHeight: 220,
                   overflowY: "auto",
+                  boxShadow: "var(--shadow-modal)",
                 }}>
                   {clientesFiltrados.map((c) => (
                     <li key={c.cliente_id}>
                       <button
                         type="button"
+                        className="pagos-autocomplete__option"
                         style={{
                           width: "100%",
                           padding: "10px 12px",
                           border: "none",
                           background: "transparent",
+                          color: "inherit",
                           textAlign: "left",
                           cursor: "pointer",
                         }}
@@ -642,7 +646,9 @@ function Pagos() {
                 )}
 
                 <div className="pagos-field">
-                  <label htmlFor="valor-a-cobrar">Valor a cobrar</label>
+                  <label htmlFor="valor-a-cobrar">
+                    Valor a cobrar <span className="tm-required">*</span>
+                  </label>
                   <div className="pagos-input-icon">
                     <span className="pagos-currency">Q</span>
                     <input
@@ -652,12 +658,15 @@ function Pagos() {
                       step="0.01"
                       value={valorACobrar}
                       onChange={(e) => setValorACobrar(e.target.value)}
+                      required
                     />
                   </div>
                 </div>
 
                 <div className="pagos-field">
-                  <label htmlFor="cantidad-pagos">Cantidad de pagos</label>
+                  <label htmlFor="cantidad-pagos">
+                    Cantidad de pagos <span className="tm-required">*</span>
+                  </label>
                   <input
                     id="cantidad-pagos"
                     type="number"
@@ -665,6 +674,7 @@ function Pagos() {
                     step="1"
                     value={cantidadPagos}
                     onChange={(e) => setCantidadPagos(e.target.value)}
+                    required
                   />
                 </div>
 
@@ -743,6 +753,10 @@ function Pagos() {
                     <strong>{formatearMoneda(cuotaReferencial)}</strong>
                   </p>
                 </div>
+
+                <p className="tm-required-note">
+                  <span className="tm-required">*</span> Campos obligatorios
+                </p>
 
                 <button
                   type="submit"
@@ -846,14 +860,16 @@ function Pagos() {
                             Ver pagos
                           </button>
                           {Number(p.saldo_pendiente) > 0 && (
-                            <button
-                              type="button"
-                              className="tm-users__btn-accion tm-users__btn-accion--editar"
-                              onClick={() => abrirModalAbono(p)}
-                            >
-                              <Wallet size={14} />
-                              Abono
-                            </button>
+                            <SiPermiso codigo="generar_abono_plan_pagos">
+                              <button
+                                type="button"
+                                className="tm-users__btn-accion tm-users__btn-accion--editar"
+                                onClick={() => abrirModalAbono(p)}
+                              >
+                                <Wallet size={14} />
+                                Abono
+                              </button>
+                            </SiPermiso>
                           )}
                         </div>
                       </td>
@@ -917,7 +933,7 @@ function Pagos() {
             <form onSubmit={handleRegistrarAbono}>
               <div className="pagos-field">
                 <label className="pagos-field__label-row">
-                  Monto a cobrar
+                  Monto a cobrar <span className="tm-required">*</span>
                   {abonoInfo && (
                     <button
                       type="button"
@@ -945,7 +961,7 @@ function Pagos() {
               </div>
               <div className="pagos-field">
                 <label htmlFor="fecha-pago-abono">
-                  Fecha en que el cliente realizó el pago
+                  Fecha en que el cliente realizó el pago <span className="tm-required">*</span>
                 </label>
                 <input
                   id="fecha-pago-abono"
@@ -958,7 +974,7 @@ function Pagos() {
                 />
               </div>
               <div className="pagos-field">
-                <label>Número de transferencia</label>
+                <label>Número de transferencia <span className="tm-required">*</span></label>
                 <input
                   type="text"
                   value={transferenciaAbono}
@@ -974,6 +990,9 @@ function Pagos() {
                   onChange={(e) => setNotasAbono(e.target.value)}
                 />
               </div>
+              <p className="tm-required-note">
+                <span className="tm-required">*</span> Campos obligatorios
+              </p>
               <div className="pagos-modal__actions">
                 <button
                   type="button"

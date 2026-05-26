@@ -24,6 +24,7 @@ const INITIAL_FORM = {
 };
 
 const normalizarDpiInput = (valor) => String(valor ?? "").replace(/\D/g, "").slice(0, 13);
+const normalizarTelefonoInput = (valor) => String(valor ?? "").replace(/\D/g, "").slice(0, 15);
 
 function FormularioCliente({ open, cliente, onClose, onSuccess }) {
   const isEditMode = Boolean(cliente?.cliente_id);
@@ -47,7 +48,9 @@ function FormularioCliente({ open, cliente, onClose, onSuccess }) {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    const nextValue = name === "dpi" ? normalizarDpiInput(value) : value;
+    let nextValue = value;
+    if (name === "dpi") nextValue = normalizarDpiInput(value);
+    else if (name === "telefono") nextValue = normalizarTelefonoInput(value);
     setForm((prev) => ({ ...prev, [name]: nextValue }));
     if (error) setError("");
     if (clienteDpiDuplicado) setClienteDpiDuplicado(null);
@@ -89,12 +92,6 @@ function FormularioCliente({ open, cliente, onClose, onSuccess }) {
     }
     if (!form.apellido.trim()) {
       const msg = "El apellido es obligatorio.";
-      setError(msg);
-      toast.error(msg);
-      return false;
-    }
-    if (!form.telefono.trim()) {
-      const msg = "El teléfono es obligatorio.";
       setError(msg);
       toast.error(msg);
       return false;
@@ -161,10 +158,7 @@ function FormularioCliente({ open, cliente, onClose, onSuccess }) {
         toast.success("Cliente actualizado con éxito");
         await finalizar();
       } else {
-        const res = await createCliente({
-          ...construirPayload(),
-          usuario: 1,
-        });
+        const res = await createCliente(construirPayload());
         toast.success("Cliente creado con éxito");
         await finalizar({
           nuevoCliente: {
@@ -270,7 +264,9 @@ function FormularioCliente({ open, cliente, onClose, onSuccess }) {
 
               <div className="tm-modal__grid">
                 <div className="tm-modal__field tm-modal__field--icon">
-                  <label htmlFor="cliente-nombre">Nombre</label>
+                  <label htmlFor="cliente-nombre">
+                    Nombre <span className="formularioCliente__required" aria-hidden="true">*</span>
+                  </label>
                   <div className="tm-input-wrap">
                     <User size={16} className="tm-input-icon" />
                     <input
@@ -287,7 +283,9 @@ function FormularioCliente({ open, cliente, onClose, onSuccess }) {
                 </div>
 
                 <div className="tm-modal__field tm-modal__field--icon">
-                  <label htmlFor="cliente-apellido">Apellido</label>
+                  <label htmlFor="cliente-apellido">
+                    Apellido <span className="formularioCliente__required" aria-hidden="true">*</span>
+                  </label>
                   <div className="tm-input-wrap">
                     <User size={16} className="tm-input-icon" />
                     <input
@@ -304,24 +302,28 @@ function FormularioCliente({ open, cliente, onClose, onSuccess }) {
                 </div>
 
                 <div className="tm-modal__field tm-modal__field--icon">
-                  <label htmlFor="cliente-telefono">Teléfono</label>
+                  <label htmlFor="cliente-telefono">Teléfono (opcional)</label>
                   <div className="tm-input-wrap">
                     <Phone size={16} className="tm-input-icon" />
                     <input
                       id="cliente-telefono"
-                      type="text"
+                      type="tel"
                       name="telefono"
+                      inputMode="numeric"
+                      autoComplete="tel"
                       value={form.telefono}
                       onChange={handleChange}
-                      placeholder="Ingresa el teléfono"
+                      placeholder="Numero de telefono"
+                      maxLength={15}
                       disabled={loading}
-                      required
                     />
                   </div>
                 </div>
 
                 <div className="tm-modal__field tm-modal__field--icon">
-                  <label htmlFor="cliente-dpi">DPI</label>
+                  <label htmlFor="cliente-dpi">
+                    DPI <span className="formularioCliente__required" aria-hidden="true">*</span>
+                  </label>
                   <div className="tm-input-wrap">
                     <CreditCard size={16} className="tm-input-icon" />
                     <input
@@ -343,6 +345,10 @@ function FormularioCliente({ open, cliente, onClose, onSuccess }) {
                   </span>
                 </div>
               </div>
+
+              <p className="tm-required-note">
+                <span className="tm-required">*</span> Campos obligatorios
+              </p>
             </div>
 
             <div className="formularioCliente__footer tm-modal__actions">

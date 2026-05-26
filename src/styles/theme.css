@@ -1,0 +1,79 @@
+/* =========================================================
+   Sistema de tokens de color para soportar tema claro / oscuro
+   =========================================================
+
+   Cómo funciona:
+   - `:root` define los tokens en modo claro (default).
+   - `[data-theme="dark"]` sobre <html> sobreescribe los tokens.
+   - Los componentes deben referenciar `var(--color-*)` en vez
+     de hardcodear colores.
+
+   Los componentes que aún tienen colores hardcodeados van a
+   verse igual en ambos temas (no se rompen). La transición se
+   hace gradual: cada CSS que se actualice empieza a respetar
+   el tema.
+   ========================================================= */
+
+:root {
+  /* Superficies */
+  --color-bg:        #f5f7fb;   /* fondo general de la app */
+  --color-surface:   #ffffff;   /* tarjetas, modales, tablas */
+  --color-surface-2: #f8fafc;   /* superficies secundarias (header tablas, hover, etc.) */
+  --color-overlay:   rgba(15, 23, 42, 0.55);
+
+  /* Texto */
+  --color-text:        #111827;   /* texto principal */
+  --color-text-soft:   #374151;   /* labels, encabezados secundarios */
+  --color-text-muted:  #64748b;   /* hints, subtítulos, datos auxiliares */
+
+  /* Bordes */
+  --color-border:        #e5e7eb;   /* bordes generales */
+  --color-border-strong: #d1d5db;   /* bordes de inputs */
+  --color-border-soft:   #eef2f7;   /* divisores en headers de modal */
+
+  /* Accent (morado de la marca) — igual en ambos temas */
+  --color-primary:        #7c3aed;
+  --color-primary-soft:   #ede9fe;
+  --color-primary-strong: #6d28d9;
+
+  /* Estados */
+  --color-danger:        #dc2626;
+  --color-danger-soft:   #fef2f2;
+  --color-success:       #16a34a;
+  --color-success-soft:  #f0fdf4;
+  --color-warning:       #f59e0b;
+  --color-warning-soft:  #fef3c7;
+
+  /* Sombras */
+  --shadow-card:  0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-modal: 0 20px 40px rgba(15, 23, 42, 0.18), 0 8px 16px rgba(15, 23, 42, 0.08);
+}
+
+[data-theme="dark"] {
+  --color-bg:        #0b1120;
+  --color-surface:   #111827;
+  --color-surface-2: #1e293b;
+  --color-overlay:   rgba(0, 0, 0, 0.65);
+
+  --color-text:        #e5e7eb;
+  --color-text-soft:   #cbd5e1;
+  --color-text-muted:  #94a3b8;
+
+  --color-border:        #1f2937;
+  --color-border-strong: #334155;
+  --color-border-soft:   #1e293b;
+
+  --color-primary-soft: #2e1065;
+
+  --color-danger-soft:  rgba(220, 38, 38, 0.12);
+  --color-success-soft: rgba(22, 163, 74, 0.12);
+  --color-warning-soft: rgba(245, 158, 11, 0.12);
+
+  --shadow-card:  0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-modal: 0 20px 40px rgba(0, 0, 0, 0.5), 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+/* Suavizar el cambio entre temas */
+html {
+  transition: background-color 0.2s ease, color 0.2s ease;
+}

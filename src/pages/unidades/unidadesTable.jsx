@@ -1,3 +1,4 @@
+import SiPermiso from "../../components/SiPermiso";
 import "./unidades.css";
 
 export default function UnidadesTable({ unidades, onEdit }) {
@@ -33,13 +34,15 @@ export default function UnidadesTable({ unidades, onEdit }) {
                 </span>
               </td>
               <td>
-                <button
-                  type="button"
-                  className="tm-users__btn-accion tm-users__btn-accion--editar"
-                  onClick={() => onEdit(u)}
-                >
-                  Editar
-                </button>
+                <SiPermiso codigo="editar_unidades_medidas">
+                  <button
+                    type="button"
+                    className="tm-users__btn-accion tm-users__btn-accion--editar"
+                    onClick={() => onEdit(u)}
+                  >
+                    Editar
+                  </button>
+                </SiPermiso>
               </td>
             </tr>
           ))}

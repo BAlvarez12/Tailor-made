@@ -24,3 +24,8 @@ export const reenviarInvitacionUsuarioService = async (usuarioId) => {
   const response = await api.post(`/usuarios/reenviar-invitacion/${usuarioId}`);
   return response.data;
 };
+
+export const reiniciarPasswordUsuarioService = async (usuarioId) => {
+  const response = await api.post(`/usuarios/reiniciar-password/${usuarioId}`);
+  return response.data;
+};

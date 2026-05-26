@@ -1,3 +1,4 @@
+import SiPermiso from "../../components/SiPermiso";
 import "./unidades.css";
 
 export default function UnidadesHeader({
@@ -81,9 +82,11 @@ export default function UnidadesHeader({
       </div>
 
       <div className="tm-users__buttons">
-        <button type="button" className="tm-users__create-btn big" onClick={onCreateClick}>
-          <span>Crear unidad</span>
-        </button>
+        <SiPermiso codigo="crear_unidades_medidas">
+          <button type="button" className="tm-users__create-btn big" onClick={onCreateClick}>
+            <span>Crear unidad</span>
+          </button>
+        </SiPermiso>
       </div>
     </div>
   );

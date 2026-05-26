@@ -58,6 +58,40 @@
   letter-spacing: 0.04em;
 }
 
+.prendas-page__estado-filtros {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  flex-wrap: wrap;
+}
+
+.prendas-page__estado-filtro {
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.prendas-page__estado-filtro:hover {
+  color: #111827;
+}
+
+.prendas-page__estado-filtro.is-active {
+  background: #ffffff;
+  color: #5b21b6;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
 .prendas-page__search,
 .prendas-page__select {
   width: 100%;
@@ -189,7 +223,8 @@
   backdrop-filter: blur(8px);
 }
 
-.prenda-status--proceso {
+.prenda-status--proceso,
+.prenda-status--en_proceso {
   background: rgba(254, 243, 199, 0.95);
   color: #92400e;
 }
@@ -448,6 +483,12 @@
   height: 100%;
   object-fit: contain;
   display: block;
+  animation: prendaFadeIn 0.5s ease-out;
+}
+
+@keyframes prendaFadeIn {
+  from { opacity: 0.35; transform: scale(1.02); }
+  to   { opacity: 1; transform: scale(1); }
 }
 
 

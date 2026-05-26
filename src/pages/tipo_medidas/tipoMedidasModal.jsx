@@ -66,7 +66,9 @@ export default function TipoMedidasModal({
 
               <div className="tm-modal__grid">
                 <div className="tm-modal__field tm-modal__field--icon tm-modal__field--full">
-                  <label htmlFor="nombre_tipo_medida">Nombre</label>
+                  <label htmlFor="nombre_tipo_medida">
+                    Nombre <span className="tm-required">*</span>
+                  </label>
                   <div className="tm-input-wrap">
                     <Tag size={16} className="tm-input-icon" />
                     <input
@@ -80,12 +82,14 @@ export default function TipoMedidasModal({
                         })
                       }
                       placeholder="Ej. Busto"
+                      required
+                      maxLength={50}
                     />
                   </div>
                 </div>
 
                 <div className="tm-modal__field tm-modal__field--icon tm-modal__field--full">
-                  <label htmlFor="descripcion_tipo_medida">Descripción</label>
+                  <label htmlFor="descripcion_tipo_medida">Descripción (opcional)</label>
                   <div className="tm-input-wrap tm-input-wrap--textarea">
                     <AlignLeft size={16} className="tm-input-icon" />
                     <textarea
@@ -99,10 +103,15 @@ export default function TipoMedidasModal({
                       }
                       placeholder="Descripción opcional del tipo de medida"
                       rows={3}
+                      maxLength={255}
                     />
                   </div>
                 </div>
               </div>
+
+              <p className="tm-required-note">
+                <span className="tm-required">*</span> Campos obligatorios
+              </p>
             </div>
 
             <div className="tm-modal-form__footer tm-modal__actions">

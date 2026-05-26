@@ -222,7 +222,9 @@ function CategoriasMaterialModal({ open, onClose }) {
 
                 <div className="tm-modal__grid tm-modal__grid--single">
                   <div className="tm-modal__field tm-modal__field--icon tm-modal__field--full">
-                    <label htmlFor="nombre_categoria">Nombre</label>
+                    <label htmlFor="nombre_categoria">
+                      Nombre <span className="tm-required">*</span>
+                    </label>
                     <div className="tm-input-wrap">
                       <Tag size={16} className="tm-input-icon" />
                       <input
@@ -233,12 +235,13 @@ function CategoriasMaterialModal({ open, onClose }) {
                         onChange={handleChange}
                         placeholder="Ej. Telas, Hilos, Botones"
                         required
+                        maxLength={50}
                       />
                     </div>
                   </div>
 
                   <div className="tm-modal__field tm-modal__field--icon tm-modal__field--full">
-                    <label htmlFor="descripcion_categoria">Descripción</label>
+                    <label htmlFor="descripcion_categoria">Descripción (opcional)</label>
                     <div className="tm-input-wrap tm-input-wrap--textarea">
                       <FileText size={16} className="tm-input-icon" />
                       <textarea
@@ -248,10 +251,15 @@ function CategoriasMaterialModal({ open, onClose }) {
                         value={form.descripcion_categoria}
                         onChange={handleChange}
                         placeholder="Descripción opcional de la categoría..."
+                        maxLength={255}
                       />
                     </div>
                   </div>
                 </div>
+
+                <p className="tm-required-note">
+                  <span className="tm-required">*</span> Campos obligatorios
+                </p>
 
                 <div className="tm-modal__actions mat-cat-form-actions">
                   {esEdicion && (

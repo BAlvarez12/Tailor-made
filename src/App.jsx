@@ -1,8 +1,10 @@
 import AppRouter from './routes/AppRouter'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
+import useTema from './hooks/useTema'
 
 function App() {
+  const { tema } = useTema()
   return (
     <>
       <AppRouter />
@@ -14,7 +16,7 @@ function App() {
         closeOnClick
         pauseOnHover
         draggable
-        theme="light"
+        theme={tema === 'dark' ? 'dark' : 'light'}
       />
     </>
   )

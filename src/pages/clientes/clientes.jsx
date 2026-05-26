@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { getClientes } from "../../services/clienteService";
 import "../../styles/tmListPage.css";
 import "./clientes.css";
 import FormularioCliente from "./FormularioCliente";
 import ModalMedidas from "./ModalMedidas";
-import ModalActualizarMedidas from "./ModalActualizarMedidas";
+import SiPermiso from "../../components/SiPermiso";
 
 function Clientes() {
   const [clientes, setClientes] = useState([]);
@@ -172,16 +173,18 @@ function Clientes() {
         </div>
 
         <div className="tm-users__buttons">
-          <button
-            type="button"
-            className="tm-users__create-btn"
-            onClick={() => {
-              setClienteSeleccionado(null);
-              setModalClienteAbierto(true);
-            }}
-          >
-            <span>Crear cliente</span>
-          </button>
+          <SiPermiso codigo="crear_clientes">
+            <button
+              type="button"
+              className="tm-users__create-btn"
+              onClick={() => {
+                setClienteSeleccionado(null);
+                setModalClienteAbierto(true);
+              }}
+            >
+              <span>Crear cliente</span>
+            </button>
+          </SiPermiso>
         </div>
       </header>
 
@@ -211,7 +214,15 @@ function Clientes() {
               <tbody>
                 {clientesPaginados.map((c) => (
                   <tr key={c.cliente_id}>
-                    <td>{c.nombre_cliente}</td>
+                    <td>
+                      <Link
+                        to={`/home/clientes/${c.cliente_id}`}
+                        className="tm-cliente-link"
+                        title="Ver ficha del cliente"
+                      >
+                        {c.nombre_cliente}
+                      </Link>
+                    </td>
                     <td>{c.apellido_cliente}</td>
                     <td>{c.telefono || "—"}</td>
                     <td>{c.dpi || "—"}</td>
@@ -230,27 +241,31 @@ function Clientes() {
 
                     <td>
                       <div className="tm-users__acciones">
-                        <button
-                          type="button"
-                          className="tm-users__btn-accion tm-users__btn-accion--editar"
-                          onClick={() => {
-                            setClienteSeleccionado(c);
-                            setModalClienteAbierto(true);
-                          }}
-                        >
-                          Editar
-                        </button>
+                        <SiPermiso codigo="editar_clientes">
+                          <button
+                            type="button"
+                            className="tm-users__btn-accion tm-users__btn-accion--editar"
+                            onClick={() => {
+                              setClienteSeleccionado(c);
+                              setModalClienteAbierto(true);
+                            }}
+                          >
+                            Editar
+                          </button>
+                        </SiPermiso>
 
-                        <button
-                          type="button"
-                          className="tm-users__btn-accion tm-users__btn-accion--secundario"
-                          onClick={() => {
-                            setClienteActualizar(c);
-                            setShowActualizar(true);
-                          }}
-                        >
-                          Actualizar medidas
-                        </button>
+                        <SiPermiso codigo="actualizar_medidas_cliente">
+                          <button
+                            type="button"
+                            className="tm-users__btn-accion tm-users__btn-accion--secundario"
+                            onClick={() => {
+                              setClienteActualizar(c);
+                              setShowActualizar(true);
+                            }}
+                          >
+                            Actualizar medidas
+                          </button>
+                        </SiPermiso>
                       </div>
                     </td>
                   </tr>
@@ -316,7 +331,7 @@ function Clientes() {
       />
 
       {showActualizar && (
-        <ModalActualizarMedidas
+        <ModalMedidas
           cliente={clienteActualizar}
           onClose={() => setShowActualizar(false)}
         />
@@ -325,6 +340,7 @@ function Clientes() {
       {showMedidas && (
         <ModalMedidas
           cliente={clienteMedidas}
+          sinMedidasRegistradas
           onClose={() => setShowMedidas(false)}
         />
       )}

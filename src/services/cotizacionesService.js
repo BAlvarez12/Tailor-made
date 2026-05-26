@@ -10,10 +10,21 @@ export const crearCotizacionService = async (data) => {
   return response.data;
 };
 
-export const listarCotizacionesService = async (q = "") => {
-  const response = await api.get("/cotizaciones", {
-    params: q ? { q } : {},
-  });
+export const editarCotizacionService = async (id, data) => {
+  const response = await api.put(`/cotizaciones/${id}`, data);
+  return response.data;
+};
+
+export const anularCotizacionService = async (id, motivo = "") => {
+  const response = await api.put(`/cotizaciones/${id}/anular`, { motivo });
+  return response.data;
+};
+
+export const listarCotizacionesService = async (q = "", estado = "activas") => {
+  const params = {};
+  if (q) params.q = q;
+  if (estado && estado !== "activas") params.estado = estado;
+  const response = await api.get("/cotizaciones", { params });
   return response.data;
 };
 

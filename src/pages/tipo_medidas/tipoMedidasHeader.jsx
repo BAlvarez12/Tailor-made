@@ -1,3 +1,4 @@
+import SiPermiso from "../../components/SiPermiso";
 import "./tipo_medidas.css";
 
 export default function TipoMedidasHeader({
@@ -77,9 +78,11 @@ export default function TipoMedidasHeader({
       </div>
 
       <div className="tm-users__buttons">
-        <button type="button" className="tm-users__create-btn big" onClick={onCreateClick}>
-          <span>Crear tipo</span>
-        </button>
+        <SiPermiso codigo="crear_tipo_medidas">
+          <button type="button" className="tm-users__create-btn big" onClick={onCreateClick}>
+            <span>Crear tipo</span>
+          </button>
+        </SiPermiso>
       </div>
     </div>
   );
