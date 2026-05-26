@@ -67,7 +67,9 @@ export default function UnidadesModal({
 
               <div className="tm-modal__grid">
                 <div className="tm-modal__field tm-modal__field--icon">
-                  <label htmlFor="nombre_unidad">Nombre</label>
+                  <label htmlFor="nombre_unidad">
+                    Nombre <span className="tm-required">*</span>
+                  </label>
                   <div className="tm-input-wrap">
                     <Ruler size={16} className="tm-input-icon" />
                     <input
@@ -81,12 +83,16 @@ export default function UnidadesModal({
                         })
                       }
                       placeholder="Ej. Centímetro"
+                      required
+                      maxLength={50}
                     />
                   </div>
                 </div>
 
                 <div className="tm-modal__field tm-modal__field--icon">
-                  <label htmlFor="simbolo_unidad">Símbolo</label>
+                  <label htmlFor="simbolo_unidad">
+                    Símbolo <span className="tm-required">*</span>
+                  </label>
                   <div className="tm-input-wrap">
                     <Hash size={16} className="tm-input-icon" />
                     <input
@@ -100,10 +106,16 @@ export default function UnidadesModal({
                         })
                       }
                       placeholder="Ej. cm"
+                      required
+                      maxLength={10}
                     />
                   </div>
                 </div>
               </div>
+
+              <p className="tm-required-note">
+                <span className="tm-required">*</span> Campos obligatorios
+              </p>
             </div>
 
             <div className="tm-modal-form__footer tm-modal__actions">

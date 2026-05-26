@@ -1,16 +1,40 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./PrendasPage.css";
-import { obtenerPrendas } from "../../services/Prendas";
-import { obtenerTiposPrendaActivosService } from "../../services/tipo_prendas";
+import { obtenerPrendas } from "../../services/prendasService";
+import { obtenerTiposPrendaActivosService } from "../../services/tipoPrendasService";
 import PrendaFormulario from "./PrendaFormulario";
 import {
   obtenerImagenesPrenda,
   obtenerImagenActualPrenda,
   cambiarImagenPrenda,
 } from "../../utils/Imagenes";
+import SiPermiso from "../../components/SiPermiso";
 
 const PAGE_SIZE = 10;
+const CAROUSEL_INTERVAL_MS = 4000;
+
+const ETIQUETAS_ESTADO_PRENDA = {
+  pendiente: "Pendiente",
+  en_proceso: "En proceso",
+  finalizada: "Finalizada",
+};
+
+const OPCIONES_FILTRO_ESTADO = [
+  { value: "todas", label: "Todas" },
+  { value: "pendiente", label: "Pendientes" },
+  { value: "en_proceso", label: "En proceso" },
+  { value: "finalizada", label: "Finalizadas" },
+];
+
+const resolverEstadoPrenda = (prenda) => {
+  if (prenda?.estado_prenda) return prenda.estado_prenda;
+  if (prenda?.plan_pago && Number(prenda.plan_pago.saldo_pendiente) <= 0) {
+    return "finalizada";
+  }
+  if (prenda?.cotizacion?.cotizacion_id) return "en_proceso";
+  return "pendiente";
+};
 
 function PrendasPage() {
   const navigate = useNavigate();
@@ -21,11 +45,14 @@ function PrendasPage() {
   const [error, setError] = useState("");
   const [busquedaCliente, setBusquedaCliente] = useState("");
   const [filtroTipoPrendaId, setFiltroTipoPrendaId] = useState("");
+  const [filtroEstadoPrenda, setFiltroEstadoPrenda] = useState("todas");
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [modoFormulario, setModoFormulario] = useState("create");
   const [prendaSeleccionadaId, setPrendaSeleccionadaId] = useState(null);
   const [imageIndexes, setImageIndexes] = useState({});
+  const pausedIdsRef = useRef(new Set());
+  const prendasVisiblesRef = useRef([]);
 
   const normalizarRespuesta = (response) => {
     if (Array.isArray(response)) return response;
@@ -36,12 +63,12 @@ function PrendasPage() {
     return [];
   };
 
-  const cargarPrendas = useCallback(async () => {
+  const cargarPrendas = useCallback(async (estado = filtroEstadoPrenda) => {
     try {
       setLoading(true);
       setError("");
 
-      const response = await obtenerPrendas();
+      const response = await obtenerPrendas(estado);
       const prendasNormalizadas = normalizarRespuesta(response);
 
       setPrendas(prendasNormalizadas);
@@ -52,7 +79,7 @@ function PrendasPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [filtroEstadoPrenda]);
 
   useEffect(() => {
     cargarPrendas();
@@ -168,6 +195,39 @@ function PrendasPage() {
   );
 
   const hayMasPrendas = visibleCount < prendasFiltradas.length;
+
+  useEffect(() => {
+    prendasVisiblesRef.current = prendasVisibles;
+  }, [prendasVisibles]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setImageIndexes((prev) => {
+        const next = { ...prev };
+        let cambio = false;
+        prendasVisiblesRef.current.forEach((prenda) => {
+          const id = obtenerIdPrenda(prenda);
+          if (!id) return;
+          if (pausedIdsRef.current.has(String(id))) return;
+          const total = obtenerImagenesPrenda(prenda).length;
+          if (total <= 1) return;
+          const curr = next[id] || 0;
+          next[id] = (curr + 1) % total;
+          cambio = true;
+        });
+        return cambio ? next : prev;
+      });
+    }, CAROUSEL_INTERVAL_MS);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const setCarruselPausado = (id, paused) => {
+    if (!id) return;
+    const key = String(id);
+    if (paused) pausedIdsRef.current.add(key);
+    else pausedIdsRef.current.delete(key);
+  };
 
   useEffect(() => {
     const sentinel = loadMoreRef.current;
@@ -313,13 +373,15 @@ function PrendasPage() {
         </div>
 
         <div className="prendas-page__header-actions">
-          <button
-            type="button"
-            className="prendas-page__create-button"
-            onClick={abrirFormularioCrear}
-          >
-            Crear prenda
-          </button>
+          <SiPermiso codigo="crear_prendas">
+            <button
+              type="button"
+              className="prendas-page__create-button"
+              onClick={abrirFormularioCrear}
+            >
+              Crear prenda
+            </button>
+          </SiPermiso>
         </div>
       </div>
 
@@ -354,6 +416,31 @@ function PrendasPage() {
               </option>
             ))}
           </select>
+        </div>
+
+        <div className="prendas-page__filter-group">
+          <label>Estado</label>
+          <div
+            className="prendas-page__estado-filtros"
+            role="group"
+            aria-label="Filtrar por estado de la prenda"
+          >
+            {OPCIONES_FILTRO_ESTADO.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                className={`prendas-page__estado-filtro ${
+                  filtroEstadoPrenda === opt.value ? "is-active" : ""
+                }`}
+                onClick={() => {
+                  setFiltroEstadoPrenda(opt.value);
+                  cargarPrendas(opt.value);
+                }}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {!loading && !error && prendasFiltradas.length > 0 && (
@@ -394,7 +481,9 @@ function PrendasPage() {
             const tituloPrenda = obtenerTituloPrenda(prenda);
             const tipoPrenda = obtenerTipoPrenda(prenda);
             const fechaCreado = obtenerFechaCreado(prenda);
-            const estado = obtenerEstadoTexto(prenda?.estado);
+            const estadoPrenda = resolverEstadoPrenda(prenda);
+            const etiquetaEstado =
+              ETIQUETAS_ESTADO_PRENDA[estadoPrenda] || estadoPrenda;
             const imagenes = obtenerImagenesPrenda(prenda);
             const imagenActual = obtenerImagenActual(prenda);
             const currentIndex = imageIndexes[idPrenda] || 0;
@@ -403,10 +492,15 @@ function PrendasPage() {
 
             return (
               <article className="prenda-card" key={idPrenda}>
-                <div className="prenda-card__image-container">
+                <div
+                  className="prenda-card__image-container"
+                  onMouseEnter={() => setCarruselPausado(idPrenda, true)}
+                  onMouseLeave={() => setCarruselPausado(idPrenda, false)}
+                >
                   {imagenes.length > 0 ? (
                     <>
                       <img
+                        key={imagenActual}
                         src={imagenActual}
                         alt={tituloPrenda}
                         className="prenda-card__image"
@@ -449,7 +543,11 @@ function PrendasPage() {
                     <div className="prenda-card__image-placeholder">{tipoPrenda}</div>
                   )}
 
-                  <span className={obtenerClaseEstado(estado)}>{estado}</span>
+                  <span
+                    className={`prenda-status prenda-status--${estadoPrenda}`}
+                  >
+                    {etiquetaEstado}
+                  </span>
                 </div>
 
                 <div className="prenda-card__content">
@@ -492,13 +590,15 @@ function PrendasPage() {
                       {tieneCotizacion ? "Ver cotización" : "Cotización"}
                     </button>
 
-                    <button
-                      type="button"
-                      className="prenda-card__button prenda-card__button--primary"
-                      onClick={() => abrirFormularioEditar(prenda)}
-                    >
-                      Editar
-                    </button>
+                    <SiPermiso codigo="editar_prendas">
+                      <button
+                        type="button"
+                        className="prenda-card__button prenda-card__button--primary"
+                        onClick={() => abrirFormularioEditar(prenda)}
+                      >
+                        Editar
+                      </button>
+                    </SiPermiso>
 
                     <button
                       type="button"

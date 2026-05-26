@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom";
 import "./Cotizaciones.css";
 import { obtenerClientesActivosService } from "../../services/clienteService";
-import { obtenerPrendas, obtenerPrendaPorId } from "../../services/Prendas";
+import { obtenerPrendas, obtenerPrendaPorId } from "../../services/prendasService";
 import {
   crearCotizacionService,
   listarCotizacionesService,
@@ -22,6 +22,10 @@ import {
   obtenerTelefonoCliente,
   clienteCoincideBusqueda,
 } from "../../utils/clienteDisplay";
+import { tienePermiso } from "../../utils/permisosUsuario";
+import SiPermiso from "../../components/SiPermiso";
+import EditarCotizacionModal from "./EditarCotizacionModal";
+import AnularCotizacionModal from "./AnularCotizacionModal";
 import {
   Search,
   User,
@@ -37,21 +41,15 @@ import {
   Wallet,
   CircleDollarSign,
   MessageCircle,
+  Edit3,
+  Ban,
+  MoreVertical,
 } from "lucide-react";
 import HistorialPagosModal from "../pagos/HistorialPagosModal";
 import {
   listarPlanesPagoService,
   obtenerPlanPagoService,
 } from "../../services/pagosService";
-
-const obtenerUsuarioId = () => {
-  try {
-    const usuario = JSON.parse(localStorage.getItem("usuario")) || {};
-    return usuario.usuario_id ?? usuario.id ?? null;
-  } catch {
-    return null;
-  }
-};
 
 const normalizarRespuesta = (data) => {
   if (Array.isArray(data)) return data;
@@ -70,6 +68,23 @@ const formatearMoneda = (valor) => {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
+};
+
+const ETIQUETAS_ESTADO_COTIZACION = {
+  activa: "Activa",
+  en_proceso: "En proceso",
+  finalizada: "Finalizada",
+  anulada: "Anulada",
+};
+
+const resolverEstadoCotizacion = (item) => {
+  if (item?.estado_cotizacion) return item.estado_cotizacion;
+  if (Number(item?.estado_registro) === 0) return "anulada";
+  const saldo = Number(item?.saldo_pendiente);
+  if (item?.plan_pago_id) {
+    return Number.isFinite(saldo) && saldo <= 0 ? "finalizada" : "en_proceso";
+  }
+  return "activa";
 };
 
 const IconoQuetzal = ({ size = 18 }) => (
@@ -108,6 +123,7 @@ function Cotizaciones() {
   const [vista, setVista] = useState("crear");
   const [cotizaciones, setCotizaciones] = useState([]);
   const [busquedaListado, setBusquedaListado] = useState("");
+  const [filtroEstado, setFiltroEstado] = useState("activas");
   const [loadingListado, setLoadingListado] = useState(false);
   const [errorListado, setErrorListado] = useState("");
   const [cotizacionEnVista, setCotizacionEnVista] = useState(null);
@@ -118,6 +134,21 @@ function Cotizaciones() {
   const [planPagoActivo, setPlanPagoActivo] = useState(null);
   const [cargandoPlanPago, setCargandoPlanPago] = useState(false);
   const [enviandoWhatsAppId, setEnviandoWhatsAppId] = useState(null);
+  const [cotizacionAEditar, setCotizacionAEditar] = useState(null);
+  const [cotizacionAAnular, setCotizacionAAnular] = useState(null);
+  const [menuAbiertoId, setMenuAbiertoId] = useState(null);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    if (menuAbiertoId == null) return;
+    const handler = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setMenuAbiertoId(null);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [menuAbiertoId]);
 
   const cotizacionTienePlanPago = (item) =>
     Number(item?.tiene_plan_pago) === 1 || Boolean(item?.plan_pago_id);
@@ -149,11 +180,17 @@ function Cotizaciones() {
     }
   }, []);
 
-  const cargarListado = async (termino = busquedaListado) => {
+  const cargarListado = async (
+    termino = busquedaListado,
+    estado = filtroEstado
+  ) => {
     try {
       setLoadingListado(true);
       setErrorListado("");
-      const data = await listarCotizacionesService(String(termino || "").trim());
+      const data = await listarCotizacionesService(
+        String(termino || "").trim(),
+        estado
+      );
       setCotizaciones(normalizarRespuesta(data));
     } catch (err) {
       console.error("Error al cargar listado:", err);
@@ -453,13 +490,7 @@ function Cotizaciones() {
         cliente_prenda_id: Number(prendaId),
         valor_total: valor,
         notas: notas.trim(),
-        usuario_creador: obtenerUsuarioId(),
       });
-
-      setMensajeExito(
-        `Cotización ${resultado.codigo_cotizacion || ""} guardada correctamente.`
-      );
-      setErrorDetalle("");
 
       if (resultado.cotizacion_id) {
         await abrirPdfCotizacion(
@@ -467,6 +498,14 @@ function Cotizaciones() {
           resultado.codigo_cotizacion
         );
       }
+
+      // Limpia todo el formulario para evitar guardar la misma cotización dos veces.
+      // El mensaje se setea DESPUÉS de la limpieza (limpiarCliente lo borra).
+      limpiarCliente();
+      setErrorDetalle("");
+      setMensajeExito(
+        `Cotización ${resultado.codigo_cotizacion || ""} guardada correctamente.`
+      );
     } catch (err) {
       console.error("Error al guardar cotización:", err);
       setErrorDetalle(
@@ -629,14 +668,16 @@ function Cotizaciones() {
           </p>
         </div>
         <div className="cotiz-tabs">
-          <button
-            type="button"
-            className={`cotiz-tabs__btn ${vista === "crear" ? "is-active" : ""}`}
-            onClick={() => setVista("crear")}
-          >
-            <Plus size={18} />
-            Nueva cotización
-          </button>
+          <SiPermiso codigo="crear_cotizaciones">
+            <button
+              type="button"
+              className={`cotiz-tabs__btn ${vista === "crear" ? "is-active" : ""}`}
+              onClick={() => setVista("crear")}
+            >
+              <Plus size={18} />
+              Nueva cotización
+            </button>
+          </SiPermiso>
           <button
             type="button"
             className={`cotiz-tabs__btn ${vista === "listado" ? "is-active" : ""}`}
@@ -664,6 +705,28 @@ function Cotizaciones() {
             </button>
           </div>
 
+          <div className="cotiz-listado__filtros" role="group" aria-label="Filtrar por estado">
+            {[
+              { value: "activas", label: "Activas" },
+              { value: "anuladas", label: "Anuladas" },
+              { value: "todas", label: "Todas" },
+            ].map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                className={`cotiz-listado__filtro ${
+                  filtroEstado === opt.value ? "is-active" : ""
+                }`}
+                onClick={() => {
+                  setFiltroEstado(opt.value);
+                  cargarListado(busquedaListado, opt.value);
+                }}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
           {loadingListado && (
             <div className="cotiz-page__state">Cargando cotizaciones...</div>
           )}
@@ -689,12 +752,19 @@ function Cotizaciones() {
                     <th>Tipo de prenda</th>
                     <th>Total</th>
                     <th>Fecha</th>
+                    <th>Estado</th>
                     <th>Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {cotizaciones.map((item) => (
-                    <tr key={item.cotizacion_id}>
+                  {cotizaciones.map((item) => {
+                    const estado = resolverEstadoCotizacion(item);
+                    const esAnulada = estado === "anulada";
+                    return (
+                    <tr
+                      key={item.cotizacion_id}
+                      className={esAnulada ? "cotiz-table__row--anulada" : ""}
+                    >
                       <td>
                         <strong>{item.codigo_cotizacion}</strong>
                       </td>
@@ -707,56 +777,146 @@ function Cotizaciones() {
                           ? new Date(item.fecha_creado).toLocaleDateString("es-GT")
                           : "—"}
                       </td>
+                      <td>
+                        <span className={`cotiz-estado-badge cotiz-estado-badge--${estado}`}>
+                          {ETIQUETAS_ESTADO_COTIZACION[estado] || estado}
+                        </span>
+                      </td>
                       <td className="cotiz-table__acciones">
-                        <button
-                          type="button"
-                          className="cotiz-table__pdf"
-                          onClick={() => handleImprimirPdf(item)}
-                        >
-                          <Printer size={16} />
-                          PDF
-                        </button>
-                        <button
-                          type="button"
-                          className="cotiz-table__whatsapp"
-                          onClick={() => handleEnviarWhatsApp(item, "listado")}
-                          disabled={
-                            enviandoWhatsAppId === item.cotizacion_id ||
-                            !resolverTelefonoCotizacion(item)
-                          }
-                          title={
-                            resolverTelefonoCotizacion(item)
-                              ? "Enviar cotización por WhatsApp"
-                              : "Sin teléfono registrado"
-                          }
-                        >
-                          <MessageCircle size={16} />
-                          {enviandoWhatsAppId === item.cotizacion_id
-                            ? "Enviando..."
-                            : "WhatsApp"}
-                        </button>
-                        {cotizacionTienePlanPago(item) ? (
+                        <SiPermiso codigo="generar_pdf_cotizacion">
                           <button
                             type="button"
-                            className="cotiz-table__pagos"
-                            onClick={() => abrirHistorialPagos(item)}
+                            className="cotiz-table__pdf"
+                            onClick={() => handleImprimirPdf(item)}
+                            title="Ver PDF"
                           >
-                            <Wallet size={16} />
-                            Ver pagos
+                            <Printer size={16} />
+                            PDF
                           </button>
-                        ) : (
-                          <button
-                            type="button"
-                            className="cotiz-table__plan"
-                            onClick={() => irAGenerarPlanPago(item)}
+                        </SiPermiso>
+                        {!esAnulada && (
+                          <SiPermiso codigo="enviar_whatsapp_cotizacion">
+                            <button
+                              type="button"
+                              className="cotiz-table__whatsapp"
+                              onClick={() => handleEnviarWhatsApp(item, "listado")}
+                              disabled={
+                                enviandoWhatsAppId === item.cotizacion_id ||
+                                !resolverTelefonoCotizacion(item)
+                              }
+                              title={
+                                resolverTelefonoCotizacion(item)
+                                  ? "Enviar cotización por WhatsApp"
+                                  : "Sin teléfono registrado"
+                              }
+                            >
+                              <MessageCircle size={16} />
+                              {enviandoWhatsAppId === item.cotizacion_id
+                                ? "Enviando..."
+                                : "WhatsApp"}
+                            </button>
+                          </SiPermiso>
+                        )}
+                        {!esAnulada && (
+                          <div
+                            className="cotiz-menu"
+                            ref={
+                              menuAbiertoId === item.cotizacion_id
+                                ? menuRef
+                                : null
+                            }
                           >
-                            <CircleDollarSign size={16} />
-                            Generar plan
-                          </button>
+                            <button
+                              type="button"
+                              className="cotiz-menu__trigger"
+                              aria-haspopup="menu"
+                              aria-expanded={menuAbiertoId === item.cotizacion_id}
+                              title="Más acciones"
+                              onClick={() =>
+                                setMenuAbiertoId(
+                                  menuAbiertoId === item.cotizacion_id
+                                    ? null
+                                    : item.cotizacion_id
+                                )
+                              }
+                            >
+                              <MoreVertical size={16} />
+                            </button>
+                            {menuAbiertoId === item.cotizacion_id && (
+                              <div className="cotiz-menu__list" role="menu">
+                                {cotizacionTienePlanPago(item) ? (
+                                  <SiPermiso codigo="ver_plan_pagos">
+                                    <button
+                                      type="button"
+                                      role="menuitem"
+                                      className="cotiz-menu__item"
+                                      onClick={() => {
+                                        setMenuAbiertoId(null);
+                                        abrirHistorialPagos(item);
+                                      }}
+                                    >
+                                      <Wallet size={14} />
+                                      Ver pagos
+                                    </button>
+                                  </SiPermiso>
+                                ) : (
+                                  <SiPermiso codigo="generar_plan_pagos_cotizacion">
+                                    <button
+                                      type="button"
+                                      role="menuitem"
+                                      className="cotiz-menu__item"
+                                      onClick={() => {
+                                        setMenuAbiertoId(null);
+                                        irAGenerarPlanPago(item);
+                                      }}
+                                    >
+                                      <CircleDollarSign size={14} />
+                                      Generar plan
+                                    </button>
+                                  </SiPermiso>
+                                )}
+
+                                {!cotizacionTienePlanPago(item) && (
+                                  <SiPermiso codigo="editar_cotizaciones">
+                                    <button
+                                      type="button"
+                                      role="menuitem"
+                                      className="cotiz-menu__item"
+                                      onClick={() => {
+                                        setMenuAbiertoId(null);
+                                        setCotizacionAEditar(item);
+                                      }}
+                                    >
+                                      <Edit3 size={14} />
+                                      Editar
+                                    </button>
+                                  </SiPermiso>
+                                )}
+
+                                {!cotizacionTienePlanPago(item) && (
+                                  <SiPermiso codigo="anular_cotizaciones">
+                                    <button
+                                      type="button"
+                                      role="menuitem"
+                                      className="cotiz-menu__item cotiz-menu__item--danger"
+                                      onClick={() => {
+                                        setMenuAbiertoId(null);
+                                        setCotizacionAAnular(item);
+                                      }}
+                                    >
+                                      <Ban size={14} />
+                                      Anular
+                                    </button>
+                                  </SiPermiso>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         )}
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -786,7 +946,7 @@ function Cotizaciones() {
               className="cotiz-field cotiz-autocomplete"
               ref={clienteAutocompleteRef}
             >
-              <label>Cliente</label>
+              <label>Cliente <span className="tm-required">*</span></label>
               <div className="cotiz-input-icon cotiz-autocomplete__trigger">
                 {clienteId ? <User size={18} /> : <Search size={18} />}
                 <input
@@ -1062,36 +1222,40 @@ function Cotizaciones() {
                   </span>
                 </div>
                 <div className="cotiz-existing-banner__actions">
-                  <button
-                    type="button"
-                    className="cotiz-existing-banner__pdf"
-                    onClick={() => handleImprimirPdf(cotizacionActivaParaPrenda)}
-                  >
-                    <Printer size={16} />
-                    Ver PDF
-                  </button>
-                  <button
-                    type="button"
-                    className="cotiz-existing-banner__whatsapp"
-                    onClick={() =>
-                      handleEnviarWhatsApp(cotizacionActivaParaPrenda, "crear")
-                    }
-                    disabled={
-                      enviandoWhatsAppId ===
-                        cotizacionActivaParaPrenda.cotizacion_id ||
-                      !resolverTelefonoCotizacion(cotizacionActivaParaPrenda)
-                    }
-                    title={
-                      resolverTelefonoCotizacion(cotizacionActivaParaPrenda)
-                        ? "Enviar cotización por WhatsApp"
-                        : "Sin teléfono registrado"
-                    }
-                  >
-                    <MessageCircle size={16} />
-                    {enviandoWhatsAppId === cotizacionActivaParaPrenda.cotizacion_id
-                      ? "Enviando..."
-                      : "WhatsApp"}
-                  </button>
+                  <SiPermiso codigo="generar_pdf_cotizacion">
+                    <button
+                      type="button"
+                      className="cotiz-existing-banner__pdf"
+                      onClick={() => handleImprimirPdf(cotizacionActivaParaPrenda)}
+                    >
+                      <Printer size={16} />
+                      Ver PDF
+                    </button>
+                  </SiPermiso>
+                  <SiPermiso codigo="enviar_whatsapp_cotizacion">
+                    <button
+                      type="button"
+                      className="cotiz-existing-banner__whatsapp"
+                      onClick={() =>
+                        handleEnviarWhatsApp(cotizacionActivaParaPrenda, "crear")
+                      }
+                      disabled={
+                        enviandoWhatsAppId ===
+                          cotizacionActivaParaPrenda.cotizacion_id ||
+                        !resolverTelefonoCotizacion(cotizacionActivaParaPrenda)
+                      }
+                      title={
+                        resolverTelefonoCotizacion(cotizacionActivaParaPrenda)
+                          ? "Enviar cotización por WhatsApp"
+                          : "Sin teléfono registrado"
+                      }
+                    >
+                      <MessageCircle size={16} />
+                      {enviandoWhatsAppId === cotizacionActivaParaPrenda.cotizacion_id
+                        ? "Enviando..."
+                        : "WhatsApp"}
+                    </button>
+                  </SiPermiso>
                   {cargandoPlanPago ? (
                     <span className="cotiz-existing-banner__loading">
                       Consultando plan...
@@ -1125,7 +1289,9 @@ function Cotizaciones() {
             )}
 
             <div className="cotiz-valor-row">
-              <label htmlFor="valor-cotizacion">Monto (quetzales)</label>
+              <label htmlFor="valor-cotizacion">
+                Monto (quetzales) <span className="tm-required">*</span>
+              </label>
               <div className="cotiz-input-icon">
                 <IconoQuetzal size={16} />
                 <input
@@ -1166,14 +1332,19 @@ function Cotizaciones() {
             </div>
 
             {!cotizacionActivaParaPrenda && (
-              <button
-                type="submit"
-                className="cotiz-save"
-                disabled={!detallePrenda || guardando}
-              >
-                <Save size={18} />
-                {guardando ? "Guardando..." : "Guardar cotización"}
-              </button>
+              <>
+                <p className="tm-required-note">
+                  <span className="tm-required">*</span> Campos obligatorios
+                </p>
+                <button
+                  type="submit"
+                  className="cotiz-save"
+                  disabled={!detallePrenda || guardando}
+                >
+                  <Save size={18} />
+                  {guardando ? "Guardando..." : "Guardar cotización"}
+                </button>
+              </>
             )}
           </section>
         </form>
@@ -1184,6 +1355,20 @@ function Cotizaciones() {
         plan={planHistorialPagos}
         mensajeError={errorHistorialPagos}
         onClose={cerrarHistorialPagos}
+      />
+
+      <EditarCotizacionModal
+        open={Boolean(cotizacionAEditar)}
+        cotizacion={cotizacionAEditar}
+        onClose={() => setCotizacionAEditar(null)}
+        onGuardado={() => cargarListado()}
+      />
+
+      <AnularCotizacionModal
+        open={Boolean(cotizacionAAnular)}
+        cotizacion={cotizacionAAnular}
+        onClose={() => setCotizacionAAnular(null)}
+        onAnulada={() => cargarListado()}
       />
     </div>
   );

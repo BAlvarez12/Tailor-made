@@ -547,7 +547,15 @@
   margin-bottom: 0;
 }
 
-.pagos-historial-table__pdf .pagos-btn-pdf-mini span {
+.pagos-historial-table__acciones {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.pagos-historial-table__acciones .pagos-btn-pdf-mini span,
+.pagos-historial-table__acciones .pagos-btn-wa-mini span {
   display: none;
 }
 
@@ -608,10 +616,38 @@
   cursor: pointer;
   display: inline-flex;
   align-items: center;
+  gap: 4px;
+  font-weight: 700;
+  font-size: 12px;
 }
 
 .pagos-btn-pdf-mini:hover {
   background: #ddd6fe;
+}
+
+.pagos-btn-wa-mini {
+  border: none;
+  background: #dcfce7;
+  color: #166534;
+  border-radius: 8px;
+  padding: 6px 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 700;
+  font-size: 12px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.pagos-btn-wa-mini:hover:not(:disabled) {
+  background: #bbf7d0;
+  color: #14532d;
+}
+
+.pagos-btn-wa-mini:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .pagos-table-fecha {
@@ -728,11 +764,13 @@
     font-size: 0.92rem;
   }
 
-  .pagos-historial-table__pdf {
-    justify-content: space-between;
+  .pagos-historial-table__acciones {
+    justify-content: flex-start;
+    flex-wrap: wrap;
   }
 
-  .pagos-historial-table__pdf .pagos-btn-pdf-mini {
+  .pagos-historial-table__acciones .pagos-btn-pdf-mini,
+  .pagos-historial-table__acciones .pagos-btn-wa-mini {
     width: auto;
     gap: 6px;
     padding: 8px 12px;
@@ -740,7 +778,8 @@
     font-weight: 700;
   }
 
-  .pagos-historial-table__pdf .pagos-btn-pdf-mini span {
+  .pagos-historial-table__acciones .pagos-btn-pdf-mini span,
+  .pagos-historial-table__acciones .pagos-btn-wa-mini span {
     display: inline;
   }
 

@@ -19,3 +19,28 @@
   opacity: 0.65;
   cursor: wait;
 }
+
+.tm-users__btn-accion--reset {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.tm-users__btn-accion--reset:hover:not(:disabled) {
+  background: #fde68a;
+  color: #78350f;
+}
+
+.tm-users__btn-accion--reset:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+[data-theme="dark"] .tm-users__btn-accion--reset {
+  background: rgba(245, 158, 11, 0.18);
+  color: #fcd34d;
+}
+
+[data-theme="dark"] .tm-users__btn-accion--reset:hover:not(:disabled) {
+  background: rgba(245, 158, 11, 0.28);
+  color: #fde68a;
+}

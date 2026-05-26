@@ -1,14 +1,19 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import axios from "axios";
+import api from "../../utils/api";
 import "./Materiales.css";
 import logo from "../../assets/logo-tailor-made.png";
 import MaterialesExistenciasModal from "./MaterialesExistenciasModal";
 import MaterialFormModal from "./MaterialFormModal";
 import CategoriasMaterialModal from "./CategoriasMaterialModal";
+import SiPermiso from "../../components/SiPermiso";
+import ConfirmacionModal from "../../components/ConfirmacionModal";
 import { Layers } from "lucide-react";
+import { toast } from "react-toastify";
+
+const API_BASE = import.meta.env.VITE_BACKEND_URL;
 
 const urlImagenMaterial = (nombreArchivo) =>
-  `${import.meta.env.VITE_BACKEND_URL}/uploads/materiales/${nombreArchivo}`;
+  `${API_BASE}/uploads/materiales/${encodeURIComponent(nombreArchivo)}`;
 
 function Materiales() {
   const [materiales, setMateriales] = useState([]);
@@ -22,15 +27,28 @@ function Materiales() {
   const [mostrarModalCrear, setMostrarModalCrear] = useState(false);
   const [materialEditarId, setMaterialEditarId] = useState(null);
   const [categoriasCatalogo, setCategoriasCatalogo] = useState([]);
+  const [materialAEliminar, setMaterialAEliminar] = useState(null);
+  const [eliminando, setEliminando] = useState(false);
 
   const [imageIndexes, setImageIndexes] = useState({});
+  const [imagenesFallidas, setImagenesFallidas] = useState({});
   const [previewImagenes, setPreviewImagenes] = useState([]);
   const [previewIndex, setPreviewIndex] = useState(0);
   const [animando, setAnimando] = useState(false);
 
+  const marcarImagenFallida = (materialId, nombreArchivo, urlIntentada) => {
+    console.warn(
+      `[Materiales] No se pudo cargar la imagen del material ${materialId}: "${nombreArchivo}" — URL: ${urlIntentada}`
+    );
+    setImagenesFallidas((prev) => ({
+      ...prev,
+      [`${materialId}::${nombreArchivo}`]: true,
+    }));
+  };
+
   const fetchCategorias = useCallback(async () => {
     try {
-      const res = await axios.get(`${API_BASE}/api/materiales/categorias`);
+      const res = await api.get(`/materiales/categorias`);
       setCategoriasCatalogo(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error(err);
@@ -42,7 +60,7 @@ function Materiales() {
     try {
       setLoading(true);
       setError("");
-      const res = await axios.get(`${API_BASE}/api/materiales`);
+      const res = await api.get(`/materiales`);
       setMateriales(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error(err);
@@ -105,14 +123,27 @@ function Materiales() {
     });
   }, [materiales, busquedaNombre, filtroCategoriaId]);
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("¿Eliminar material?")) return;
+  const solicitarEliminar = (material) => {
+    setMaterialAEliminar(material);
+  };
 
+  const confirmarEliminar = async () => {
+    if (!materialAEliminar) return;
     try {
-      await axios.delete(`${API_BASE}/api/materiales/${id}`);
+      setEliminando(true);
+      await api.delete(`/materiales/${materialAEliminar.material_id}`);
+      toast.success("Material eliminado.");
+      setMaterialAEliminar(null);
       fetchMateriales();
     } catch (err) {
       console.error(err);
+      toast.error(
+        err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          "No se pudo eliminar el material."
+      );
+    } finally {
+      setEliminando(false);
     }
   };
 
@@ -128,8 +159,15 @@ function Materiales() {
     });
   };
 
-  const obtenerImagenActual = (mat) => {
+  const obtenerImagenesValidas = (mat) => {
     const imgs = Array.isArray(mat.imagenes) ? mat.imagenes : [];
+    return imgs.filter(
+      (nombre) => !imagenesFallidas[`${mat.material_id}::${nombre}`]
+    );
+  };
+
+  const obtenerImagenActual = (mat) => {
+    const imgs = obtenerImagenesValidas(mat);
     if (imgs.length === 0) return null;
     const idx = imageIndexes[mat.material_id] || 0;
     return imgs[idx] || imgs[0];
@@ -173,31 +211,37 @@ function Materiales() {
         </div>
 
         <div className="materiales-page__header-actions">
-          <button
-            type="button"
-            className="materiales-page__btn-secondary materiales-page__btn-secondary--icon"
-            onClick={() => setMostrarModalCategorias(true)}
-          >
-            <Layers size={16} />
-            Agregar categorías
-          </button>
-          <button
-            type="button"
-            className="materiales-page__btn-secondary"
-            onClick={() => setMostrarModalExistencias(true)}
-          >
-            Existencia
-          </button>
-          <button
-            type="button"
-            className="materiales-page__btn-create"
-            onClick={() => {
-              setMaterialEditarId(null);
-              setMostrarModalCrear(true);
-            }}
-          >
-            Crear material
-          </button>
+          <SiPermiso codigos={["crear_categoria_materiales", "editar_categoria_materiales"]}>
+            <button
+              type="button"
+              className="materiales-page__btn-secondary materiales-page__btn-secondary--icon"
+              onClick={() => setMostrarModalCategorias(true)}
+            >
+              <Layers size={16} />
+              Agregar categorías
+            </button>
+          </SiPermiso>
+          <SiPermiso codigo="existencias-materiales">
+            <button
+              type="button"
+              className="materiales-page__btn-secondary"
+              onClick={() => setMostrarModalExistencias(true)}
+            >
+              Existencia
+            </button>
+          </SiPermiso>
+          <SiPermiso codigo="crear_materiales">
+            <button
+              type="button"
+              className="materiales-page__btn-create"
+              onClick={() => {
+                setMaterialEditarId(null);
+                setMostrarModalCrear(true);
+              }}
+            >
+              Crear material
+            </button>
+          </SiPermiso>
         </div>
       </header>
 
@@ -260,7 +304,7 @@ function Materiales() {
       {!loading && !error && materialesFiltrados.length > 0 && (
         <div className="materiales-page__grid">
           {materialesFiltrados.map((mat) => {
-            const imgs = Array.isArray(mat.imagenes) ? mat.imagenes : [];
+            const imgs = obtenerImagenesValidas(mat);
             const imagenActual = obtenerImagenActual(mat);
             const currentIndex = imageIndexes[mat.material_id] || 0;
             const stock = Number(mat.stock) || 0;
@@ -275,6 +319,13 @@ function Materiales() {
                         alt={mat.nombre_material}
                         className="material-card__image"
                         onClick={() => abrirPreview(imgs, currentIndex)}
+                        onError={(e) =>
+                          marcarImagenFallida(
+                            mat.material_id,
+                            imagenActual,
+                            e.currentTarget.src
+                          )
+                        }
                       />
                       {imgs.length > 1 && (
                         <>
@@ -342,23 +393,27 @@ function Materiales() {
                   </div>
 
                   <div className="material-card__actions">
-                    <button
-                      type="button"
-                      className="material-card__btn material-card__btn--edit"
-                      onClick={() => {
-                        setMaterialEditarId(mat.material_id);
-                        setMostrarModalCrear(true);
-                      }}
-                    >
-                      Editar
-                    </button>
-                    <button
-                      type="button"
-                      className="material-card__btn material-card__btn--delete"
-                      onClick={() => handleDelete(mat.material_id)}
-                    >
-                      Eliminar
-                    </button>
+                    <SiPermiso codigo="editar_materiales">
+                      <button
+                        type="button"
+                        className="material-card__btn material-card__btn--edit"
+                        onClick={() => {
+                          setMaterialEditarId(mat.material_id);
+                          setMostrarModalCrear(true);
+                        }}
+                      >
+                        Editar
+                      </button>
+                    </SiPermiso>
+                    <SiPermiso codigo="editar_materiales">
+                      <button
+                        type="button"
+                        className="material-card__btn material-card__btn--delete"
+                        onClick={() => solicitarEliminar(mat)}
+                      >
+                        Eliminar
+                      </button>
+                    </SiPermiso>
                   </div>
                 </div>
               </article>
@@ -392,6 +447,23 @@ function Materiales() {
           setMaterialEditarId(null);
           fetchMateriales();
         }}
+      />
+
+      <ConfirmacionModal
+        open={Boolean(materialAEliminar)}
+        titulo="Eliminar material"
+        mensaje={
+          materialAEliminar
+            ? `¿Seguro que deseas eliminar "${materialAEliminar.nombre_material}"?`
+            : ""
+        }
+        detalle="Esta acción no se puede deshacer. Las imágenes asociadas también se quitarán del catálogo."
+        tono="peligro"
+        textoConfirmar="Sí, eliminar"
+        textoCancelar="Cancelar"
+        onConfirmar={confirmarEliminar}
+        onCancelar={() => setMaterialAEliminar(null)}
+        procesando={eliminando}
       />
 
       {previewImagenes.length > 0 && (

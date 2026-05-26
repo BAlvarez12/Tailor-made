@@ -14,10 +14,17 @@ import {
   ImagePlus,
   Save,
   XCircle,
+  UploadCloud,
+  X,
 } from "lucide-react";
 
 const getApiUploadsMateriales = () =>
   `${import.meta.env.VITE_BACKEND_URL}/uploads/materiales`;
+
+const MAX_IMAGENES = 3;
+const MAX_TAMANIO_BYTES = 5 * 1024 * 1024; // 5MB
+const TIPOS_MIME_VALIDOS = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+const EXTENSIONES_VALIDAS = /\.(jpe?g|png|webp)$/i;
 
 const FORM_VACIO = {
   nombre_material: "",
@@ -28,15 +35,27 @@ const FORM_VACIO = {
   stock: "",
 };
 
+const Obligatorio = () => (
+  <span className="mat-modal__required" aria-hidden="true">*</span>
+);
+
 function MaterialFormModal({ open, materialId, onClose }) {
   const esEdicion = Boolean(materialId);
   const [form, setForm] = useState(FORM_VACIO);
-  const [imagenes, setImagenes] = useState([]);
+  const [imagenes, setImagenes] = useState([]); // [{ file, url }]
   const [imagenesExistentes, setImagenesExistentes] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [cargando, setCargando] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
+  const [arrastrando, setArrastrando] = useState(false);
+
+  const limpiarImagenes = useCallback(() => {
+    setImagenes((prev) => {
+      prev.forEach((img) => URL.revokeObjectURL(img.url));
+      return [];
+    });
+  }, []);
 
   const cargarCategorias = useCallback(async () => {
     try {
@@ -82,31 +101,104 @@ function MaterialFormModal({ open, materialId, onClose }) {
     if (!open) return;
     cargarCategorias();
     setError("");
+    setArrastrando(false);
 
     if (esEdicion) {
       cargarMaterial();
-      setImagenes([]);
+      limpiarImagenes();
     } else {
       setForm(FORM_VACIO);
-      setImagenes([]);
+      limpiarImagenes();
       setImagenesExistentes([]);
       setCargando(false);
     }
-  }, [open, esEdicion, materialId, cargarCategorias, cargarMaterial]);
+  }, [open, esEdicion, materialId, cargarCategorias, cargarMaterial, limpiarImagenes]);
+
+  useEffect(() => {
+    return () => {
+      imagenes.forEach((img) => URL.revokeObjectURL(img.url));
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  const agregarArchivos = (fileList) => {
+    const arr = Array.from(fileList || []);
+    if (arr.length === 0) return;
+
+    const errores = [];
+    const validos = [];
+
+    for (const file of arr) {
+      const mimeOk = TIPOS_MIME_VALIDOS.includes(file.type);
+      const extOk = EXTENSIONES_VALIDAS.test(file.name);
+
+      if (!mimeOk || !extOk) {
+        errores.push(`"${file.name}" no es una imagen válida (solo JPG, PNG o WEBP).`);
+        continue;
+      }
+      if (file.size > MAX_TAMANIO_BYTES) {
+        errores.push(`"${file.name}" supera los 5MB.`);
+        continue;
+      }
+      validos.push(file);
+    }
+
+    setImagenes((prev) => {
+      const espacioDisponible = Math.max(0, MAX_IMAGENES - prev.length);
+      const aAgregar = validos.slice(0, espacioDisponible);
+
+      if (validos.length > espacioDisponible) {
+        errores.push(`Solo puedes subir ${MAX_IMAGENES} imágenes por material.`);
+      }
+
+      if (errores.length) setError(errores.join(" "));
+      else setError("");
+
+      if (aAgregar.length === 0) return prev;
+
+      const nuevos = aAgregar.map((file) => ({
+        file,
+        url: URL.createObjectURL(file),
+      }));
+      return [...prev, ...nuevos];
+    });
+  };
+
   const handleFiles = (e) => {
-    const nuevos = Array.from(e.target.files || []);
-    setImagenes((prev) => [...prev, ...nuevos]);
+    agregarArchivos(e.target.files);
     e.target.value = null;
   };
 
   const quitarImagenNueva = (index) => {
-    setImagenes((prev) => prev.filter((_, i) => i !== index));
+    setImagenes((prev) => {
+      const eliminada = prev[index];
+      if (eliminada) URL.revokeObjectURL(eliminada.url);
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    if (!arrastrando) setArrastrando(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    if (e.currentTarget.contains(e.relatedTarget)) return;
+    setArrastrando(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setArrastrando(false);
+    if (e.dataTransfer?.files?.length) {
+      agregarArchivos(e.dataTransfer.files);
+    }
   };
 
   const handleCerrar = () => {
@@ -120,15 +212,22 @@ function MaterialFormModal({ open, materialId, onClose }) {
       return false;
     }
     if (!form.categoria_id) {
-      setError("Selecciona una categoría.");
+      setError("La categoría es obligatoria.");
       return false;
     }
-    if (form.precio_unitario === "" || Number(form.precio_unitario) < 0) {
-      setError("Ingresa un precio válido.");
-      return false;
+    if (!esEdicion) {
+      const stockTxt = String(form.stock ?? "").trim();
+      if (stockTxt === "") {
+        setError("La cantidad inicial es obligatoria.");
+        return false;
+      }
+      if (Number.isNaN(Number(stockTxt)) || Number(stockTxt) < 0) {
+        setError("La cantidad inicial debe ser un número mayor o igual a 0.");
+        return false;
+      }
     }
-    if (!esEdicion && form.stock !== "" && Number(form.stock) < 0) {
-      setError("La cantidad inicial no puede ser negativa.");
+    if (form.precio_unitario !== "" && Number(form.precio_unitario) < 0) {
+      setError("El precio no puede ser negativo.");
       return false;
     }
     return true;
@@ -147,16 +246,19 @@ function MaterialFormModal({ open, materialId, onClose }) {
           nombre_material: form.nombre_material.trim(),
           descripcion_material: form.descripcion_material.trim(),
           categoria_id: form.categoria_id,
-          precio_unitario: form.precio_unitario,
+          precio_unitario:
+            form.precio_unitario === "" ? 0 : form.precio_unitario,
           referencia_compra: form.referencia_compra.trim(),
           stock: form.stock,
         });
       } else {
         const data = new FormData();
         Object.entries(form).forEach(([key, value]) => {
-          data.append(key, value);
+          const finalVal =
+            key === "precio_unitario" && value === "" ? "0" : value;
+          data.append(key, finalVal);
         });
-        imagenes.forEach((file) => data.append("imagenes", file));
+        imagenes.forEach((img) => data.append("imagenes", img.file));
 
         await api.post("/materiales", data, {
           headers: { "Content-Type": "multipart/form-data" },
@@ -182,7 +284,7 @@ function MaterialFormModal({ open, materialId, onClose }) {
     <div className="tm-modal-form">
       <div className="tm-modal-overlay" onClick={handleCerrar}>
         <div
-          className="tm-modal tm-modal--md mat-modal--scroll"
+          className="tm-modal mat-modal--wide mat-modal--scroll"
           onClick={(e) => e.stopPropagation()}
           role="dialog"
           aria-modal="true"
@@ -224,184 +326,225 @@ function MaterialFormModal({ open, materialId, onClose }) {
             <form className="tm-modal__form" onSubmit={handleSubmit}>
               {error && <p className="mat-modal__error">{error}</p>}
 
-              <div className="tm-modal__section">
-                <p className="tm-modal__section-title">
-                  <FileText size={16} />
-                  Información general
-                </p>
+              <div className="mat-modal__layout">
+                {/* IZQUIERDA: Información del material */}
+                <div className="mat-modal__columna mat-modal__columna--info">
+                  <div className="tm-modal__section">
+                    <p className="tm-modal__section-title">
+                      <FileText size={16} />
+                      Información general
+                    </p>
 
-                <div className="tm-modal__grid">
-                  <div className="tm-modal__field tm-modal__field--icon tm-modal__field--full">
-                    <label htmlFor="nombre_material">Nombre</label>
-                    <div className="tm-input-wrap">
-                      <Package size={16} className="tm-input-icon" />
-                      <input
-                        id="nombre_material"
-                        name="nombre_material"
-                        type="text"
-                        value={form.nombre_material}
-                        onChange={handleChange}
-                        placeholder="Ej. Tela satén"
-                        required
-                      />
-                    </div>
-                  </div>
+                    <div className="tm-modal__grid tm-modal__grid--single">
+                      <div className="tm-modal__field tm-modal__field--icon tm-modal__field--full">
+                        <label htmlFor="nombre_material">
+                          Nombre <Obligatorio />
+                        </label>
+                        <div className="tm-input-wrap">
+                          <Package size={16} className="tm-input-icon" />
+                          <input
+                            id="nombre_material"
+                            name="nombre_material"
+                            type="text"
+                            value={form.nombre_material}
+                            onChange={handleChange}
+                            placeholder="Ej. Tela satén"
+                            required
+                          />
+                        </div>
+                      </div>
 
-                  <div className="tm-modal__field tm-modal__field--icon">
-                    <label htmlFor="categoria_id">Categoría</label>
-                    <div className="tm-input-wrap">
-                      <Tag size={16} className="tm-input-icon" />
-                      <select
-                        id="categoria_id"
-                        name="categoria_id"
-                        value={form.categoria_id}
-                        onChange={handleChange}
-                        required
-                      >
-                        <option value="">Seleccionar</option>
-                        {categorias.map((cat) => (
-                          <option
-                            key={cat.categoria_id}
-                            value={cat.categoria_id}
+                      <div className="tm-modal__field tm-modal__field--icon">
+                        <label htmlFor="categoria_id">
+                          Categoría <Obligatorio />
+                        </label>
+                        <div className="tm-input-wrap">
+                          <Tag size={16} className="tm-input-icon" />
+                          <select
+                            id="categoria_id"
+                            name="categoria_id"
+                            value={form.categoria_id}
+                            onChange={handleChange}
+                            required
                           >
-                            {cat.nombre_categoria}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
+                            <option value="">Seleccionar</option>
+                            {categorias.map((cat) => (
+                              <option
+                                key={cat.categoria_id}
+                                value={cat.categoria_id}
+                              >
+                                {cat.nombre_categoria}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
 
-                  <div className="tm-modal__field">
-                    <label htmlFor="precio_unitario">Precio unitario</label>
-                    <div className="tm-input-wrap mat-modal__input-currency">
-                      <span className="mat-modal__currency" aria-hidden>Q</span>
-                      <input
-                        id="precio_unitario"
-                        name="precio_unitario"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={form.precio_unitario}
-                        onChange={handleChange}
-                        placeholder="0.00"
-                        required
-                      />
-                    </div>
-                  </div>
+                      <div className="tm-modal__field">
+                        <label htmlFor="precio_unitario">Precio unitario</label>
+                        <div className="tm-input-wrap mat-modal__input-currency">
+                          <span className="mat-modal__currency" aria-hidden>Q</span>
+                          <input
+                            id="precio_unitario"
+                            name="precio_unitario"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={form.precio_unitario}
+                            onChange={handleChange}
+                            placeholder="0.00"
+                          />
+                        </div>
+                      </div>
 
-                  <div className="tm-modal__field tm-modal__field--icon">
-                    <label htmlFor="referencia_compra">Referencia de compra</label>
-                    <div className="tm-input-wrap">
-                      <Hash size={16} className="tm-input-icon" />
-                      <input
-                        id="referencia_compra"
-                        name="referencia_compra"
-                        type="text"
-                        value={form.referencia_compra}
-                        onChange={handleChange}
-                        placeholder="Opcional"
-                      />
-                    </div>
-                  </div>
+                      <div className="tm-modal__field tm-modal__field--icon">
+                        <label htmlFor="referencia_compra">Referencia de compra</label>
+                        <div className="tm-input-wrap">
+                          <Hash size={16} className="tm-input-icon" />
+                          <input
+                            id="referencia_compra"
+                            name="referencia_compra"
+                            type="text"
+                            value={form.referencia_compra}
+                            onChange={handleChange}
+                            placeholder="Opcional"
+                          />
+                        </div>
+                      </div>
 
-                  {!esEdicion && (
-                    <div className="tm-modal__field tm-modal__field--icon">
-                      <label htmlFor="stock">Cantidad inicial</label>
-                      <div className="tm-input-wrap">
-                        <Layers size={16} className="tm-input-icon" />
-                        <input
-                          id="stock"
-                          name="stock"
-                          type="number"
-                          min="0"
-                          step="1"
-                          value={form.stock}
+                      {!esEdicion && (
+                        <div className="tm-modal__field tm-modal__field--icon">
+                          <label htmlFor="stock">
+                            Cantidad inicial <Obligatorio />
+                          </label>
+                          <div className="tm-input-wrap">
+                            <Layers size={16} className="tm-input-icon" />
+                            <input
+                              id="stock"
+                              name="stock"
+                              type="number"
+                              min="0"
+                              step="1"
+                              value={form.stock}
+                              onChange={handleChange}
+                              placeholder="0"
+                              required
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {esEdicion && (
+                        <div className="tm-modal__field">
+                          <label>Existencia actual</label>
+                          <div className="mat-modal__stock-readonly">
+                            {form.stock ?? 0} unidades
+                            <span>Usa «+ Existencia» en el listado para ajustar stock.</span>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="tm-modal__field tm-modal__field--full">
+                        <label htmlFor="descripcion_material">Descripción</label>
+                        <textarea
+                          id="descripcion_material"
+                          name="descripcion_material"
+                          rows={3}
+                          value={form.descripcion_material}
                           onChange={handleChange}
-                          placeholder="0"
+                          placeholder="Detalles del material..."
                         />
                       </div>
                     </div>
-                  )}
 
-                  {esEdicion && (
-                    <div className="tm-modal__field">
-                      <label>Existencia actual</label>
-                      <div className="mat-modal__stock-readonly">
-                        {form.stock ?? 0} unidades
-                        <span>Usa «+ Existencia» en el listado para ajustar stock.</span>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="tm-modal__field tm-modal__field--full">
-                    <label htmlFor="descripcion_material">Descripción</label>
-                    <textarea
-                      id="descripcion_material"
-                      name="descripcion_material"
-                      rows={3}
-                      value={form.descripcion_material}
-                      onChange={handleChange}
-                      placeholder="Detalles del material..."
-                    />
+                    <p className="mat-modal__required-note">
+                      <Obligatorio />
+                      Campos obligatorios
+                    </p>
                   </div>
                 </div>
-              </div>
 
-              {!esEdicion && (
-                <div className="tm-modal__section">
-                  <p className="tm-modal__section-title">
-                    <ImagePlus size={16} />
-                    Imágenes
-                  </p>
-                  <div className="mat-modal__imagenes">
-                    <label className="mat-modal__file-btn">
-                      <ImagePlus size={18} />
-                      Agregar imágenes
-                      <input
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        hidden
-                        onChange={handleFiles}
-                      />
-                    </label>
-                    {imagenes.length > 0 && (
-                      <ul className="mat-modal__img-list">
-                        {imagenes.map((file, idx) => (
-                          <li key={`${file.name}-${idx}`}>
-                            <span>{file.name}</span>
-                            <button
-                              type="button"
-                              onClick={() => quitarImagenNueva(idx)}
-                              aria-label="Quitar"
-                            >
-                              ×
-                            </button>
-                          </li>
+                {/* DERECHA: Imágenes */}
+                <div className="mat-modal__columna mat-modal__columna--imagenes">
+                  <div className="tm-modal__section">
+                    <p className="tm-modal__section-title">
+                      <ImagePlus size={16} />
+                      Imágenes
+                    </p>
+
+                    {!esEdicion ? (
+                      <>
+                        <label
+                          htmlFor="material-imagenes"
+                          className={`mat-modal__dropzone${arrastrando ? " mat-modal__dropzone--active" : ""}`}
+                          onDragOver={handleDragOver}
+                          onDragEnter={handleDragOver}
+                          onDragLeave={handleDragLeave}
+                          onDrop={handleDrop}
+                        >
+                          <UploadCloud size={36} />
+                          <strong>
+                            {arrastrando
+                              ? "Suelta las imágenes aquí"
+                              : "Arrastra imágenes o haz clic"}
+                          </strong>
+                          <span>PNG, JPG, JPEG o WEBP — máx. 3 imágenes, 5MB c/u</span>
+                          <input
+                            id="material-imagenes"
+                            type="file"
+                            accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                            multiple
+                            hidden
+                            onChange={handleFiles}
+                          />
+                        </label>
+
+                        {imagenes.length > 0 && (
+                          <div className="mat-modal__thumb-grid">
+                            {imagenes.map((img, idx) => (
+                              <div
+                                key={`${img.file.name}-${idx}`}
+                                className="mat-modal__thumb"
+                              >
+                                <img src={img.url} alt={img.file.name} />
+                                <button
+                                  type="button"
+                                  className="mat-modal__thumb-remove"
+                                  onClick={() => quitarImagenNueva(idx)}
+                                  aria-label="Quitar imagen"
+                                >
+                                  <X size={14} />
+                                </button>
+                                <span className="mat-modal__thumb-name">
+                                  {img.file.name}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    ) : imagenesExistentes.length > 0 ? (
+                      <div className="mat-modal__thumb-grid">
+                        {imagenesExistentes.map((nombre) => (
+                          <div key={nombre} className="mat-modal__thumb">
+                            <img
+                              src={`${getApiUploadsMateriales()}/${encodeURIComponent(nombre)}`}
+                              alt=""
+                              onError={(e) => {
+                                e.currentTarget.style.display = "none";
+                              }}
+                            />
+                          </div>
                         ))}
-                      </ul>
+                      </div>
+                    ) : (
+                      <p className="mat-modal__empty-imgs">
+                        Este material no tiene imágenes guardadas.
+                      </p>
                     )}
                   </div>
                 </div>
-              )}
-
-              {esEdicion && imagenesExistentes.length > 0 && (
-                <div className="tm-modal__section">
-                  <p className="tm-modal__section-title">
-                    <ImagePlus size={16} />
-                    Imágenes actuales
-                  </p>
-                  <div className="mat-modal__img-preview-grid">
-                    {imagenesExistentes.map((img) => (
-                      <img
-                        key={img}
-                        src={`${getApiUploadsMateriales()}/${img}`}
-                        alt=""
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
+              </div>
 
               <div className="tm-modal__actions">
                 <button

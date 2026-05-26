@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import "./ImgPrendas.css";
-import { obtenerPrendaPorId } from "../../services/Prendas";
+import { obtenerPrendaPorId } from "../../services/prendasService";
 import {
   obtenerDetallePrenda,
   obtenerImagenesPrenda,

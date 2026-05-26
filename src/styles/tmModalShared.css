@@ -2,7 +2,7 @@
 .tm-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.55);
+  background: var(--color-overlay);
   backdrop-filter: blur(5px);
   display: flex;
   align-items: center;
@@ -14,11 +14,10 @@
 .tm-modal {
   width: 100%;
   max-width: 760px;
-  background: #ffffff;
+  background: var(--color-surface);
+  color: var(--color-text);
   border-radius: 24px;
-  box-shadow:
-    0 20px 40px rgba(15, 23, 42, 0.18),
-    0 8px 16px rgba(15, 23, 42, 0.08);
+  box-shadow: var(--shadow-modal);
   overflow: hidden;
   animation: tmModalFadeIn 0.2s ease;
 }
@@ -311,6 +310,81 @@
 .tm-modal-form .tm-modal__actions button:disabled::before,
 .tm-modal-form .tm-modal-form__footer button:disabled::before {
   display: none;
+}
+
+/* =========================================================
+   Indicadores de campos obligatorios — clases reusables
+   ========================================================= */
+
+.tm-required {
+  color: #dc2626;
+  font-weight: 700;
+  margin-left: 2px;
+}
+
+.tm-required-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 14px 0 0;
+  font-size: 12px;
+  color: #64748b;
+}
+
+[data-theme="dark"] .tm-required-note {
+  color: var(--color-text-muted);
+}
+
+/* =========================================================
+   Overrides para tema oscuro — solo lo más visible
+   ========================================================= */
+
+[data-theme="dark"] .tm-modal__header {
+  background: linear-gradient(180deg, #1e293b 0%, var(--color-surface) 100%);
+  border-bottom-color: var(--color-border);
+}
+
+[data-theme="dark"] .tm-modal__header h2,
+[data-theme="dark"] .tm-modal__field label,
+[data-theme="dark"] .tm-modal__section-title {
+  color: var(--color-text);
+}
+
+[data-theme="dark"] .tm-modal__subtitle {
+  color: var(--color-text-muted);
+}
+
+[data-theme="dark"] .tm-modal__close {
+  background: var(--color-surface-2);
+  color: var(--color-text-soft);
+}
+
+[data-theme="dark"] .tm-modal__close:hover {
+  background: var(--color-border-strong);
+  color: var(--color-text);
+}
+
+[data-theme="dark"] .tm-modal__field input,
+[data-theme="dark"] .tm-modal__field select,
+[data-theme="dark"] .tm-modal__field textarea {
+  background: var(--color-surface-2);
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
+}
+
+[data-theme="dark"] .tm-modal__field input::placeholder,
+[data-theme="dark"] .tm-modal__field textarea::placeholder {
+  color: var(--color-text-muted);
+}
+
+[data-theme="dark"] .tm-input-icon {
+  color: var(--color-text-muted);
+}
+
+[data-theme="dark"] .tm-modal-form .btn-cancelar {
+  background: transparent;
+  color: var(--color-text-soft);
+  border-color: var(--color-border-strong);
 }
 
 @media (max-width: 640px) {

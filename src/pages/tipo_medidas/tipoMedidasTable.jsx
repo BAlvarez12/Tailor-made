@@ -1,3 +1,4 @@
+import SiPermiso from "../../components/SiPermiso";
 import "./tipo_medidas.css";
 
 export default function TipoMedidasTable({ tipos, onEdit }) {
@@ -33,13 +34,15 @@ export default function TipoMedidasTable({ tipos, onEdit }) {
                 </span>
               </td>
               <td>
-                <button
-                  type="button"
-                  className="tm-users__btn-accion tm-users__btn-accion--editar"
-                  onClick={() => onEdit(t)}
-                >
-                  Editar
-                </button>
+                <SiPermiso codigo="editar_tipo_medidas">
+                  <button
+                    type="button"
+                    className="tm-users__btn-accion tm-users__btn-accion--editar"
+                    onClick={() => onEdit(t)}
+                  >
+                    Editar
+                  </button>
+                </SiPermiso>
               </td>
             </tr>
           ))}

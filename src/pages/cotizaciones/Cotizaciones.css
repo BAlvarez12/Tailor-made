@@ -1,3 +1,85 @@
+/* Estilos para modales de editar / anular cotización */
+.cotiz-modal-error {
+  margin: 0 0 14px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.cotiz-edit-info {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.cotiz-edit-info > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cotiz-edit-info__label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cotiz-edit-info__value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+}
+
+/* Botones nuevos en la tabla de cotizaciones */
+.cotiz-table__edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid #c4b5fd;
+  background: #f5f3ff;
+  color: #5b21b6;
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.cotiz-table__edit:hover {
+  background: #ede9fe;
+}
+
+.cotiz-table__anular {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.cotiz-table__anular:hover {
+  background: #fee2e2;
+}
+
 :root {
   --cotiz-border: #e2e8f0;
   --cotiz-surface: #ffffff;
@@ -882,4 +964,191 @@
   .cotiz-detail-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* Filtro de estado del listado */
+.cotiz-listado__filtros {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  margin: 0 0 14px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+}
+
+.cotiz-listado__filtro {
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.cotiz-listado__filtro:hover {
+  color: #111827;
+}
+
+.cotiz-listado__filtro.is-active {
+  background: #ffffff;
+  color: #5b21b6;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+/* Badge de estado de cotización */
+.cotiz-estado-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+
+.cotiz-estado-badge--activa {
+  background: #dbeafe;
+  color: #1e40af;
+  border-color: #bfdbfe;
+}
+
+.cotiz-estado-badge--en_proceso {
+  background: #fef3c7;
+  color: #92400e;
+  border-color: #fde68a;
+}
+
+.cotiz-estado-badge--finalizada {
+  background: #dcfce7;
+  color: #166534;
+  border-color: #bbf7d0;
+}
+
+.cotiz-estado-badge--anulada {
+  background: #fee2e2;
+  color: #991b1b;
+  border-color: #fecaca;
+}
+
+.cotiz-table__row--anulada {
+  opacity: 0.7;
+}
+
+.cotiz-table__row--anulada td {
+  text-decoration: line-through;
+  text-decoration-color: rgba(153, 27, 27, 0.35);
+}
+
+.cotiz-table__row--anulada .cotiz-estado-badge,
+.cotiz-table__row--anulada .cotiz-table__acciones,
+.cotiz-table__row--anulada .cotiz-table__pdf {
+  text-decoration: none;
+}
+
+/* Menú de acciones (kebab) */
+.cotiz-menu {
+  position: relative;
+  display: inline-flex;
+}
+
+.cotiz-menu__trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #475569;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.cotiz-menu__trigger:hover,
+.cotiz-menu__trigger[aria-expanded="true"] {
+  background: #ffffff;
+  border-color: #c4b5fd;
+  color: #5b21b6;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+.cotiz-menu__list {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 20;
+  min-width: 170px;
+  padding: 6px;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: cotiz-menu-fade 0.12s ease-out;
+}
+
+@keyframes cotiz-menu-fade {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.cotiz-menu__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  color: #1f2937;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.cotiz-menu__item:hover {
+  background: #f1f5f9;
+  color: #111827;
+}
+
+.cotiz-menu__item svg {
+  color: #64748b;
+  flex-shrink: 0;
+}
+
+.cotiz-menu__item:hover svg {
+  color: #5b21b6;
+}
+
+.cotiz-menu__item--danger {
+  color: #b91c1c;
+}
+
+.cotiz-menu__item--danger svg {
+  color: #ef4444;
+}
+
+.cotiz-menu__item--danger:hover {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.cotiz-menu__item--danger:hover svg {
+  color: #b91c1c;
 }

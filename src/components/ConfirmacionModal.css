@@ -1,0 +1,57 @@
+/* Modal de confirmación — usa tmModalShared.css como base */
+
+.confirm-modal {
+  max-width: 480px;
+}
+
+/* Icono coloreado según el tono */
+.confirm-modal__icon--peligro {
+  background: linear-gradient(135deg, #ef4444, #b91c1c);
+  box-shadow: 0 10px 20px rgba(220, 38, 38, 0.28);
+}
+
+.confirm-modal__icon--advertencia {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  box-shadow: 0 10px 20px rgba(217, 119, 6, 0.28);
+}
+
+.confirm-modal__icon--normal {
+  /* Hereda el morado default de tm-modal__title-icon */
+}
+
+.confirm-modal__body {
+  padding: 16px 28px 0;
+}
+
+.confirm-modal__body p {
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  color: #78350f;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.confirm-modal--peligro .confirm-modal__body p {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #991b1b;
+}
+
+.confirm-modal__actions {
+  padding: 20px 28px 24px;
+  margin-top: 0;
+  border-top: 1px solid #eef2f7;
+}
+
+/* Variante de peligro: el botón principal en rojo */
+.tm-modal-form .confirm-modal .btn-guardar--peligro {
+  background: #dc2626;
+  border-color: #dc2626;
+}
+
+.tm-modal-form .confirm-modal .btn-guardar--peligro::before {
+  background: #991b1b;
+}

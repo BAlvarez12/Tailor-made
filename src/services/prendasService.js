@@ -1,7 +1,9 @@
 import api from '../utils/api'
 
-export const obtenerPrendas = async () => {
-  const response = await api.get('/prendas/obtener')
+export const obtenerPrendas = async (estado = 'todas') => {
+  const params = {}
+  if (estado && estado !== 'todas') params.estado = estado
+  const response = await api.get('/prendas/obtener', { params })
   return response.data
 }
 

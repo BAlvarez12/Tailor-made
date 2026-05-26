@@ -4,7 +4,7 @@ import {
   actualizarUsuarioService,
   obtenerUsuarioPorId,
   reenviarInvitacionUsuarioService,
-} from "../../services/usuarios";
+} from "../../services/usuariosService";
 import {
   ESTADO_USUARIO,
   etiquetaEstadoUsuario,
@@ -13,7 +13,7 @@ import {
   generarVistaPreviaUsuario,
   tieneApellidoDetectable,
 } from "../../utils/generarUsuarioLogin";
-import { obtenerRolesService } from "../../services/roles";
+import { obtenerRolesService } from "../../services/rolesService";
 import {
   evaluarFortalezaPassword,
   validarPasswordRecuperacion,
@@ -665,6 +665,10 @@ function FormularioUsuarios({
                   </>
                 )}
               </div>
+
+              <p className="tm-required-note">
+                <span className="tm-required">*</span> Campos obligatorios
+              </p>
             </div>
 
             <div className="formularioUsuarios__footer tm-modal__actions">

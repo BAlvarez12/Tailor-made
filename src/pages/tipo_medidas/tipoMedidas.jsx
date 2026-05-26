@@ -113,13 +113,8 @@ export default function TipoMedidas() {
 
   const handleGuardar = async () => {
     try {
-      const usuario = JSON.parse(localStorage.getItem("usuario"));
-
       if (modoCrear) {
-        await createTipo({
-          ...formData,
-          usuario_creador: usuario?.usuario_id
-        });
+        await createTipo(formData);
       } else {
         await updateTipo(tipoSeleccionado.tipo_medida_id, formData);
       }

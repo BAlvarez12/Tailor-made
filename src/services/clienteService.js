@@ -19,3 +19,8 @@ export const obtenerClientesActivosService = async () => {
   const response = await api.get('/clientes/activos')
   return response.data
 }
+
+export const obtenerClienteDetalleService = async (id) => {
+  const response = await api.get(`/clientes/${id}/detalle`)
+  return response.data
+}

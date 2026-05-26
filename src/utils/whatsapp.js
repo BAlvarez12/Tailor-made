@@ -95,6 +95,81 @@ export const construirMensajeCotizacionWhatsApp = (cotizacion) => {
   return lineas.join("\n");
 };
 
+const formatearMontoQ = (valor) => {
+  const n = Number(valor);
+  if (!Number.isFinite(n)) return "";
+  return `Q ${n.toLocaleString("es-GT", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+};
+
+const etiquetaTipoPagoTexto = (tipo) => {
+  const t = String(tipo || "").toLowerCase();
+  if (t === "anticipo") return "Anticipo";
+  if (t === "abono") return "Abono";
+  if (t === "otro") return "Otro";
+  return tipo ? String(tipo) : "Pago";
+};
+
+/**
+ * Construye el mensaje de WhatsApp para un pago/recibo.
+ *
+ * Espera:
+ *   pago: { codigo_recibo, monto, fecha_pago, tipo_pago, numero_transferencia, notas }
+ *   plan: { codigo_plan, cliente_nombre, valor_a_cobrar, total_abonado, saldo_pendiente }
+ *   contexto: { numeroPago, totalPagos } (opcional, para "Abono X de Y")
+ */
+export const construirMensajePagoWhatsApp = ({ pago, plan, contexto = {} }) => {
+  const nombre = String(plan?.cliente_nombre || "cliente").trim();
+  const recibo = pago?.codigo_recibo || "—";
+  const fecha = formatearFechaCotizacion(pago?.fecha_pago);
+  const monto = formatearMontoQ(pago?.monto);
+  const tipoTxt = etiquetaTipoPagoTexto(pago?.tipo_pago);
+  const cuotaInfo =
+    contexto?.numeroPago && contexto?.totalPagos
+      ? ` (${contexto.numeroPago} de ${contexto.totalPagos})`
+      : "";
+
+  const lineas = [
+    `Hola ${nombre}, le confirmamos su pago a *BeautyBell*:`,
+    "",
+    `*Recibo:* ${recibo}`,
+  ];
+
+  if (fecha) lineas.push(`*Fecha:* ${fecha}`);
+  if (monto) lineas.push(`*Monto:* ${monto}`);
+  lineas.push(`*Tipo:* ${tipoTxt}${cuotaInfo}`);
+
+  if (pago?.numero_transferencia) {
+    lineas.push(`*Transferencia:* ${pago.numero_transferencia}`);
+  }
+
+  if (plan) {
+    lineas.push("", "*Estado del plan*");
+    if (plan.codigo_plan) lineas.push(`• Plan: ${plan.codigo_plan}`);
+    if (plan.valor_a_cobrar != null)
+      lineas.push(`• Total a cobrar: ${formatearMontoQ(plan.valor_a_cobrar)}`);
+    if (plan.total_abonado != null)
+      lineas.push(`• Abonado a la fecha: ${formatearMontoQ(plan.total_abonado)}`);
+    if (plan.saldo_pendiente != null)
+      lineas.push(`• Saldo pendiente: ${formatearMontoQ(plan.saldo_pendiente)}`);
+  }
+
+  const saldoCero = Number(plan?.saldo_pendiente) <= 0;
+  if (saldoCero) {
+    lineas.push("", "✅ *Pago completado.* ¡Gracias por su preferencia!");
+  } else {
+    lineas.push("", "¡Gracias por su pago! Quedamos atentos a cualquier consulta.");
+  }
+
+  if (pago?.notas && String(pago.notas).trim()) {
+    lineas.push("", `*Notas:* ${String(pago.notas).trim()}`);
+  }
+
+  return lineas.join("\n");
+};
+
 export const abrirWhatsAppConMensaje = (telefono, mensaje) => {
   const numero = normalizarTelefonoWhatsApp(telefono);
   if (!numero) {

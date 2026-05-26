@@ -1,7 +1,7 @@
-import { useMemo } from "react";
-import { X, FileText } from "lucide-react";
+import { useMemo, useState } from "react";
+import { X, FileText, MessageCircle } from "lucide-react";
 import "./Pagos.css";
-import { abrirPdfRecibo } from "../../services/pagosService";
+import { abrirPdfRecibo, enviarPagoPorWhatsApp } from "../../services/pagosService";
 import {
   formatearCuotasPlan,
   textoCuotaPago,
@@ -19,6 +19,8 @@ const formatearMoneda = (valor) => {
 };
 
 function HistorialPagosModal({ open, loading, plan, mensajeError, onClose }) {
+  const [errorWhatsApp, setErrorWhatsApp] = useState("");
+
   const pagosDelHistorial = useMemo(() => {
     if (!plan?.pagos) return [];
     return [...plan.pagos].sort((a, b) => {
@@ -27,6 +29,26 @@ function HistorialPagosModal({ open, loading, plan, mensajeError, onClose }) {
       return fa - fb;
     });
   }, [plan]);
+
+  const telefonoCliente = String(plan?.cliente_telefono || "").trim();
+
+  const handleEnviarWhatsApp = (pago, idx) => {
+    setErrorWhatsApp("");
+    try {
+      const totalPagos = Number(plan?.cantidad_pagos) || pagosDelHistorial.length;
+      enviarPagoPorWhatsApp({
+        pago,
+        plan,
+        contexto: {
+          numeroPago: idx + 1,
+          totalPagos,
+        },
+      });
+    } catch (err) {
+      console.error(err);
+      setErrorWhatsApp(err?.message || "No se pudo abrir WhatsApp.");
+    }
+  };
 
   if (!open) return null;
 
@@ -60,6 +82,10 @@ function HistorialPagosModal({ open, loading, plan, mensajeError, onClose }) {
             <p className="pagos-hint pagos-hint--error">{mensajeError}</p>
           )}
 
+          {!loading && errorWhatsApp && (
+            <p className="pagos-hint pagos-hint--error">{errorWhatsApp}</p>
+          )}
+
           {!loading && !mensajeError && plan && (
             <>
               <p className="pagos-modal__sub pagos-modal__sub--historial">
@@ -85,7 +111,7 @@ function HistorialPagosModal({ open, loading, plan, mensajeError, onClose }) {
                         <th>Monto</th>
                         <th>Tipo</th>
                         <th>Transferencia</th>
-                        <th>PDF</th>
+                        <th>Acciones</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -110,7 +136,10 @@ function HistorialPagosModal({ open, loading, plan, mensajeError, onClose }) {
                           <td data-label="Transferencia">
                             {pago.numero_transferencia || "—"}
                           </td>
-                          <td data-label="Recibo PDF" className="pagos-historial-table__pdf">
+                          <td
+                            data-label="Acciones"
+                            className="pagos-historial-table__acciones"
+                          >
                             <button
                               type="button"
                               className="pagos-btn-pdf-mini"
@@ -123,7 +152,21 @@ function HistorialPagosModal({ open, loading, plan, mensajeError, onClose }) {
                               title="Ver recibo PDF"
                             >
                               <FileText size={14} />
-                              <span>Ver PDF</span>
+                              <span>PDF</span>
+                            </button>
+                            <button
+                              type="button"
+                              className="pagos-btn-wa-mini"
+                              onClick={() => handleEnviarWhatsApp(pago, idx)}
+                              disabled={!telefonoCliente}
+                              title={
+                                telefonoCliente
+                                  ? "Enviar recibo por WhatsApp"
+                                  : "Sin teléfono registrado"
+                              }
+                            >
+                              <MessageCircle size={14} />
+                              <span>WhatsApp</span>
                             </button>
                           </td>
                         </tr>
