@@ -9,7 +9,9 @@ const descargarPdfCotizacion = async (req, res) => {
       return res.status(400).json({ message: "Id de cotización inválido" });
     }
 
-    const cotizacion = await obtenerCotizacionCompleta(cotizacionId);
+    const cotizacion = await obtenerCotizacionCompleta(cotizacionId, {
+      incluirAnuladas: true,
+    });
 
     if (!cotizacion) {
       return res.status(404).json({ message: "Cotización no encontrada" });

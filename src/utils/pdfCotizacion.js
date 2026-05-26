@@ -15,6 +15,43 @@ const COLORS = {
   surface: "#f8fafc",
   headerTable: "#475569",
   rowAlt: "#f1f5f9",
+  anulada: "#dc2626",
+  finalizada: "#16a34a",
+};
+
+const resolverMarcaEstado = (cotizacion) => {
+  if (Number(cotizacion?.estado) === 0) {
+    return { texto: "ANULADA", color: COLORS.anulada };
+  }
+  const plan = cotizacion?.plan_pago;
+  if (plan && Number(plan.saldo_pendiente) <= 0) {
+    return { texto: "FINALIZADA", color: COLORS.finalizada };
+  }
+  return null;
+};
+
+const dibujarMarcaAgua = (doc, marca) => {
+  if (!marca) return;
+
+  const w = doc.page.width;
+  const h = doc.page.height;
+  const cx = w / 2;
+  const cy = h / 2;
+
+  doc.save();
+  doc.opacity(0.14);
+  doc.rotate(-30, { origin: [cx, cy] });
+  doc
+    .fillColor(marca.color)
+    .font("Helvetica-Bold")
+    .fontSize(140)
+    .text(marca.texto, 0, cy - 80, {
+      width: w,
+      align: "center",
+      lineBreak: false,
+    });
+  doc.restore();
+  doc.opacity(1);
 };
 
 const formatearMoneda = (valor) => {
@@ -436,6 +473,7 @@ const generarPdfCotizacion = (cotizacion) => {
 
       dibujarTotal(doc, cotizacion.valor_total, y);
       dibujarPie(doc);
+      dibujarMarcaAgua(doc, resolverMarcaEstado(cotizacion));
 
       doc.end();
     } catch (error) {

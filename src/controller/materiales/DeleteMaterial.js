@@ -1,4 +1,5 @@
 const db = require('../../config/db')
+const { registrar, fromReq } = require('../../services/logOperaciones')
 
 const deleteMaterial = async (req, res) => {
   try {
@@ -6,6 +7,14 @@ const deleteMaterial = async (req, res) => {
 
     //  SOFT DELETE (desactivar)
     await db.query(`CALL sp_delete_material(?)`, [id])
+
+    registrar({
+      ...fromReq(req),
+      accion: 'eliminar',
+      entidad: 'material',
+      entidadId: Number(id),
+      descripcion: `Material #${id} desactivado`,
+    })
 
     res.json({ message: 'Material desactivado correctamente' })
 

@@ -12,6 +12,7 @@ const {
 } = require('../../utils/generarUsuarioLogin');
 const { ESTADO_USUARIO } = require('../../utils/estadosUsuario');
 const { crearTokenInvitacion } = require('../../services/invitacionUsuarioService');
+const { registrar, fromReq } = require('../../services/logOperaciones');
 
 const crearUsuario = async (req, res) => {
   try {
@@ -119,6 +120,11 @@ const crearUsuario = async (req, res) => {
       VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), ?)
     `;
 
+    const usuarioCreador = req.user?.usuario_id;
+    if (!usuarioCreador) {
+      return res.status(401).json({ message: 'No autorizado.' });
+    }
+
     const values = [
       nombreLimpio,
       apellidoLimpio,
@@ -127,7 +133,7 @@ const crearUsuario = async (req, res) => {
       emailLimpio,
       estadoInicial,
       Number(rol_id),
-      1,
+      usuarioCreador,
     ];
 
     const [result] = await pool.query(sql, values);
@@ -147,6 +153,22 @@ const crearUsuario = async (req, res) => {
       invitacionEnviada = Boolean(invitacion.enviado);
     }
 
+    registrar({
+      ...fromReq(req),
+      accion: 'crear',
+      entidad: 'usuario',
+      entidadId: usuarioId,
+      descripcion: `Usuario "${usuarioLimpio}" (${nombreLimpio} ${apellidoLimpio}) creado`,
+      datosDespues: {
+        usuario: usuarioLimpio,
+        nombre: nombreLimpio,
+        apellido: apellidoLimpio,
+        email: emailLimpio,
+        modo_acceso: modoAcceso,
+        invitacionEnviada,
+      },
+    });
+
     return res.status(201).json({
       message: invitacionEnviada
         ? 'Usuario creado e invitación enviada por correo.'
@@ -159,6 +181,17 @@ const crearUsuario = async (req, res) => {
     });
   } catch (error) {
     console.error('Error al crear usuario:', error);
+
+    if (error.code === 'ER_DUP_ENTRY') {
+      const campo = error.message?.includes('uk_usuarios_email')
+        ? 'correo electrónico'
+        : error.message?.includes('uk_usuarios_usuario')
+          ? 'nombre de usuario'
+          : 'dato único';
+      return res.status(409).json({
+        message: `Ya existe un usuario con ese ${campo}.`,
+      });
+    }
 
     if (error.message?.includes('Configuración de correo')) {
       return res.status(500).json({

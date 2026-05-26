@@ -1,18 +1,22 @@
 const db = require("../../config/db");
 const { generarCodigoCotizacion } = require("../../utils/generarCodigoCotizacion");
 const { obtenerDatosPrendaParaCotizacion } = require("./cotizacionQueries");
+const { registrar, fromReq } = require("../../services/logOperaciones");
 
 const crearCotizacion = async (req, res) => {
   let connection;
 
   try {
-    const { cliente_id, cliente_prenda_id, valor_total, notas, usuario_creador } =
-      req.body;
+    const { cliente_id, cliente_prenda_id, valor_total, notas } = req.body;
+
+    const usuarioCreador = req.user?.usuario_id;
+    if (!usuarioCreador) {
+      return res.status(401).json({ message: "No autorizado." });
+    }
 
     const clienteId = Number(cliente_id);
     const clientePrendaId = Number(cliente_prenda_id);
     const valorTotal = Number(valor_total);
-    const usuarioCreador = usuario_creador ? Number(usuario_creador) : null;
 
     if (!clienteId || !clientePrendaId || !valorTotal || valorTotal <= 0) {
       return res.status(400).json({
@@ -111,6 +115,20 @@ const crearCotizacion = async (req, res) => {
     }
 
     await connection.commit();
+
+    registrar({
+      ...fromReq(req),
+      accion: "crear",
+      entidad: "cotizacion",
+      entidadId: cotizacionId,
+      descripcion: `Cotización ${codigo} creada para cliente ${nombreCliente} (Q ${valorTotal.toFixed(2)})`,
+      datosDespues: {
+        codigo_cotizacion: codigo,
+        cliente_id: clienteId,
+        cliente_prenda_id: clientePrendaId,
+        valor_total: valorTotal,
+      },
+    });
 
     return res.status(201).json({
       message: "Cotización creada correctamente",

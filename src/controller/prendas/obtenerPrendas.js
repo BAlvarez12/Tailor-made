@@ -1,7 +1,13 @@
 const db = require('../../config/db')
 
+const ESTADOS_PRENDA_VALIDOS = ['pendiente', 'en_proceso', 'finalizada', 'todas']
+
 const obtenerPrendas = async (req, res) => {
   try {
+    const estadoFiltro = ESTADOS_PRENDA_VALIDOS.includes(req.query.estado)
+      ? req.query.estado
+      : 'todas'
+
     const sql = `
       SELECT
         cp.cliente_prenda_id,
@@ -19,22 +25,18 @@ const obtenerPrendas = async (req, res) => {
 
         cpi.url_img,
 
-        (
-          SELECT cot.cotizacion_id
-          FROM cotizaciones cot
-          WHERE cot.cliente_prenda_id = cp.cliente_prenda_id
-            AND cot.estado = 1
-          ORDER BY cot.fecha_creado DESC, cot.cotizacion_id DESC
-          LIMIT 1
-        ) AS cotizacion_id,
-        (
-          SELECT cot.codigo_cotizacion
-          FROM cotizaciones cot
-          WHERE cot.cliente_prenda_id = cp.cliente_prenda_id
-            AND cot.estado = 1
-          ORDER BY cot.fecha_creado DESC, cot.cotizacion_id DESC
-          LIMIT 1
-        ) AS codigo_cotizacion
+        cot_ult.cotizacion_id,
+        cot_ult.codigo_cotizacion,
+        pp.plan_pago_id,
+        pp.saldo_pendiente,
+        pp.total_abonado,
+        pp.valor_a_cobrar,
+
+        CASE
+          WHEN cot_ult.cotizacion_id IS NULL THEN 'pendiente'
+          WHEN pp.plan_pago_id IS NOT NULL AND pp.saldo_pendiente <= 0 THEN 'finalizada'
+          ELSE 'en_proceso'
+        END AS estado_prenda
 
       FROM cliente_prenda cp
       INNER JOIN clientes c
@@ -44,13 +46,39 @@ const obtenerPrendas = async (req, res) => {
       LEFT JOIN cliente_prenda_img cpi
         ON cp.cliente_prenda_id = cpi.cliente_prenda_id
 
+      LEFT JOIN (
+        SELECT cot1.cliente_prenda_id, cot1.cotizacion_id, cot1.codigo_cotizacion
+        FROM cotizaciones cot1
+        WHERE cot1.estado = 1
+          AND cot1.cotizacion_id = (
+            SELECT cot2.cotizacion_id
+            FROM cotizaciones cot2
+            WHERE cot2.cliente_prenda_id = cot1.cliente_prenda_id
+              AND cot2.estado = 1
+            ORDER BY cot2.fecha_creado DESC, cot2.cotizacion_id DESC
+            LIMIT 1
+          )
+      ) cot_ult ON cot_ult.cliente_prenda_id = cp.cliente_prenda_id
+
+      LEFT JOIN planes_pago pp
+        ON pp.cotizacion_id = cot_ult.cotizacion_id AND pp.estado = 1
+
       WHERE cp.estado = 1
         AND c.estado = 1
+        ${estadoFiltro === 'todas' ? '' : `
+        AND (
+          CASE
+            WHEN cot_ult.cotizacion_id IS NULL THEN 'pendiente'
+            WHEN pp.plan_pago_id IS NOT NULL AND pp.saldo_pendiente <= 0 THEN 'finalizada'
+            ELSE 'en_proceso'
+          END
+        ) = ?`}
 
       ORDER BY cp.cliente_prenda_id DESC
     `
 
-    const [rows] = await db.query(sql)
+    const params = estadoFiltro === 'todas' ? [] : [estadoFiltro]
+    const [rows] = await db.query(sql, params)
 
     const prendasMap = new Map()
 
@@ -60,6 +88,7 @@ const obtenerPrendas = async (req, res) => {
           cliente_prenda_id: row.cliente_prenda_id,
           titulo: row.titulo,
           estado: row.estado,
+          estado_prenda: row.estado_prenda,
           fecha_creado: row.fecha_creado,
 
           cliente: {
@@ -79,6 +108,15 @@ const obtenerPrendas = async (req, res) => {
             ? {
                 cotizacion_id: row.cotizacion_id,
                 codigo_cotizacion: row.codigo_cotizacion
+              }
+            : null,
+
+          plan_pago: row.plan_pago_id
+            ? {
+                plan_pago_id: row.plan_pago_id,
+                saldo_pendiente: row.saldo_pendiente,
+                total_abonado: row.total_abonado,
+                valor_a_cobrar: row.valor_a_cobrar
               }
             : null,
 

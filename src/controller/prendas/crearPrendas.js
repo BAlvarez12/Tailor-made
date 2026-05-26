@@ -1,4 +1,5 @@
 const db = require('../../config/db')
+const { registrar, fromReq } = require('../../services/logOperaciones')
 
 const crearPrendas = async (req, res) => {
   let connection
@@ -8,24 +9,27 @@ const crearPrendas = async (req, res) => {
       cliente_id,
       tipo_prenda_id,
       titulo,
-      usuario_creador,
       imagenes = [],
       medidas = [],
       materiales = []
     } = req.body
 
-    if (!cliente_id || !tipo_prenda_id || !titulo || !usuario_creador) {
+    const usuarioCreador = req.user?.usuario_id
+    if (!usuarioCreador) {
+      return res.status(401).json({ message: 'No autorizado.' })
+    }
+
+    if (!cliente_id || !tipo_prenda_id || !titulo) {
       return res.status(400).json({
-        message: 'cliente_id, tipo_prenda_id, titulo y usuario_creador son obligatorios'
+        message: 'cliente_id, tipo_prenda_id y titulo son obligatorios'
       })
     }
 
     const clienteId = Number(cliente_id)
     const tipoPrendaId = Number(tipo_prenda_id)
-    const usuarioCreador = Number(usuario_creador)
     const tituloLimpio = String(titulo).trim()
 
-    if (!clienteId || !tipoPrendaId || !usuarioCreador || !tituloLimpio) {
+    if (!clienteId || !tipoPrendaId || !tituloLimpio) {
       return res.status(400).json({
         message: 'Los datos principales son inválidos'
       })
@@ -171,6 +175,22 @@ const crearPrendas = async (req, res) => {
     }
 
     await connection.commit()
+
+    registrar({
+      ...fromReq(req),
+      accion: 'crear',
+      entidad: 'prenda',
+      entidadId: cliente_prenda_id,
+      descripcion: `Prenda "${tituloLimpio}" creada para cliente #${clienteId}`,
+      datosDespues: {
+        cliente_id: clienteId,
+        tipo_prenda_id: tipoPrendaId,
+        titulo: tituloLimpio,
+        medidas: medidasValidas.length,
+        materiales: materialesValidos.length,
+        imagenes: imagenesValidas.length,
+      },
+    })
 
     return res.status(201).json({
       message: 'Prenda creada correctamente',

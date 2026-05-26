@@ -1,9 +1,14 @@
 const db = require("../../config/db");
 
+const ESTADOS_VALIDOS = ["activas", "anuladas", "todas"];
+
 const listarCotizaciones = async (req, res) => {
   try {
     const { q } = req.query;
     const termino = q ? String(q).trim() : "";
+    const estadoFiltro = ESTADOS_VALIDOS.includes(req.query.estado)
+      ? req.query.estado
+      : "activas";
 
     let sql = `
       SELECT
@@ -18,16 +23,33 @@ const listarCotizaciones = async (req, res) => {
         c.valor_total,
         c.notas,
         c.fecha_creado,
+        c.estado AS estado_registro,
         CASE WHEN pp.plan_pago_id IS NOT NULL THEN 1 ELSE 0 END AS tiene_plan_pago,
         pp.plan_pago_id,
-        pp.codigo_plan
+        pp.codigo_plan,
+        pp.saldo_pendiente,
+        pp.total_abonado,
+        pp.valor_a_cobrar,
+        CASE
+          WHEN c.estado = 0 THEN 'anulada'
+          WHEN pp.plan_pago_id IS NOT NULL AND pp.saldo_pendiente <= 0 THEN 'finalizada'
+          WHEN pp.plan_pago_id IS NOT NULL THEN 'en_proceso'
+          ELSE 'activa'
+        END AS estado_cotizacion
       FROM cotizaciones c
       LEFT JOIN planes_pago pp
         ON pp.cotizacion_id = c.cotizacion_id AND pp.estado = 1
-      WHERE c.estado = 1
+      WHERE 1 = 1
     `;
 
     const params = [];
+
+    if (estadoFiltro === "activas") {
+      sql += ` AND c.estado = 1`;
+    } else if (estadoFiltro === "anuladas") {
+      sql += ` AND c.estado = 0`;
+    }
+    // "todas" no agrega filtro
 
     if (termino) {
       const like = `%${termino}%`;

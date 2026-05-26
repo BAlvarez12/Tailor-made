@@ -45,19 +45,21 @@ const login = async (req, res) => {
     }
 
     const sql = `
-      SELECT 
-        usuario_id,
-        nombre_usuario,
-        apellido_usuario,
-        usuario,
-        password,
-        email,
-        estado,
-        rol_id,
-        fecha_creado,
-        usuario_creador
-      FROM usuarios
-      WHERE usuario = ?
+      SELECT
+        u.usuario_id,
+        u.nombre_usuario,
+        u.apellido_usuario,
+        u.usuario,
+        u.password,
+        u.email,
+        u.estado,
+        u.rol_id,
+        u.fecha_creado,
+        u.usuario_creador,
+        r.nombre_rol
+      FROM usuarios u
+      LEFT JOIN roles r ON r.rol_id = u.rol_id
+      WHERE u.usuario = ?
       LIMIT 1
     `;
 
@@ -96,12 +98,22 @@ const login = async (req, res) => {
 
     await reiniciarIntentos(usuario);
 
+    const [permisosRows] = await pool.query(
+      `SELECT p.nombre_permiso
+         FROM permisos p
+         JOIN permisos_rol pr ON pr.permiso_id = p.permiso_id
+        WHERE pr.rol_id = ?`,
+      [usuarioDB.rol_id]
+    );
+    const permisos = permisosRows.map((r) => r.nombre_permiso);
+
     const token = jwt.sign(
       {
         usuario_id: usuarioDB.usuario_id,
         usuario: usuarioDB.usuario,
         email: usuarioDB.email,
         rol_id: usuarioDB.rol_id,
+        permisos,
       },
       process.env.JWT_SECRET,
       { expiresIn: '8h' }
@@ -118,6 +130,8 @@ const login = async (req, res) => {
         usuario: usuarioDB.usuario,
         email: usuarioDB.email,
         rol_id: usuarioDB.rol_id,
+        nombre_rol: usuarioDB.nombre_rol,
+        permisos,
       },
     });
   } catch (error) {

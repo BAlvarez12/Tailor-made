@@ -3,6 +3,7 @@ const { generarCodigoPlanPago } = require("../../utils/generarCodigoPlanPago");
 const { generarCodigoRecibo } = require("../../utils/generarCodigoRecibo");
 const { normalizarFechaPago } = require("../../utils/normalizarFechaPago");
 const { recalcularTotalesPlan } = require("./pagosQueries");
+const { registrar, fromReq } = require("../../services/logOperaciones");
 
 const crearPlanPago = async (req, res) => {
   let connection;
@@ -17,8 +18,12 @@ const crearPlanPago = async (req, res) => {
       notas,
       registrar_anticipo,
       fecha_pago,
-      usuario_creador,
     } = req.body;
+
+    const usuarioCreador = req.user?.usuario_id;
+    if (!usuarioCreador) {
+      return res.status(401).json({ message: "No autorizado." });
+    }
 
     const cotizacionId = Number(cotizacion_id);
     const valorACobrar = Number(valor_a_cobrar);
@@ -26,7 +31,6 @@ const crearPlanPago = async (req, res) => {
     const valorAnticipo = Number(valor_anticipo) || 0;
     const debeRegistrarAnticipo =
       registrar_anticipo !== false && valorAnticipo > 0;
-    const usuarioCreador = usuario_creador ? Number(usuario_creador) : null;
 
     if (!cotizacionId || !valorACobrar || valorACobrar <= 0) {
       return res.status(400).json({
@@ -170,6 +174,19 @@ const crearPlanPago = async (req, res) => {
     }
 
     await connection.commit();
+
+    registrar({
+      ...fromReq(req),
+      accion: "crear",
+      entidad: "plan_pago",
+      entidadId: planPagoId,
+      descripcion: `Plan de pago ${codigoPlan} creado${pagoAnticipoId ? ` (con anticipo ${codigoReciboAnticipo})` : ""}`,
+      datosDespues: {
+        codigo_plan: codigoPlan,
+        cotizacion_id,
+        anticipo_id: pagoAnticipoId,
+      },
+    });
 
     return res.status(201).json({
       message: "Plan de pago creado correctamente",

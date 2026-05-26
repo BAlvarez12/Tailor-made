@@ -1,4 +1,5 @@
 const db = require('../../config/db')
+const { registrar, fromReq } = require('../../services/logOperaciones')
 
 const normalizarImagenes = (imagenes) => {
   if (!Array.isArray(imagenes)) return null
@@ -68,16 +69,19 @@ const updatePrendas = async (req, res) => {
       cliente_id,
       tipo_prenda_id,
       titulo,
-      usuario_creador,
       imagenes,
       medidas,
       materiales
     } = req.body
 
+    const usuarioCreador = req.user?.usuario_id
+    if (!usuarioCreador) {
+      return res.status(401).json({ message: 'No autorizado.' })
+    }
+
     const clientePrendaId = Number(id)
     const clienteId = Number(cliente_id)
     const tipoPrendaId = Number(tipo_prenda_id)
-    const usuarioCreador = Number(usuario_creador)
     const tituloLimpio = String(titulo || '').trim()
 
     if (!clientePrendaId) {
@@ -86,9 +90,9 @@ const updatePrendas = async (req, res) => {
       })
     }
 
-    if (!clienteId || !tipoPrendaId || !usuarioCreador || !tituloLimpio) {
+    if (!clienteId || !tipoPrendaId || !tituloLimpio) {
       return res.status(400).json({
-        message: 'cliente_id, tipo_prenda_id, titulo y usuario_creador son obligatorios'
+        message: 'cliente_id, tipo_prenda_id y titulo son obligatorios'
       })
     }
 
@@ -225,6 +229,19 @@ const updatePrendas = async (req, res) => {
     }
 
     await connection.commit()
+
+    registrar({
+      ...fromReq(req),
+      accion: 'editar',
+      entidad: 'prenda',
+      entidadId: clientePrendaId,
+      descripcion: `Prenda "${tituloLimpio}" (#${clientePrendaId}) editada`,
+      datosDespues: {
+        cliente_id: clienteId,
+        tipo_prenda_id: tipoPrendaId,
+        titulo: tituloLimpio,
+      },
+    })
 
     return res.status(200).json({
       message: 'Prenda actualizada correctamente',
