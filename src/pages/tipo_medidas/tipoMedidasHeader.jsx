@@ -1,5 +1,12 @@
+import { ChevronDown, Filter } from "lucide-react";
 import SiPermiso from "../../components/SiPermiso";
 import "./tipo_medidas.css";
+
+const ETIQUETAS_FILTRO = {
+  null: "Todos",
+  1: "Activos",
+  0: "Inactivos",
+};
 
 export default function TipoMedidasHeader({
   busqueda,
@@ -36,11 +43,21 @@ export default function TipoMedidasHeader({
         <div className="filter-dropdown" style={{ position: "relative" }}>
           <button
             type="button"
-            className="filter-button"
-            title="Filtrar"
+            className={`filter-button ${filtroEstado !== null ? "is-active" : ""}`}
+            title="Filtrar por estado"
             onClick={() => setShowFilterMenu(!showFilterMenu)}
+            aria-haspopup="menu"
+            aria-expanded={showFilterMenu}
           >
-            Filtrar por estado
+            <Filter size={16} aria-hidden="true" />
+            <span className="filter-button__label">
+              {ETIQUETAS_FILTRO[String(filtroEstado)]}
+            </span>
+            <ChevronDown
+              size={16}
+              aria-hidden="true"
+              className="filter-button__chevron"
+            />
           </button>
           <div className={`filter-menu ${showFilterMenu ? "active" : ""}`}>
             <button

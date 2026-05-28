@@ -366,3 +366,35 @@
   filter: brightness(1.06);
   box-shadow: 0 6px 18px rgba(37, 99, 235, 0.38);
 }
+
+/* =========================================================
+   MOBILE: botones full-width apilados (Guardar arriba, Cancelar abajo)
+   ========================================================= */
+@media (max-width: 640px) {
+  .formularioUsuarios .formularioUsuarios__footer.tm-modal__actions,
+  .formularioUsuarios .tm-modal__actions,
+  .formularioUsuarios .formularioUsuarios__footer {
+    flex-direction: column-reverse;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 10px;
+    margin-top: 16px;
+  }
+
+  /* Cancelar (primer hijo en DOM) — neutraliza el margin-left: auto que lo
+     empuja a la derecha en desktop */
+  .formularioUsuarios .formularioUsuarios__footer button:first-child {
+    margin-left: 0;
+  }
+
+  .formularioUsuarios .tm-modal__actions button,
+  .formularioUsuarios .formularioUsuarios__footer button {
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    min-height: 0;
+    padding: 8px 14px;
+    font-size: 14px;
+    border-radius: 8px;
+  }
+}

@@ -17,19 +17,21 @@
 /* =====================================
    MOBILE / TABLET (≤ 900px)
    El sidebar desktop está oculto; usamos MobileNav (barra inferior).
-   El padding-bottom evita que la barra tape contenido.
+   - padding-top respeta la barra de status del cel (notch, hora, batería)
+     sumando env(safe-area-inset-top) a un padding base de 14px.
+   - padding-bottom evita que la barra inferior tape contenido.
    ===================================== */
 @media (max-width: 900px) {
   .tm-layout__content {
     margin-left: 0;
-    padding: 14px 12px;
-    padding-bottom: calc(80px + env(safe-area-inset-bottom));
+    padding: calc(14px + env(safe-area-inset-top)) 12px
+             calc(80px + env(safe-area-inset-bottom)) 12px;
   }
 }
 
 @media (max-width: 480px) {
   .tm-layout__content {
-    padding: 12px 10px;
-    padding-bottom: calc(78px + env(safe-area-inset-bottom));
+    padding: calc(12px + env(safe-area-inset-top)) 10px
+             calc(78px + env(safe-area-inset-bottom)) 10px;
   }
 }

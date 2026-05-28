@@ -199,29 +199,11 @@
   line-height: 1.45;
 }
 
-.tm-modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.55);
-  backdrop-filter: blur(5px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 999999;
-  padding: 24px;
-}
-
-.tm-modal {
-  width: 100%;
-  max-width: 760px;
-  background: #ffffff;
-  border-radius: 24px;
-  box-shadow:
-    0 20px 40px rgba(15, 23, 42, 0.18),
-    0 8px 16px rgba(15, 23, 42, 0.08);
-  overflow: hidden;
-  animation: modalFadeIn 0.2s ease;
-}
+/* NOTA: .tm-modal-overlay, .tm-modal y @keyframes modalFadeIn estaban
+   duplicados aquí y pisaban las reglas mobile de tmModalShared.css
+   (especialmente la versión full-screen edge-to-edge ≤900px). Se borraron;
+   el estilo base ahora viene 100% del shared. Solo se conservan los
+   modificadores específicos de Clientes (--medidas, --medidas-lg). */
 
 .tm-modal--medidas {
   max-width: 980px;
@@ -232,14 +214,13 @@
   width: 96vw;
 }
 
-@keyframes modalFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(12px) scale(0.985);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
+@media (max-width: 900px) {
+  /* En mobile, los modificadores tampoco deben restringir el ancho:
+     full-screen real igual que los otros modales. */
+  .tm-modal--medidas,
+  .tm-modal--medidas-lg {
+    max-width: 100%;
+    width: 100%;
   }
 }
 
@@ -309,9 +290,11 @@
 
 /* ================= BODY MODAL ================= */
 
-.tm-modal__form {
-  padding: 26px 28px 28px;
-}
+/* NOTA: `.tm-modal__form { padding: 26px 28px 28px }` estaba duplicado aquí
+   (idéntico al de tmModalShared.css). Como esto carga después en la cascada,
+   su shorthand `padding` pisaba el `padding-bottom: 76px+safe-area` que el
+   shared mobile aplica para que los botones queden arriba del navbar.
+   Se eliminó — el padding base ahora viene 100% del shared. */
 
 .tm-modal__scroll {
   max-height: min(72vh, 720px);
@@ -504,10 +487,10 @@
 }
 
 @media (max-width: 640px) {
-  .tm-modal {
-    max-width: 100%;
-    border-radius: 20px;
-  }
+  /* IMPORTANTE: NO incluimos aquí la regla `.tm-modal { max-width: 100%;
+     border-radius: 20px }` porque pisaba el `border-radius: 0` del shared
+     y dejaba al modal con apariencia de "ventana flotante" en mobile. El
+     shared (tmModalShared.css) ya define las reglas mobile correctas. */
 
   .tm-modal__header,
   .tm-modal__form {
