@@ -107,7 +107,7 @@ function Home() {
         <div className="tm-home__hero-content">
           <span className="tm-home__eyebrow">
             <Sparkles size={14} aria-hidden />
-            Panel principal
+            Panel principal de BeautyBell
           </span>
           <h1>Bienvenido, {nombre}</h1>
           <p>Vista general del negocio en tiempo real.</p>

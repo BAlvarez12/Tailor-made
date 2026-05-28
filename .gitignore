@@ -8,12 +8,14 @@ dist/
 dist-ssr/
 .vite/
 
-# Variables de entorno (NUNCA subir secretos)
+# Variables de entorno (NUNCA subir secretos: IPs, URLs internas, tokens)
 .env
-.env.local
-.env.*.local
+.env.*
 # .env.example SÍ se sube (plantilla pública sin secretos)
 !.env.example
+
+# Capacitor — archivos generados que no se versionan
+.capacitor/
 
 # Logs
 *.log

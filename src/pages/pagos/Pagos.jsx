@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import "../../styles/tmListPage.css";
 import "./Pagos.css";
 import { obtenerClientesActivosService } from "../../services/clienteService";
+import { listarCotizacionesService } from "../../services/cotizacionesService";
 import {
   listarPlanesPagoService,
   listarCotizacionesClientePagoService,
@@ -113,8 +114,25 @@ function Pagos() {
   const [cargandoHistorial, setCargandoHistorial] = useState(false);
 
   useEffect(() => {
-    obtenerClientesActivosService()
-      .then((data) => setClientes(normalizarRespuesta(data).map(normalizarCliente)))
+    // Carga clientes activos + cotizaciones activas en paralelo, y deja en
+    // el dropdown solo los clientes que tienen al menos una cotización.
+    Promise.all([
+      obtenerClientesActivosService(),
+      listarCotizacionesService("", "activas"),
+    ])
+      .then(([clientesData, cotizacionesData]) => {
+        const clientesList = normalizarRespuesta(clientesData).map(normalizarCliente);
+        const cotizacionesList = normalizarRespuesta(cotizacionesData);
+        const idsConCotizacion = new Set(
+          cotizacionesList
+            .map((cot) => cot.cliente_id)
+            .filter((id) => id !== undefined && id !== null)
+            .map(String)
+        );
+        setClientes(
+          clientesList.filter((c) => idsConCotizacion.has(String(c.cliente_id)))
+        );
+      })
       .catch(console.error);
   }, []);
 
@@ -173,6 +191,15 @@ function Pagos() {
     aplicarDesdeCotizaciones();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clientes, location.state]);
+
+  // Soporte para el FAB del MobileNav: fuerza la vista "crear" cuando llega
+  // navigation con `state.abrirCrear`.
+  useEffect(() => {
+    if (location.state?.abrirCrear) {
+      setVista("crear");
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, [location.state, location.pathname, navigate]);
 
   useEffect(() => {
     if (!clienteDropdownOpen) return;
@@ -445,21 +472,11 @@ function Pagos() {
 
   return (
     <div className="tm-users pagos-page">
-      <header className="tm-users__header" style={{ display: "block" }}>
-        <div style={{ marginBottom: 16 }}>
-          <span className="cotiz-page__eyebrow" style={{
-            display: "inline-block",
-            marginBottom: 8,
-            fontSize: 12,
-            fontWeight: 700,
-            letterSpacing: "0.06em",
-            textTransform: "uppercase",
-            color: "#7c3aed",
-          }}>
-            Ventas
-          </span>
-          <h1 style={{ margin: "0 0 6px" }}>Control de pagos</h1>
-          <p style={{ margin: 0, color: "#6b7280" }}>
+      <header className="tm-users__header pagos-page__header">
+        <div className="pagos-page__header-info">
+          <span className="pagos-page__eyebrow">Ventas</span>
+          <h1 className="pagos-page__title">Control de pagos</h1>
+          <p className="pagos-page__subtitle">
             Asocia una cotización con un plan de pago y genera recibos PDF.
           </p>
         </div>
@@ -494,25 +511,15 @@ function Pagos() {
           <section className="pagos-panel">
             <h2>Cliente</h2>
             <div
-              className="cotiz-field cotiz-autocomplete"
+              className="cotiz-field cotiz-autocomplete pagos-autocomplete"
               ref={clienteRef}
-              style={{ position: "relative" }}
             >
               <label>Buscar cliente <span className="tm-required">*</span></label>
-              <div className="cotiz-input-icon cotiz-autocomplete__trigger" style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                border: "1px solid var(--color-border)",
-                background: "var(--color-surface)",
-                color: "var(--color-text)",
-                borderRadius: 14,
-                padding: "0 12px",
-                minHeight: 48,
-              }}>
+              <div className="cotiz-input-icon cotiz-autocomplete__trigger pagos-autocomplete__trigger">
                 {clienteId ? <User size={18} /> : <Search size={18} />}
                 <input
                   type="text"
+                  className="pagos-autocomplete__input"
                   value={clienteSearch}
                   onChange={(e) => {
                     setClienteSearch(e.target.value);
@@ -522,52 +529,25 @@ function Pagos() {
                   onFocus={() => setClienteDropdownOpen(true)}
                   placeholder="Nombre o teléfono"
                   autoComplete="off"
-                  style={{
-                    border: "none",
-                    flex: 1,
-                    outline: "none",
-                    background: "transparent",
-                    color: "var(--color-text)",
-                  }}
                 />
                 {clienteId && (
-                  <button type="button" onClick={limpiarCliente} aria-label="Quitar">
+                  <button
+                    type="button"
+                    className="pagos-autocomplete__clear"
+                    onClick={limpiarCliente}
+                    aria-label="Quitar"
+                  >
                     <X size={16} />
                   </button>
                 )}
               </div>
               {clienteDropdownOpen && (
-                <ul className="cotiz-autocomplete__list" role="listbox" style={{
-                  position: "absolute",
-                  top: "100%",
-                  left: 0,
-                  right: 0,
-                  zIndex: 20,
-                  background: "var(--color-surface)",
-                  color: "var(--color-text)",
-                  border: "1px solid var(--color-border)",
-                  borderRadius: 12,
-                  margin: "6px 0 0",
-                  padding: 6,
-                  listStyle: "none",
-                  maxHeight: 220,
-                  overflowY: "auto",
-                  boxShadow: "var(--shadow-modal)",
-                }}>
+                <ul className="cotiz-autocomplete__list pagos-autocomplete__list" role="listbox">
                   {clientesFiltrados.map((c) => (
                     <li key={c.cliente_id}>
                       <button
                         type="button"
                         className="pagos-autocomplete__option"
-                        style={{
-                          width: "100%",
-                          padding: "10px 12px",
-                          border: "none",
-                          background: "transparent",
-                          color: "inherit",
-                          textAlign: "left",
-                          cursor: "pointer",
-                        }}
                         onMouseDown={(ev) => ev.preventDefault()}
                         onClick={() => seleccionarCliente(c)}
                       >
@@ -826,29 +806,29 @@ function Pagos() {
                 <tbody>
                   {planes.map((p) => (
                     <tr key={p.plan_pago_id}>
-                      <td>
+                      <td data-label="Plan">
                         <strong>{p.codigo_plan}</strong>
                       </td>
-                      <td>{p.cliente_nombre}</td>
-                      <td>{p.codigo_cotizacion}</td>
-                      <td>{formatearMoneda(p.valor_a_cobrar)}</td>
-                      <td>{formatearMoneda(p.total_abonado)}</td>
-                      <td>{formatearMoneda(p.saldo_pendiente)}</td>
-                      <td>
+                      <td data-label="Cliente">{p.cliente_nombre}</td>
+                      <td data-label="Cotización">{p.codigo_cotizacion}</td>
+                      <td data-label="A cobrar">{formatearMoneda(p.valor_a_cobrar)}</td>
+                      <td data-label="Abonado">{formatearMoneda(p.total_abonado)}</td>
+                      <td data-label="Saldo">{formatearMoneda(p.saldo_pendiente)}</td>
+                      <td data-label="Cuotas">
                         <span className="pagos-cuotas-badge" title="Pagos realizados / total planificado">
                           {formatearCuotasPlan(p)}
                         </span>
                       </td>
-                      <td>{formatearMoneda(p.valor_anticipo)}</td>
-                      <td className="pagos-table-fecha">
+                      <td data-label="Monto agregado">{formatearMoneda(p.valor_anticipo)}</td>
+                      <td data-label="Último pago" className="pagos-table-fecha">
                         {p.ultima_fecha_pago
                           ? formatearFechaPago(p.ultima_fecha_pago)
                           : "—"}
                       </td>
-                      <td className="pagos-table-fecha">
+                      <td data-label="Fecha plan" className="pagos-table-fecha">
                         {formatearFechaPago(p.fecha_creado)}
                       </td>
-                      <td>
+                      <td data-label="Acciones">
                         <div className="tm-users__acciones pagos-acciones">
                           <button
                             type="button"

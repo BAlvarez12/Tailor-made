@@ -1,0 +1,471 @@
+/* =========================================================
+   BARRA INFERIOR FIJA
+   ========================================================= */
+.tm-mnav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 90;
+  background: var(--color-surface, #ffffff);
+  border-top: 1px solid var(--color-border, #e2e8f0);
+  padding: 6px 4px;
+  padding-bottom: calc(6px + env(safe-area-inset-bottom));
+  box-shadow: 0 -4px 14px rgba(15, 23, 42, 0.06);
+  justify-content: space-around;
+  align-items: stretch;
+  gap: 2px;
+}
+
+.tm-mnav__item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 6px 4px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted, #64748b);
+  font-size: 11px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  border-radius: 10px;
+  min-height: 52px;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.tm-mnav__item span {
+  text-align: center;
+  line-height: 1;
+}
+
+.tm-mnav__item:active {
+  background: rgba(124, 58, 237, 0.08);
+}
+
+.tm-mnav__item--active {
+  color: var(--color-primary, #7c3aed);
+}
+
+.tm-mnav__item--active svg {
+  filter: drop-shadow(0 2px 6px rgba(124, 58, 237, 0.3));
+}
+
+/* =========================================================
+   OVERLAY DETRÁS DEL SHEET
+   ========================================================= */
+.tm-msheet__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 110;
+  animation: tm-msheet-fade 0.2s ease-out;
+}
+
+@keyframes tm-msheet-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* =========================================================
+   BOTTOM SHEET DESLIZABLE
+   ========================================================= */
+.tm-msheet {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 120;
+  max-height: 85vh;
+  background: var(--color-surface, #ffffff);
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
+  box-shadow: 0 -10px 40px rgba(15, 23, 42, 0.18);
+  transform: translateY(100%);
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+.tm-msheet--abierto {
+  transform: translateY(0);
+}
+
+.tm-msheet__handle {
+  width: 44px;
+  height: 4px;
+  border-radius: 4px;
+  background: var(--color-border, #cbd5e1);
+  margin: 10px auto 4px;
+  flex-shrink: 0;
+}
+
+.tm-msheet__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 18px 12px;
+  border-bottom: 1px solid var(--color-border-soft, #f1f5f9);
+  flex-shrink: 0;
+}
+
+.tm-msheet__header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text, #0f172a);
+}
+
+.tm-msheet__close {
+  width: 34px;
+  height: 34px;
+  border: none;
+  background: var(--color-surface-2, #f1f5f9);
+  color: var(--color-text-muted, #64748b);
+  border-radius: 10px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease;
+}
+
+.tm-msheet__close:hover {
+  background: var(--color-border, #e2e8f0);
+  color: var(--color-text, #0f172a);
+}
+
+.tm-msheet__body {
+  padding: 8px 12px calc(20px + env(safe-area-inset-bottom));
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Tarjeta de usuario en el sheet */
+.tm-msheet__user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 12px;
+  margin: 4px 0 12px;
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  border-radius: 14px;
+  text-decoration: none;
+  color: #ffffff;
+  transition: transform 0.1s ease, box-shadow 0.15s ease;
+  box-shadow: 0 6px 16px rgba(124, 58, 237, 0.25);
+}
+
+.tm-msheet__user:active {
+  transform: scale(0.99);
+}
+
+.tm-msheet__avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  flex-shrink: 0;
+}
+
+.tm-msheet__user-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.tm-msheet__user-info strong {
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tm-msheet__rol {
+  font-size: 11px;
+  opacity: 0.85;
+  margin-top: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+
+.tm-msheet__chevron {
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+/* Sección título */
+.tm-msheet__section {
+  margin: 16px 8px 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted, #64748b);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Filas tipo botón/link */
+.tm-msheet__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 13px 12px;
+  border: none;
+  background: transparent;
+  color: var(--color-text, #0f172a);
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  text-decoration: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.tm-msheet__row:hover,
+.tm-msheet__row:active {
+  background: var(--color-surface-2, #f1f5f9);
+}
+
+.tm-msheet__row span {
+  flex: 1;
+}
+
+.tm-msheet__row--active {
+  background: var(--color-primary-soft, rgba(124, 58, 237, 0.1));
+  color: var(--color-primary-strong, #5b21b6);
+}
+
+.tm-msheet__row--sub {
+  padding-left: 32px;
+  font-size: 13px;
+}
+
+.tm-msheet__row--danger {
+  color: #b91c1c;
+}
+
+.tm-msheet__row--danger:hover {
+  background: #fef2f2;
+}
+
+.tm-msheet__kbd {
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: var(--color-surface-2, #f1f5f9);
+  color: var(--color-text-muted, #64748b);
+  border: 1px solid var(--color-border, #e2e8f0);
+}
+
+/* =========================================================
+   FAB CENTRAL "+" (acción rápida para crear)
+   El FAB vive como un slot real del flex del nav, en el centro.
+   El botón se levanta sobre la barra con transform negativo.
+   ========================================================= */
+.tm-mnav__fab-slot {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  position: relative;
+  min-height: 52px;
+}
+
+.tm-mnav__fab {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 4px solid var(--color-surface, #ffffff);
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  color: #ffffff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 22px rgba(124, 58, 237, 0.45),
+    0 4px 8px rgba(15, 23, 42, 0.12);
+  /* Eleva el FAB para que la mitad sobresalga sobre el borde superior
+     del nav. El slot reserva el espacio horizontal sin afectar el flujo. */
+  transform: translateY(-28px);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.tm-mnav__fab:hover {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+}
+
+.tm-mnav__fab:active {
+  transform: translateY(-28px) scale(0.94);
+}
+
+.tm-mnav__fab--abierto {
+  background: linear-gradient(135deg, #5b21b6 0%, #4c1d95 100%);
+  transform: translateY(-28px) rotate(45deg);
+  box-shadow: 0 6px 14px rgba(124, 58, 237, 0.35);
+}
+
+/* =========================================================
+   OVERLAY del menú de creación
+   ========================================================= */
+.tm-mcrear__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 110;
+  animation: tm-msheet-fade 0.18s ease-out;
+}
+
+/* =========================================================
+   MENÚ FLOTANTE DE CREACIÓN (mini bottom sheet)
+   ========================================================= */
+.tm-mcrear {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 120;
+  background: var(--color-surface, #ffffff);
+  border-top-left-radius: 22px;
+  border-top-right-radius: 22px;
+  box-shadow: 0 -10px 40px rgba(15, 23, 42, 0.18);
+  transform: translateY(100%);
+  transition: transform 0.26s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-direction: column;
+  padding-bottom: calc(20px + env(safe-area-inset-bottom));
+}
+
+.tm-mcrear--abierto {
+  transform: translateY(0);
+}
+
+.tm-mcrear__handle {
+  width: 44px;
+  height: 4px;
+  border-radius: 4px;
+  background: var(--color-border, #cbd5e1);
+  margin: 10px auto 4px;
+  flex-shrink: 0;
+}
+
+.tm-mcrear__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 18px 12px;
+  border-bottom: 1px solid var(--color-border-soft, #f1f5f9);
+}
+
+.tm-mcrear__header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text, #0f172a);
+}
+
+.tm-mcrear__close {
+  width: 34px;
+  height: 34px;
+  border: none;
+  background: var(--color-surface-2, #f1f5f9);
+  color: var(--color-text-muted, #64748b);
+  border-radius: 10px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease;
+}
+
+.tm-mcrear__close:hover {
+  background: var(--color-border, #e2e8f0);
+  color: var(--color-text, #0f172a);
+}
+
+.tm-mcrear__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 14px 14px 8px;
+}
+
+.tm-mcrear__option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 16px 14px;
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 14px;
+  background: var(--color-surface, #ffffff);
+  color: var(--color-text, #0f172a);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease,
+    transform 0.1s ease;
+}
+
+.tm-mcrear__option:hover {
+  border-color: #c4b5fd;
+  background: #faf5ff;
+}
+
+.tm-mcrear__option:active {
+  transform: scale(0.98);
+}
+
+.tm-mcrear__option-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(124, 58, 237, 0.25);
+}
+
+.tm-mcrear__option-label {
+  line-height: 1.25;
+}
+
+/* =========================================================
+   ACTIVACIÓN: solo en mobile / tablet (≤ 900px)
+   ========================================================= */
+@media (max-width: 900px) {
+  .tm-mnav {
+    display: flex;
+  }
+  .tm-msheet {
+    display: flex;
+  }
+  .tm-mcrear {
+    display: flex;
+  }
+}

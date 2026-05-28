@@ -6,6 +6,8 @@ import Clientes from "../pages/clientes/clientes";
 import FichaCliente from "../pages/clientes/FichaCliente";
 import Unidades from "../pages/unidades/unidades";
 import TipoMedidas from "../pages/tipo_medidas/tipoMedidas";
+import TipoPrendas from "../pages/tipo_prendas/tipoPrendas";
+import MiCuenta from "../pages/mi_cuenta/MiCuenta";
 import ProtectedRoute from "./ProtectedRoute";
 import PermissionRoute from "./PermissionRoute";
 import HomeLayout from "../layouts/HomeLayout";
@@ -30,6 +32,8 @@ function AppRouter() {
         }
       >
         <Route index element={<Home />} />
+
+        <Route path="mi-cuenta" element={<MiCuenta />} />
 
         <Route
           path="prendas"
@@ -109,6 +113,14 @@ function AppRouter() {
           element={
             <PermissionRoute codigo="ver_tipo_medidas">
               <TipoMedidas />
+            </PermissionRoute>
+          }
+        />
+        <Route
+          path="configuracion/tipo-prendas"
+          element={
+            <PermissionRoute codigo="ver_tipo_prendas">
+              <TipoPrendas />
             </PermissionRoute>
           }
         />

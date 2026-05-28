@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { getClientes } from "../../services/clienteService";
 import "../../styles/tmListPage.css";
 import "./clientes.css";
@@ -8,6 +8,10 @@ import ModalMedidas from "./ModalMedidas";
 import SiPermiso from "../../components/SiPermiso";
 
 function Clientes() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const abrirCrearAplicado = useRef(false);
+
   const [clientes, setClientes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -24,6 +28,17 @@ function Clientes() {
   const [clienteMedidas, setClienteMedidas] = useState(null);
   const [showActualizar, setShowActualizar] = useState(false);
   const [clienteActualizar, setClienteActualizar] = useState(null);
+
+  // Soporte para navegación con `state.abrirCrear` (desde el FAB del MobileNav)
+  useEffect(() => {
+    if (abrirCrearAplicado.current) return;
+    if (location.state?.abrirCrear) {
+      abrirCrearAplicado.current = true;
+      setClienteSeleccionado(null);
+      setModalClienteAbierto(true);
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, [location.state, location.pathname, navigate]);
 
   const cargarClientes = async () => {
     try {
@@ -214,7 +229,7 @@ function Clientes() {
               <tbody>
                 {clientesPaginados.map((c) => (
                   <tr key={c.cliente_id}>
-                    <td>
+                    <td data-label="Nombre">
                       <Link
                         to={`/home/clientes/${c.cliente_id}`}
                         className="tm-cliente-link"
@@ -223,11 +238,11 @@ function Clientes() {
                         {c.nombre_cliente}
                       </Link>
                     </td>
-                    <td>{c.apellido_cliente}</td>
-                    <td>{c.telefono || "—"}</td>
-                    <td>{c.dpi || "—"}</td>
+                    <td data-label="Apellido">{c.apellido_cliente}</td>
+                    <td data-label="Teléfono">{c.telefono || "—"}</td>
+                    <td data-label="DPI">{c.dpi || "—"}</td>
 
-                    <td>
+                    <td data-label="Estado">
                       <span
                         className={`tm-users__badge ${
                           Number(c.estado) === 1
@@ -239,7 +254,7 @@ function Clientes() {
                       </span>
                     </td>
 
-                    <td>
+                    <td data-label="Acciones">
                       <div className="tm-users__acciones">
                         <SiPermiso codigo="editar_clientes">
                           <button

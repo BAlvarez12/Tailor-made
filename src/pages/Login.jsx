@@ -145,6 +145,7 @@ function Login() {
   const [error, setError] = useState('')
   const [info, setInfo] = useState('')
   const [bloqueado, setBloqueado] = useState(false)
+  const [iniciandoSesion, setIniciandoSesion] = useState(false)
 
   const codigoVencido = segundosRestantes <= 0 && Boolean(expiresAt)
 
@@ -303,12 +304,14 @@ function Login() {
       const data = await loginService(form)
       localStorage.setItem('token', data.token)
       localStorage.setItem('usuario', JSON.stringify(data.usuario))
-      navigate('/home')
+      setIniciandoSesion(true)
+      setTimeout(() => {
+        navigate('/home')
+      }, 2000)
     } catch (err) {
       const data = err.response?.data
       setError(data?.message || 'No se pudo iniciar sesión. Verifica tus credenciales.')
       setBloqueado(Boolean(data?.bloqueado))
-    } finally {
       setLoading(false)
     }
   }
@@ -500,6 +503,91 @@ function Login() {
 
   return (
     <div className="tm-auth">
+      {iniciandoSesion && (
+        <div className="tm-loader-overlay" role="status" aria-live="polite">
+          <div className="tm-loader-content">
+            <svg
+              className="tm-loader-svg"
+              viewBox="0 0 320 140"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+            >
+              <defs>
+                <linearGradient id="tm-thread-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#a78bfa" />
+                  <stop offset="100%" stopColor="#7c3aed" />
+                </linearGradient>
+              </defs>
+
+              {/* Línea guía de la tela */}
+              <line
+                x1="30" y1="95" x2="290" y2="95"
+                stroke="#475569"
+                strokeWidth="1"
+                strokeDasharray="4 4"
+                opacity="0.4"
+              />
+
+              {/* Puntada en zigzag que se va dibujando */}
+              <path
+                className="tm-loader-stitches"
+                d="M 30 95 L 47 80 L 64 95 L 81 80 L 98 95 L 115 80 L 132 95 L 149 80 L 166 95 L 183 80 L 200 95 L 217 80 L 234 95 L 251 80 L 268 95 L 285 80 L 290 95"
+                stroke="url(#tm-thread-grad)"
+                strokeWidth="3"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+
+              {/* Aguja con hilo */}
+              <g className="tm-loader-needle">
+                <path
+                  d="M 0 -28 Q -14 -38, -28 -30"
+                  stroke="#a78bfa"
+                  strokeWidth="1.8"
+                  fill="none"
+                  strokeLinecap="round"
+                  opacity="0.85"
+                />
+                <line
+                  x1="0" y1="-28" x2="0" y2="6"
+                  stroke="#e2e8f0"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+                <ellipse
+                  cx="0" cy="-26" rx="2.5" ry="3.5"
+                  fill="none"
+                  stroke="#e2e8f0"
+                  strokeWidth="1.2"
+                />
+                <polygon
+                  points="0,8 -1.5,4 1.5,4"
+                  fill="#7c3aed"
+                />
+              </g>
+
+              {/* Carrete de hilo girando */}
+              <g className="tm-loader-spool" transform="translate(295, 40)">
+                <ellipse cx="0" cy="-10" rx="14" ry="3" fill="#475569" />
+                <rect x="-12" y="-10" width="24" height="20" rx="2" fill="url(#tm-thread-grad)" />
+                <ellipse cx="0" cy="10" rx="14" ry="3" fill="#475569" />
+                <line x1="-10" y1="-6" x2="10" y2="-6" stroke="#1e293b" strokeWidth="0.5" opacity="0.3" />
+                <line x1="-10" y1="0" x2="10" y2="0" stroke="#1e293b" strokeWidth="0.5" opacity="0.3" />
+                <line x1="-10" y1="6" x2="10" y2="6" stroke="#1e293b" strokeWidth="0.5" opacity="0.3" />
+              </g>
+            </svg>
+
+            <h3 className="tm-loader-title">
+              Iniciando costuras<span className="tm-loader-dots">
+                <span>.</span><span>.</span><span>.</span>
+              </span>
+            </h3>
+            <p className="tm-loader-subtitle">Preparando tu espacio de trabajo</p>
+          </div>
+        </div>
+      )}
+
       <div className="tm-auth__layout">
         <section className="tm-auth__showcase">
           <div className="tm-auth__bg-shape tm-auth__bg-shape--one"></div>
@@ -527,6 +615,15 @@ function Login() {
 
         <section className="tm-auth__panel">
           <div className="tm-auth__card">
+            {/* Logo solo visible en mobile (oculto en desktop por CSS) */}
+            <div className="tm-auth__brand">
+              <img
+                src={logoTailorMade}
+                alt="Tailor-Made"
+                className="tm-auth__brand-logo"
+              />
+            </div>
+
             <div className="tm-auth__header">
               <span className="tm-auth__eyebrow">{eyebrowVista}</span>
               <h2>{tituloVista}</h2>

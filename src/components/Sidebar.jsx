@@ -1,25 +1,10 @@
 import { useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Search, Sun, Moon, LogOut } from 'lucide-react'
 import { tienePermiso } from '../utils/permisosUsuario'
 import useTema from '../hooks/useTema'
+import { MAIN_MENU_ITEMS, CONFIG_SUBMENU_ITEMS } from '../constants/menuItems'
 import './Sidebar.css'
-
-const MAIN_MENU_ITEMS = [
-  { label: 'Home', path: '/home', exact: true },
-  { label: 'Clientes', path: '/home/clientes', exact: true, permiso: 'ver_clientes' },
-  { label: 'Cotizaciones', path: '/home/cotizaciones', exact: true, permiso: 'ver_cotizaciones' },
-  { label: 'Pagos', path: '/home/pagos', exact: true, permiso: 'ver_plan_pagos' },
-  { label: 'Prendas', path: '/home/prendas', exact: false, permiso: 'ver_prendas' },
-  { label: 'Materiales', path: '/home/materiales', exact: false, permiso: 'ver_materiales' }
-]
-
-const CONFIG_SUBMENU_ITEMS = [
-  { label: 'Usuarios', path: '/home/configuracion/usuarios', permiso: 'ver_usuarios' },
-  { label: 'Roles y permisos', path: '/home/configuracion/roles', permiso: 'ver_roles' },
-  { label: 'Unidades de medida', path: '/home/configuracion/unidades', permiso: 'ver_unidades_medidas' },
-  { label: 'Tipos de medida', path: '/home/configuracion/tipo-medidas', permiso: 'ver_tipo_medidas' }
-]
 
 function getStoredUser() {
   try {
@@ -59,10 +44,6 @@ function Sidebar() {
     navigate('/')
   }
 
-  const handleNavigate = (path) => {
-    navigate(path)
-  }
-
   const handleAbrirBusqueda = () => {
     window.dispatchEvent(new CustomEvent('abrir-busqueda'))
   }
@@ -83,7 +64,7 @@ function Sidebar() {
     <aside className="tm-sidebar">
       <div className="tm-sidebar__menu">
         <div className="tm-sidebar__brand">
-          <h2>Tailor-Made</h2>
+          <h2>BeautyBell</h2>
         </div>
 
         <button
@@ -99,14 +80,13 @@ function Sidebar() {
 
         <nav className="tm-sidebar__nav">
           {mainItemsVisibles.map((item) => (
-            <button
+            <Link
               key={item.path}
-              type="button"
+              to={item.path}
               className={getItemClassName(item)}
-              onClick={() => handleNavigate(item.path)}
             >
               {item.label}
-            </button>
+            </Link>
           ))}
 
           {mostrarConfiguracion && (
@@ -127,16 +107,15 @@ function Sidebar() {
               {isConfigOpen && (
                 <div className="tm-sidebar__submenu">
                   {configItemsVisibles.map((item) => (
-                    <button
+                    <Link
                       key={item.path}
-                      type="button"
+                      to={item.path}
                       className={`tm-sidebar__subitem ${
                         isActive(item.path) ? 'tm-sidebar__subitem--active' : ''
                       }`}
-                      onClick={() => handleNavigate(item.path)}
                     >
                       {item.label}
-                    </button>
+                    </Link>
                   ))}
                 </div>
               )}
@@ -146,14 +125,18 @@ function Sidebar() {
       </div>
 
       <div className="tm-sidebar__footer">
-        <div className="tm-sidebar__user-box">
+        <Link
+          to="/home/mi-cuenta"
+          className="tm-sidebar__user-box tm-sidebar__user-box--link"
+          title="Mi cuenta"
+        >
           <div className="tm-sidebar__avatar">{inicial}</div>
 
           <div className="tm-sidebar__user-info">
             <strong>{nombreUsuario}</strong>
             <span className="tm-sidebar__user-rol">{nombreRol}</span>
           </div>
-        </div>
+        </Link>
 
         <div className="tm-sidebar__footer-actions">
           <button

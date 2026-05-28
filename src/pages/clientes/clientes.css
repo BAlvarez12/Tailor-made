@@ -94,23 +94,24 @@
   box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
 }
 
-table {
+/* Reglas scopeadas a .clientes-table para no afectar otras tablas/modales de la app */
+.clientes-table table {
   width: 100%;
   border-collapse: collapse;
 }
 
-thead {
+.clientes-table thead {
   background: #111827;
   color: white;
 }
 
-th {
+.clientes-table th {
   font-weight: 700;
   text-align: left;
   padding: 14px 12px;
 }
 
-td {
+.clientes-table td {
   padding: 14px 12px;
   border-bottom: 1px solid #f1f5f9;
 }
