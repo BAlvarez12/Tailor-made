@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { ChevronDown, Filter } from "lucide-react";
 import { getClientes } from "../../services/clienteService";
 import "../../styles/tmListPage.css";
 import "./clientes.css";
@@ -7,10 +8,17 @@ import FormularioCliente from "./FormularioCliente";
 import ModalMedidas from "./ModalMedidas";
 import SiPermiso from "../../components/SiPermiso";
 
+const ETIQUETAS_FILTRO_ESTADO = {
+  null: "Todos",
+  1: "Activos",
+  0: "Inactivos",
+};
+
 function Clientes() {
   const location = useLocation();
   const navigate = useNavigate();
   const abrirCrearAplicado = useRef(false);
+  const searchInputRef = useRef(null);
 
   const [clientes, setClientes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -111,6 +119,7 @@ function Clientes() {
             </svg>
 
             <input
+              ref={searchInputRef}
               type="search"
               className="input"
               placeholder="Buscar por nombre, teléfono o DPI"
@@ -119,26 +128,42 @@ function Clientes() {
                 setBusqueda(e.target.value);
                 setPaginaActual(1);
               }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  searchInputRef.current?.blur();
+                }
+              }}
             />
           </div>
+
+          <button
+            type="button"
+            className="tm-search-btn"
+            onClick={() => searchInputRef.current?.blur()}
+            aria-label="Buscar"
+          >
+            Buscar
+          </button>
 
           <div className="filter-dropdown">
             <button
               type="button"
-              className="filter-button"
-              title="Filtrar"
+              className={`filter-button ${filtroEstado !== null ? "is-active" : ""}`}
+              title="Filtrar por estado"
               onClick={() => setShowFilterMenu(!showFilterMenu)}
+              aria-haspopup="menu"
+              aria-expanded={showFilterMenu}
             >
-              <svg
-                className="filter-icon"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M3 6a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707l-6.414 6.414A1 1 0 0114 15.414V19a1 1 0 01-.553.894l-4 2A1 1 0 018 21v-5.586a1 1 0 00-.293-.707L1.293 8.707A1 1 0 011 8V6z"
-                  fill="currentColor"
-                />
-              </svg>
+              <Filter size={16} aria-hidden="true" />
+              <span className="filter-button__label">
+                {ETIQUETAS_FILTRO_ESTADO[String(filtroEstado)]}
+              </span>
+              <ChevronDown
+                size={16}
+                aria-hidden="true"
+                className="filter-button__chevron"
+              />
             </button>
 
             <div className={`filter-menu ${showFilterMenu ? "active" : ""}`}>

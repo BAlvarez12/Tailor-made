@@ -168,6 +168,18 @@
   .mat-modal__columna--imagenes {
     order: 2;
   }
+
+  /* Anular max-width/calc(100% - 32px) de desktop para que el modal de
+     materiales sea full-screen edge-to-edge igual que Cliente/Prenda en
+     mobile y tablet. La altura tampoco se restringe. */
+  .mat-modal--wide {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .mat-modal--scroll {
+    max-height: none;
+  }
 }
 
 .mat-modal__input-currency {
@@ -646,42 +658,46 @@
 }
 
 @media (max-width: 640px) {
-  .tm-modal-overlay {
-    padding: 12px;
-    align-items: flex-end;
+  /* Los modales de materiales heredan el comportamiento full-screen del
+     shared (tmModalShared.css):
+       - .tm-modal-overlay → inset:0, padding:0, align-items:flex-start, z-index:80
+       - .tm-modal         → width:100%, max-width:100%, min-height:100%, border-radius:0
+     No agregamos overrides de posicionamiento aquí (el padding 12px y el
+     align-items flex-end del comportamiento "half-sheet" anterior generaban
+     una ventana flotante).
+     Pero los modificadores `.mat-modal--wide` y `.mat-modal--scroll` traen
+     reglas de desktop (max-width 980px, width calc(100% - 32px), max-height
+     min(92vh, 920px)) que también pisan al shared por cascada. Las anulamos
+     acá explícitamente para que llegue al borde de la pantalla. */
+  .mat-modal--wide {
+    width: 100%;
+    max-width: 100%;
   }
 
   .mat-modal--scroll {
-    max-height: 92vh;
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
+    max-height: none;
   }
 
-  .tm-modal__header {
-    padding: 18px 16px 14px;
-  }
+  /* Solo conservamos overrides tipográficos chicos para coherencia con la
+     densidad de info de cada modal de materiales. */
 
-  .tm-modal__title-wrap {
+  .mat-modal--scroll .tm-modal__title-wrap {
     gap: 10px;
   }
 
-  .tm-modal__title-icon {
+  .mat-modal--scroll .tm-modal__title-icon {
     width: 40px;
     height: 40px;
     min-width: 40px;
     border-radius: 12px;
   }
 
-  .tm-modal__header h2 {
+  .mat-modal--scroll .tm-modal__header h2 {
     font-size: 1.35rem;
   }
 
-  .tm-modal__subtitle {
+  .mat-modal--scroll .tm-modal__subtitle {
     font-size: 0.82rem;
-  }
-
-  .tm-modal__form {
-    padding: 18px 16px 20px;
   }
 
   .mat-modal__loading {

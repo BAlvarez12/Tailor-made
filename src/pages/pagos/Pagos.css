@@ -577,20 +577,59 @@
 }
 
 .pagos-acciones {
+  display: flex;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
-.pagos-btn-historial {
-  background: #f1f5f9 !important;
-  color: #334155 !important;
+/* Botones de acción del listado de planes de pago: rediseñados para que sean
+   prominentes, touch-friendly y coherentes con el sistema morado de la app. */
+.pagos-acciones .tm-users__btn-accion {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease,
+    box-shadow 0.15s ease, transform 0.1s ease;
+  white-space: nowrap;
+}
+
+.pagos-acciones .tm-users__btn-accion:active {
+  transform: scale(0.97);
+}
+
+/* "Ver pagos" — secundario: outline morado, fondo blanco */
+.pagos-btn-historial {
+  background: #ffffff !important;
+  color: #5b21b6 !important;
+  border: 1px solid #c4b5fd !important;
 }
 
 .pagos-btn-historial:hover {
-  background: #e2e8f0 !important;
-  color: #0f172a !important;
+  background: #f5f3ff !important;
+  color: #4c1d95 !important;
+  border-color: #a78bfa !important;
+}
+
+/* "Abono" — primario: morado gradiente lleno (acción principal) */
+.pagos-acciones .tm-users__btn-accion--editar {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  color: #ffffff;
+  border-color: transparent;
+  box-shadow: 0 4px 10px rgba(124, 58, 237, 0.28);
+}
+
+.pagos-acciones .tm-users__btn-accion--editar:hover {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: #ffffff;
+  box-shadow: 0 6px 14px rgba(124, 58, 237, 0.38);
 }
 
 .pagos-modal--historial {
@@ -799,28 +838,47 @@
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
+  /* Modal de historial de pagos full-screen edge-to-edge (mismo patrón que
+     los demás modales). El overlay queda debajo del navbar (z-index 80),
+     el modal ocupa el viewport completo, el body interno tiene padding-bottom
+     para que el botón "Cerrar" del footer no quede tapado por el nav. */
   .pagos-modal-overlay--historial {
-    padding: 12px;
-    align-items: flex-end;
+    z-index: 80;
+    inset: 0;
+    padding: 0;
+    align-items: flex-start;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .pagos-modal--historial {
-    max-height: 92vh;
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
+    max-width: 100%;
+    width: 100%;
+    margin: 0;
+    border-radius: 0;
+    max-height: none;
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
   }
 
   .pagos-modal--historial .pagos-modal__header {
     padding: 16px 16px 10px;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--color-surface, #ffffff);
   }
 
   .pagos-modal__body--historial {
     padding: 0 16px 8px;
+    flex: 1;
+    min-height: 0;
   }
 
   .pagos-modal__actions--historial {
-    padding: 12px 16px 16px;
+    padding: 12px 16px calc(16px + 110px + env(safe-area-inset-bottom));
   }
 
   .pagos-modal__actions--historial .pagos-btn-cancel {
@@ -1241,15 +1299,34 @@
     margin-bottom: 6px;
   }
 
+  /* Botones de acción en cards mobile: notablemente más compactos que
+     desktop. Side-by-side (50/50) en vez de full-width apilado
+     para ahorrar espacio vertical en el card. */
   .pagos-acciones {
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: nowrap;
     align-items: stretch;
-    gap: 8px;
+    gap: 6px;
   }
 
   .pagos-acciones .tm-users__btn-accion {
-    width: 100%;
+    flex: 1;
+    min-width: 0;
+    width: auto;
     justify-content: center;
+    height: 30px;
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 0 8px;
+    gap: 4px;
+    border-radius: 8px;
+    letter-spacing: 0.01em;
+  }
+
+  /* Si solo hay un botón visible (no hay saldo pendiente), que ocupe
+     todo el ancho */
+  .pagos-acciones .tm-users__btn-accion:only-child {
+    flex: 1 1 100%;
   }
 }
 
@@ -1302,23 +1379,32 @@
 
 /* =========================================================
    RESPONSIVE — Modal de "Registrar abono" (no historial)
-   El modal de historial ya tiene su propio bloque ≤768px.
-   Aquí cubrimos el modal de abono que comparte .pagos-modal
-   pero NO tiene .pagos-modal--historial.
+   Mismo patrón que Cliente / Prenda / Materiales:
+   - Overlay full viewport, z-index 80 (debajo del navbar = nav visible arriba)
+   - Modal edge-to-edge sin border-radius
+   - Form interno con padding-bottom 110px + safe-area para que el botón
+     Guardar no quede tapado por el nav
    ========================================================= */
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .pagos-modal-overlay {
-    padding: 12px;
-    align-items: flex-end;
+    z-index: 80;
+    inset: 0;
+    padding: 0;
+    align-items: flex-start;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .pagos-modal:not(.pagos-modal--historial) {
     max-width: 100%;
-    max-height: 92vh;
-    overflow-y: auto;
+    width: 100%;
+    margin: 0;
+    border-radius: 0;
+    max-height: none;
+    min-height: 100%;
     padding: 20px 18px;
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
+    display: flex;
+    flex-direction: column;
   }
 
   .pagos-modal:not(.pagos-modal--historial) h3 {
@@ -1327,6 +1413,11 @@
 
   .pagos-modal__header {
     margin-bottom: 6px;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--color-surface, #ffffff);
+    padding-top: 4px;
   }
 
   .pagos-modal__sub {
@@ -1360,7 +1451,15 @@
     min-height: 44px;
   }
 
-  /* Acciones: ocupan todo el ancho y se apilan en móvil chico */
+  /* El form crece para llenar el espacio. El padding-bottom asegura que
+     los botones nunca queden tapados por el navbar (64 + FAB 28 + buffer 18). */
+  .pagos-modal:not(.pagos-modal--historial) form {
+    flex: 1;
+    min-height: 0;
+    padding-bottom: calc(110px + env(safe-area-inset-bottom));
+  }
+
+  /* Acciones: ocupan todo el ancho y se apilan en móvil */
   .pagos-modal:not(.pagos-modal--historial) .pagos-modal__actions {
     flex-direction: column-reverse;
     gap: 8px;

@@ -4,6 +4,7 @@ import {
   construirMensajeCotizacionWhatsApp,
   descargarArchivo,
 } from "../utils/whatsapp";
+import { entregarPdf } from "../utils/pdfDownloader";
 
 export const crearCotizacionService = async (data) => {
   const response = await api.post("/cotizaciones", data);
@@ -46,14 +47,7 @@ export const obtenerPdfCotizacionBlob = async (id, codigo = "cotizacion") => {
 
 export const abrirPdfCotizacion = async (id, codigo = "cotizacion") => {
   const { blob, nombreArchivo } = await obtenerPdfCotizacionBlob(id, codigo);
-  const url = window.URL.createObjectURL(blob);
-  const ventana = window.open(url, "_blank");
-
-  if (!ventana) {
-    descargarArchivo(blob, nombreArchivo);
-  }
-
-  setTimeout(() => window.URL.revokeObjectURL(url), 60000);
+  await entregarPdf(blob, nombreArchivo);
 };
 
 const formatearMonedaWhatsApp = (valor) => {

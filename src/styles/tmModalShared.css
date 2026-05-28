@@ -388,11 +388,15 @@
 }
 
 @media (max-width: 900px) {
-  /* Overlay con padding más chico y scroll vertical interno cuando el modal
-     es más alto que el viewport. El align-items: flex-start evita que
-     modales largos queden con el header fuera de pantalla. */
+  /* Mobile full-screen: el modal ocupa TODO el viewport. El navbar inferior
+     queda visualmente encima (z-index del overlay 80 < nav 90), así que la
+     última franja del modal pasa por detrás del nav. Para evitar que botones
+     y campos finales queden atrapados ahí, agregamos padding-bottom dentro
+     del modal igual al alto del nav (76px + safe-area-inset-bottom). */
   .tm-modal-overlay {
-    padding: 12px;
+    z-index: 80;
+    inset: 0;
+    padding: 0;
     align-items: flex-start;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
@@ -401,21 +405,50 @@
   .tm-modal {
     max-width: 100%;
     width: 100%;
-    margin: auto;
-    border-radius: 18px;
+    margin: 0;
+    border-radius: 0;
     max-height: none;
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    /* SIN padding-bottom aquí: el fondo blanco del modal llega hasta el borde
+       inferior del viewport (el navbar lo cubre por encima). El padding lo
+       agregamos solo al contenido interno (form) para que los botones queden
+       siempre arriba del nav cuando se scrollea. */
+  }
+
+  /* El form (o contenido) crece para llenar el espacio entre el header
+     (sticky arriba) y el final del modal. El padding-bottom interno asegura
+     que los botones/último campo nunca queden tapados por el navbar.
+     Cálculo:
+       - nav bar (item min-height 52 + padding 6+6) = 64px de alto físico
+       - FAB sobresale 28px arriba del nav top
+       - Buffer visual ≥ 18px para que el último botón no roce el nav
+       - Total: 64 + 28 + 18 = 110px + safe-area-inset-bottom */
+  .tm-modal__form,
+  .tm-modal-form__form,
+  .tm-modal form {
+    flex: 1;
+    min-height: 0;
+    padding-bottom: calc(110px + env(safe-area-inset-bottom));
+  }
+
+  /* Header sticky en el tope del modal para no perder contexto al scrollear */
+  .tm-modal__header {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #ffffff;
   }
 }
 
 @media (max-width: 640px) {
+  /* En viewports muy chicos NO devolvemos border-radius ni padding lateral
+     — el modal sigue siendo edge-to-edge full-screen para aprovechar al
+     máximo el espacio (el nav inferior sigue siendo el único elemento fuera). */
   .tm-modal-overlay {
-    padding: 8px;
-    padding-top: max(8px, env(safe-area-inset-top));
-    padding-bottom: max(8px, env(safe-area-inset-bottom));
-  }
-
-  .tm-modal {
-    border-radius: 16px;
+    padding: 0;
+    padding-top: env(safe-area-inset-top);
   }
 
   .tm-modal__header,
@@ -432,13 +465,33 @@
     font-size: 22px;
   }
 
+  /* Botones del footer en mobile: full-width apilados (Guardar arriba,
+     Cancelar abajo). Aplica a todos los modales que envuelvan su contenido
+     con .tm-modal-form (Roles, Materiales, Cotizaciones, Tipo Prendas,
+     Tipo Medidas, Unidades, Categorías, Confirmaciones, etc.). */
   .tm-modal-form .tm-modal__actions,
   .tm-modal-form .tm-modal-form__footer {
     flex-direction: column-reverse;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 10px;
+    margin-top: 16px;
+  }
+
+  /* Neutraliza el margin-left: auto que en desktop empuja el primer botón
+     (Cancelar) a la derecha. En mobile queremos que ocupe todo el ancho. */
+  .tm-modal-form .tm-modal-form__footer button:first-child {
+    margin-left: 0;
   }
 
   .tm-modal-form .tm-modal__actions button,
   .tm-modal-form .tm-modal-form__footer button {
     width: 100%;
+    min-width: 0;
+    height: auto;
+    min-height: 0;
+    padding: 8px 14px;
+    font-size: 14px;
+    border-radius: 8px;
   }
 }

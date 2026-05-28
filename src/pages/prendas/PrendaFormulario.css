@@ -728,17 +728,50 @@
 }
 
 @media (max-width: 900px) {
+  /* Modal full-screen en mobile: ocupa TODO el viewport. El navbar inferior
+     queda visualmente encima (z-index del modal 80 < nav 90), así que la
+     última franja pasa por detrás del nav. Compensamos con padding-bottom
+     dentro del contenido para que botones/último campo queden tappables. */
   .crear-prenda-modal {
-    padding: 14px;
+    z-index: 80;
+    inset: 0;
+    padding: 0;
+    align-items: flex-start;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .crear-prenda-modal__content {
-    padding: 18px;
-    border-radius: 20px;
+    width: 100%;
+    max-width: 100%;
+    max-height: none;
+    min-height: 100%;
+    padding: 16px;
+    /* SIN padding-bottom extra: el fondo del modal llega hasta el borde
+       inferior. Solo agregamos breathing-room interno al form en sí. */
+    border-radius: 0;
+    border: none;
+  }
+
+  /* Padding-bottom solo al form: los botones quedan arriba del nav cuando
+     se scrollea, pero el background del modal llega hasta el borde.
+     Valor: 110px = alto del nav (64) + FAB (28) + buffer visual (18). */
+  .crear-prenda-form {
+    padding-bottom: calc(110px + env(safe-area-inset-bottom));
+  }
+
+  .crear-prenda-modal__header {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--cp-surface);
+    padding: 8px 0 12px;
+    margin: 0 0 14px;
+    border-bottom: 1px solid var(--cp-border);
   }
 
   .crear-prenda-modal__title {
-    font-size: 1.55rem;
+    font-size: 1.4rem;
   }
 
   .crear-prenda-resumen,

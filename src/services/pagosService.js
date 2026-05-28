@@ -3,6 +3,7 @@ import {
   abrirWhatsAppConMensaje,
   construirMensajePagoWhatsApp,
 } from "../utils/whatsapp";
+import { entregarPdf } from "../utils/pdfDownloader";
 
 export const listarPlanesPagoService = async (params = {}) => {
   const response = await api.get("/pagos/planes", { params });
@@ -53,15 +54,5 @@ export const abrirPdfRecibo = async (pagoId, codigo = "recibo") => {
   });
 
   const blob = new Blob([response.data], { type: "application/pdf" });
-  const url = window.URL.createObjectURL(blob);
-  const ventana = window.open(url, "_blank");
-
-  if (!ventana) {
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `${codigo}.pdf`;
-    link.click();
-  }
-
-  setTimeout(() => window.URL.revokeObjectURL(url), 60000);
+  await entregarPdf(blob, `${codigo}.pdf`);
 };
