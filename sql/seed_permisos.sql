@@ -1,5 +1,5 @@
 -- =====================================================================
--- Seed de la tabla `permisos` con los 33 códigos del sistema.
+-- Seed de la tabla `permisos` con los 40 códigos del sistema.
 -- Ejecutar una vez en la base de datos `tailor_made`.
 -- Es idempotente: se puede correr varias veces sin duplicar.
 -- =====================================================================
@@ -45,7 +45,12 @@ INSERT IGNORE INTO permisos (nombre_permiso) VALUES
   ('ver_roles'),
   ('editar_roles'),
   ('crear_roles'),
-  ('asignar_permiso_roles');
+  ('asignar_permiso_roles'),
+  ('editar_cotizaciones'),
+  ('anular_cotizaciones'),
+  ('ver_tipo_prendas'),
+  ('crear_tipo_prendas'),
+  ('editar_tipo_prendas');
 
 -- 3) Verificación
 SELECT permiso_id, nombre_permiso FROM permisos ORDER BY permiso_id;
