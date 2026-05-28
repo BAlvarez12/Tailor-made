@@ -595,8 +595,6 @@
   justify-content: flex-end;
   gap: 12px;
   padding-top: 12px;
-  background: rgba(255, 255, 255, 0.96);
-  backdrop-filter: blur(6px);
 }
 
 .crear-prenda-modal .btn-cancelar,

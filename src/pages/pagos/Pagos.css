@@ -1,3 +1,33 @@
+/* =========================================================
+   HEADER de la pantalla de pagos
+   ========================================================= */
+.pagos-page__header {
+  display: block;
+}
+
+.pagos-page__header-info {
+  margin-bottom: 16px;
+}
+
+.pagos-page__eyebrow {
+  display: inline-block;
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #7c3aed;
+}
+
+.pagos-page__title {
+  margin: 0 0 6px;
+}
+
+.pagos-page__subtitle {
+  margin: 0;
+  color: #6b7280;
+}
+
 .pagos-page__tabs {
   display: flex;
   gap: 10px;
@@ -44,6 +74,79 @@
   margin: 0 0 16px;
   font-size: 1.1rem;
   color: #0f172a;
+}
+
+/* =========================================================
+   AUTOCOMPLETE de cliente (panel "Cliente")
+   ========================================================= */
+.pagos-autocomplete {
+  position: relative;
+}
+
+.pagos-autocomplete__trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-radius: 14px;
+  padding: 0 12px;
+  min-height: 48px;
+}
+
+.pagos-autocomplete__input {
+  border: none;
+  flex: 1;
+  outline: none;
+  background: transparent;
+  color: var(--color-text);
+  min-width: 0;
+  font-size: 16px;
+}
+
+.pagos-autocomplete__clear {
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  padding: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pagos-autocomplete__list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  margin: 6px 0 0;
+  padding: 6px;
+  list-style: none;
+  max-height: 220px;
+  overflow-y: auto;
+  box-shadow: var(--shadow-modal);
+}
+
+.pagos-autocomplete__option {
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.pagos-autocomplete__option:hover {
+  background: rgba(124, 58, 237, 0.08);
 }
 
 .pagos-cotiz-list {
@@ -667,18 +770,32 @@
     font-size: 0.72rem;
   }
 
+  /* Toolbar del listado: input + botón Buscar en la misma fila */
   .pagos-list-toolbar {
-    flex-direction: column;
+    flex-direction: row;
     align-items: stretch;
-    gap: 10px;
+    flex-wrap: nowrap;
+    gap: 8px;
   }
 
   .pagos-list-toolbar .group {
-    width: 100%;
+    flex: 1;
+    min-width: 0;
+    width: auto;
+  }
+
+  .pagos-list-toolbar .input {
+    height: 44px;
+    font-size: 15px;
   }
 
   .pagos-list-toolbar .pagos-btn-buscar {
-    width: 100%;
+    width: auto;
+    flex-shrink: 0;
+    height: 44px;
+    padding: 0 16px;
+    font-size: 14px;
+    border-radius: 12px;
   }
 }
 
@@ -798,5 +915,473 @@
 @media (max-width: 1100px) {
   .pagos-form-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* =========================================================
+   RESPONSIVE MOBILE para la pantalla de Pagos (≤ 900px)
+   ========================================================= */
+@media (max-width: 900px) {
+  /* Página pagos: aprovechar más viewport pero dejando margen simétrico
+     visible a cada lado para que los cards queden centrados con aire
+     (no pegados al borde del viewport). No usamos margin negativo: la
+     página respeta el padding del .tm-layout__content (12px en mobile),
+     y reducimos el padding propio de .pagos-page a 0 horizontal.
+     Resultado: 12px de aire simétrico a cada lado del viewport. */
+  .pagos-page {
+    margin-left: auto !important;
+    margin-right: auto !important;
+    width: 100% !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+  }
+
+  /* Cancelar el negative-margin global de .tm-users__card para que la card
+     del listado respete el nuevo ancho de .pagos-page en lugar de extenderlo
+     aún más (eso causaría overflow). */
+  .pagos-page .tm-users__card {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* Las filas del listado (cards) — centradas explícitamente con margin auto
+     y un pequeño gap lateral propio (6px) para que se vea visualmente
+     centrado con aire a ambos lados, independiente del padding del padre. */
+  .pagos-page .pagos-planes-table-wrap .pagos-planes-table.tm-users__table tr {
+    width: calc(100% - 12px) !important;
+    margin: 0 auto 10px !important;
+    display: block !important;
+    box-sizing: border-box;
+  }
+
+  /* Alineamos header, tabs y toolbar al MISMO margen visible que los cards
+     del listado (6px a cada lado) para que toda la columna se vea como una
+     pila centrada y consistente. */
+  .pagos-page .pagos-page__header-info,
+  .pagos-page .pagos-list-toolbar,
+  .pagos-page .pagos-page__tabs {
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+
+  /* Título "Control de pagos" más compacto para que no se parta */
+  .pagos-page .tm-users__header h1 {
+    font-size: clamp(20px, 5vw, 24px);
+    line-height: 1.2;
+  }
+
+  .pagos-page .tm-users__header p {
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  /* Header / tabs */
+  .pagos-page__tabs {
+    width: 100%;
+  }
+
+  .pagos-page__tabs-btn {
+    flex: 1;
+    justify-content: center;
+    font-size: 13px;
+    padding: 8px 10px;
+  }
+
+  /* Form grid del crear plan: una columna, respetando el padding del layout */
+  .pagos-form-grid {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+    width: 100% !important;
+    margin: 0 !important;
+    box-sizing: border-box;
+  }
+
+  /* Panels del form crear: cards normales con borde y radius (alineados al
+     padding del contenedor, sin trucos de margen negativo) */
+  .pagos-panel {
+    padding: 16px !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 14px !important;
+    width: 100% !important;
+    margin: 0 !important;
+    box-sizing: border-box;
+  }
+
+  .pagos-panel h2 {
+    font-size: 1.05rem;
+    margin-bottom: 14px;
+  }
+
+  /* Campos: inputs altos, font-size 16px para evitar zoom en iOS */
+  .pagos-field {
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+
+  .pagos-field label {
+    font-size: 0.88rem;
+  }
+
+  .pagos-field input,
+  .pagos-field textarea,
+  .pagos-input-icon input {
+    min-height: 44px;
+    font-size: 16px;
+    padding: 10px 14px;
+    border-radius: 10px;
+  }
+
+  .pagos-input-icon {
+    padding: 0 14px;
+    border-radius: 10px;
+    min-height: 44px;
+  }
+
+  /* Checkbox row: label más grande y tap-friendly */
+  .pagos-field label:has(input[type="checkbox"]) {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.92rem;
+    line-height: 1.4;
+    padding: 6px 0;
+    cursor: pointer;
+  }
+
+  .pagos-field input[type="checkbox"] {
+    min-height: 0;
+    width: 20px;
+    height: 20px;
+    margin: 0 8px 0 0 !important;
+    accent-color: #7c3aed;
+  }
+
+  /* Autocomplete del cliente: input touch-friendly */
+  .pagos-autocomplete__trigger {
+    min-height: 46px;
+    border-radius: 10px;
+    padding: 0 12px;
+  }
+
+  .pagos-autocomplete__input {
+    font-size: 16px;
+    min-height: 44px;
+  }
+
+  .pagos-autocomplete__list {
+    max-height: 260px;
+  }
+
+  .pagos-autocomplete__option {
+    padding: 12px;
+    font-size: 15px;
+  }
+
+  /* Lista de cotizaciones del cliente: full width, scroll cómodo */
+  .pagos-cotiz-list {
+    max-height: 320px;
+    padding: 4px;
+  }
+
+  .pagos-cotiz-item {
+    padding: 12px 14px;
+    min-height: 56px;
+    border-radius: 10px;
+    gap: 6px;
+  }
+
+  .pagos-cotiz-item__code {
+    font-size: 0.95rem;
+  }
+
+  .pagos-cotiz-item__meta {
+    font-size: 0.82rem;
+  }
+
+  /* Resumen: padding mobile y typography */
+  .pagos-resumen {
+    padding: 12px 14px;
+    border-radius: 12px;
+  }
+
+  .pagos-resumen p {
+    font-size: 0.88rem;
+    line-height: 1.5;
+  }
+
+  /* Botón guardar: prominente, morado consistente con design system */
+  .pagos-save {
+    min-height: 48px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 15px;
+    background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+    box-shadow: 0 8px 20px rgba(124, 58, 237, 0.25);
+  }
+
+  .pagos-save:hover:not(:disabled) {
+    filter: brightness(1.05);
+  }
+
+  /* Mensajes de éxito/error en mobile */
+  .pagos-success,
+  .pagos-error {
+    margin: 8px 0;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 0.88rem;
+  }
+
+  /* Hint type messages */
+  .pagos-hint {
+    font-size: 0.88rem;
+    line-height: 1.5;
+  }
+
+  /* Wrapper de la tabla: respeta el padding del layout, sin trucos de
+     ancho calc() ni margin negativo */
+  .pagos-planes-table-wrap.tm-users__table-wrapper {
+    overflow-x: visible !important;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .pagos-planes-table-wrap .pagos-planes-table.tm-users__table {
+    display: block !important;
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  .pagos-planes-table-wrap .pagos-planes-table.tm-users__table thead {
+    display: none !important;
+  }
+
+  .pagos-planes-table-wrap .pagos-planes-table.tm-users__table tbody,
+  .pagos-planes-table-wrap .pagos-planes-table.tm-users__table tr,
+  .pagos-planes-table-wrap .pagos-planes-table.tm-users__table td {
+    display: block !important;
+    width: 100%;
+  }
+
+  /* Cada card con borde completo y radius (no edge-to-edge) */
+  .pagos-planes-table-wrap .pagos-planes-table.tm-users__table tr {
+    margin: 0 0 10px !important;
+    background: #ffffff;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 14px !important;
+    padding: 12px 14px !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  }
+
+  .pagos-planes-table-wrap .pagos-planes-table.tm-users__table td {
+    padding: 10px 0 !important;
+    border: none;
+    font-size: 14px;
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 28px;
+    text-align: left;
+    /* Reset constraints heredados de desktop (td:nth-child(2) tiene
+       max-width: 180px que cortaba el nombre del cliente en mobile) */
+    max-width: none !important;
+    min-width: 0 !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  /* La etiqueta (::before) no se encoge para mantener alineación
+     consistente; el valor (texto del td) ocupa el resto de ancho */
+  .pagos-planes-table-wrap .pagos-planes-table.tm-users__table td::before {
+    flex-shrink: 0;
+  }
+
+  /* Celda "Cliente" específicamente: nombre completo en una sola línea
+     siempre que entre; si no, hace wrap como un párrafo, no en columna
+     estrecha */
+  .pagos-planes-table-wrap .pagos-planes-table.tm-users__table td[data-label="Cliente"] {
+    text-align: right;
+  }
+
+  .pagos-planes-table-wrap .pagos-planes-table.tm-users__table td:not(:last-child) {
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  .pagos-planes-table-wrap .pagos-planes-table.tm-users__table td::before {
+    content: attr(data-label);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #64748b;
+    flex-shrink: 0;
+    margin-right: 8px;
+  }
+
+  /* Acciones: full width con botones apilados */
+  .pagos-planes-table-wrap .pagos-planes-table.tm-users__table td:last-child {
+    flex-direction: column;
+    align-items: stretch;
+    padding-top: 10px;
+  }
+
+  .pagos-planes-table-wrap .pagos-planes-table.tm-users__table td:last-child::before {
+    margin-bottom: 6px;
+  }
+
+  .pagos-acciones {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .pagos-acciones .tm-users__btn-accion {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  /* En pantallas muy chicas mantenemos la página alineada al padding
+     del .tm-layout__content (10px), centrada con margen simétrico */
+  .pagos-page {
+    margin-left: auto !important;
+    margin-right: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .pagos-planes-table-wrap .pagos-planes-table.tm-users__table tr {
+    padding: 10px 12px;
+  }
+
+  /* Tabs: en viewport muy chico, mantener el texto + ícono visibles
+     reduciendo aún más el padding y el gap */
+  .pagos-page__tabs {
+    gap: 8px;
+  }
+
+  .pagos-page__tabs-btn {
+    padding: 8px 8px;
+    font-size: 12.5px;
+    gap: 6px;
+  }
+
+  .pagos-page__tabs-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  /* Toolbar del listado en viewport chico: botón Buscar más compacto */
+  .pagos-list-toolbar .pagos-btn-buscar {
+    padding: 0 12px;
+    font-size: 13px;
+  }
+
+  /* Resumen del plan: typography aún más compacta */
+  .pagos-resumen {
+    padding: 10px 12px;
+  }
+
+  .pagos-resumen p {
+    font-size: 0.84rem;
+  }
+}
+
+/* =========================================================
+   RESPONSIVE — Modal de "Registrar abono" (no historial)
+   El modal de historial ya tiene su propio bloque ≤768px.
+   Aquí cubrimos el modal de abono que comparte .pagos-modal
+   pero NO tiene .pagos-modal--historial.
+   ========================================================= */
+@media (max-width: 768px) {
+  .pagos-modal-overlay {
+    padding: 12px;
+    align-items: flex-end;
+  }
+
+  .pagos-modal:not(.pagos-modal--historial) {
+    max-width: 100%;
+    max-height: 92vh;
+    overflow-y: auto;
+    padding: 20px 18px;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  .pagos-modal:not(.pagos-modal--historial) h3 {
+    font-size: 1.1rem;
+  }
+
+  .pagos-modal__header {
+    margin-bottom: 6px;
+  }
+
+  .pagos-modal__sub {
+    font-size: 0.85rem;
+    margin-bottom: 12px;
+  }
+
+  /* Tarjeta de monto sugerido más compacta */
+  .pagos-modal__monto-sugerido {
+    padding: 12px;
+    margin-bottom: 14px;
+  }
+
+  .pagos-modal__monto-sugerido strong {
+    font-size: 1.2rem;
+  }
+
+  .pagos-modal__monto-sugerido span {
+    font-size: 0.76rem;
+  }
+
+  /* Inputs del modal: 16px para evitar zoom de iOS */
+  .pagos-modal .pagos-field input,
+  .pagos-modal .pagos-field textarea,
+  .pagos-modal .pagos-input-icon input {
+    font-size: 16px;
+    min-height: 44px;
+  }
+
+  .pagos-modal .pagos-input-icon {
+    min-height: 44px;
+  }
+
+  /* Acciones: ocupan todo el ancho y se apilan en móvil chico */
+  .pagos-modal:not(.pagos-modal--historial) .pagos-modal__actions {
+    flex-direction: column-reverse;
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .pagos-modal:not(.pagos-modal--historial) .pagos-modal__actions .pagos-btn-cancel,
+  .pagos-modal:not(.pagos-modal--historial) .pagos-modal__actions .pagos-btn-submit {
+    width: 100%;
+    justify-content: center;
+    padding: 12px 18px;
+    min-height: 46px;
+  }
+}
+
+@media (max-width: 480px) {
+  .pagos-modal:not(.pagos-modal--historial) {
+    padding: 18px 14px;
+  }
+
+  .pagos-modal__monto-sugerido strong {
+    font-size: 1.1rem;
   }
 }

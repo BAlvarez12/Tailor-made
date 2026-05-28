@@ -96,6 +96,15 @@ export const CATEGORIAS_PERMISOS = [
     ],
   },
   {
+    id: "tipo_prendas",
+    nombre: "Tipos de prenda",
+    permisos: [
+      { codigo: "ver_tipo_prendas", etiqueta: "Ver tipos de prenda" },
+      { codigo: "crear_tipo_prendas", etiqueta: "Crear tipos de prenda" },
+      { codigo: "editar_tipo_prendas", etiqueta: "Editar tipos de prenda" },
+    ],
+  },
+  {
     id: "roles",
     nombre: "Roles y permisos",
     permisos: [

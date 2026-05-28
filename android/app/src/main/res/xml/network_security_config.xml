@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- HTTP cleartext habilitado SOLO para el backend mientras no hay dominio
+         con HTTPS. Cuando consigas el certificado SSL, elimina este bloque. -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">35.254.59.62</domain>
+    </domain-config>
+</network-security-config>

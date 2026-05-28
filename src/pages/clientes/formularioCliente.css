@@ -148,4 +148,26 @@
   .formularioCliente--dpi-open .formularioCliente__modal-overlay .tm-modal {
     transform: none;
   }
+
+  /* Footer del modal de cliente en mobile: Guardar (primario, arriba) y
+     Cancelar (secundario, abajo) apilados verticalmente, cada uno ocupando
+     TODO el ancho del modal de izquierda a derecha. */
+  .formularioCliente .formularioCliente__footer.tm-modal__actions,
+  .formularioCliente .tm-modal__actions {
+    flex-direction: column-reverse;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .formularioCliente .tm-modal__actions button,
+  .formularioCliente .formularioCliente__footer button {
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    min-height: 0;
+    padding: 8px 14px;
+    font-size: 14px;
+    border-radius: 8px;
+  }
 }

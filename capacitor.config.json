@@ -1,0 +1,8 @@
+{
+  "appId": "com.paloblanco.tailormade",
+  "appName": "Tailor-made",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
+}

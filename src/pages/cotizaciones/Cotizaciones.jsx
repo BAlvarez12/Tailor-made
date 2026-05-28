@@ -137,17 +137,71 @@ function Cotizaciones() {
   const [cotizacionAEditar, setCotizacionAEditar] = useState(null);
   const [cotizacionAAnular, setCotizacionAAnular] = useState(null);
   const [menuAbiertoId, setMenuAbiertoId] = useState(null);
+  const [menuCoords, setMenuCoords] = useState(null);
   const menuRef = useRef(null);
+
+  const cerrarMenuCotizacion = () => {
+    setMenuAbiertoId(null);
+    setMenuCoords(null);
+  };
+
+  const toggleMenuCotizacion = (cotizacionId, event) => {
+    if (menuAbiertoId === cotizacionId) {
+      cerrarMenuCotizacion();
+      return;
+    }
+    const rect = event.currentTarget.getBoundingClientRect();
+    const espacioAbajo = window.innerHeight - rect.bottom;
+    const arriba = espacioAbajo < 220;
+
+    // Ancho aproximado del menú (min-width 170 + padding/border)
+    const MENU_WIDTH = 200;
+    const MARGEN = 8;
+
+    // ¿Hay suficiente espacio a la IZQUIERDA del borde derecho del botón?
+    // Si no, alineamos el menú al borde IZQUIERDO del botón (abre hacia la derecha)
+    const espacioIzquierda = rect.right;
+    const abreHaciaDerecha = espacioIzquierda < MENU_WIDTH + MARGEN;
+
+    const coords = {
+      direccion: arriba ? "arriba" : "abajo",
+      top: arriba ? "auto" : `${rect.bottom + 6}px`,
+      bottom: arriba ? `${window.innerHeight - rect.top + 6}px` : "auto",
+    };
+
+    if (abreHaciaDerecha) {
+      // No hay espacio a la izquierda → alineamos con el borde izquierdo del trigger
+      // y limitamos para no salirnos del viewport por la derecha
+      const left = Math.max(MARGEN, rect.left);
+      const maxLeft = window.innerWidth - MENU_WIDTH - MARGEN;
+      coords.left = `${Math.min(left, maxLeft)}px`;
+      coords.right = "auto";
+    } else {
+      // Alineamos con el borde derecho del trigger (comportamiento por defecto)
+      coords.right = `${window.innerWidth - rect.right}px`;
+      coords.left = "auto";
+    }
+
+    setMenuCoords(coords);
+    setMenuAbiertoId(cotizacionId);
+  };
 
   useEffect(() => {
     if (menuAbiertoId == null) return;
     const handler = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
-        setMenuAbiertoId(null);
+        cerrarMenuCotizacion();
       }
     };
+    const cerrarPorEventoExterno = () => cerrarMenuCotizacion();
     document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    window.addEventListener("scroll", cerrarPorEventoExterno, true);
+    window.addEventListener("resize", cerrarPorEventoExterno);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      window.removeEventListener("scroll", cerrarPorEventoExterno, true);
+      window.removeEventListener("resize", cerrarPorEventoExterno);
+    };
   }, [menuAbiertoId]);
 
   const cotizacionTienePlanPago = (item) =>
@@ -254,6 +308,15 @@ function Cotizaciones() {
     aplicarNavegacionDesdePrendas();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadingInicial, location.state, clientes]);
+
+  // Soporte para el FAB del MobileNav: fuerza la vista "crear" cuando llega
+  // navigation con `state.abrirCrear` (independiente del deep-link existente).
+  useEffect(() => {
+    if (location.state?.abrirCrear) {
+      setVista("crear");
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, [location.state, location.pathname, navigate]);
 
   useEffect(() => {
     if (vista === "listado") {
@@ -765,24 +828,24 @@ function Cotizaciones() {
                       key={item.cotizacion_id}
                       className={esAnulada ? "cotiz-table__row--anulada" : ""}
                     >
-                      <td>
+                      <td data-label="Código">
                         <strong>{item.codigo_cotizacion}</strong>
                       </td>
-                      <td>{item.cliente_nombre}</td>
-                      <td>{item.cliente_telefono || "—"}</td>
-                      <td>{item.tipo_prenda_nombre || "—"}</td>
-                      <td>{formatearMoneda(item.valor_total)}</td>
-                      <td>
+                      <td data-label="Cliente">{item.cliente_nombre}</td>
+                      <td data-label="Teléfono">{item.cliente_telefono || "—"}</td>
+                      <td data-label="Tipo de prenda">{item.tipo_prenda_nombre || "—"}</td>
+                      <td data-label="Total">{formatearMoneda(item.valor_total)}</td>
+                      <td data-label="Fecha">
                         {item.fecha_creado
                           ? new Date(item.fecha_creado).toLocaleDateString("es-GT")
                           : "—"}
                       </td>
-                      <td>
+                      <td data-label="Estado">
                         <span className={`cotiz-estado-badge cotiz-estado-badge--${estado}`}>
                           {ETIQUETAS_ESTADO_COTIZACION[estado] || estado}
                         </span>
                       </td>
-                      <td className="cotiz-table__acciones">
+                      <td data-label="Acciones" className="cotiz-table__acciones">
                         <SiPermiso codigo="generar_pdf_cotizacion">
                           <button
                             type="button"
@@ -832,18 +895,22 @@ function Cotizaciones() {
                               aria-haspopup="menu"
                               aria-expanded={menuAbiertoId === item.cotizacion_id}
                               title="Más acciones"
-                              onClick={() =>
-                                setMenuAbiertoId(
-                                  menuAbiertoId === item.cotizacion_id
-                                    ? null
-                                    : item.cotizacion_id
-                                )
-                              }
+                              onClick={(e) => toggleMenuCotizacion(item.cotizacion_id, e)}
                             >
                               <MoreVertical size={16} />
                             </button>
-                            {menuAbiertoId === item.cotizacion_id && (
-                              <div className="cotiz-menu__list" role="menu">
+                            {menuAbiertoId === item.cotizacion_id && menuCoords && (
+                              <div
+                                className={`cotiz-menu__list cotiz-menu__list--${menuCoords.direccion}`}
+                                role="menu"
+                                style={{
+                                  position: "fixed",
+                                  top: menuCoords.top,
+                                  bottom: menuCoords.bottom,
+                                  right: menuCoords.right,
+                                  left: menuCoords.left,
+                                }}
+                              >
                                 {cotizacionTienePlanPago(item) ? (
                                   <SiPermiso codigo="ver_plan_pagos">
                                     <button

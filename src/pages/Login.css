@@ -173,6 +173,24 @@
     0 8px 20px rgba(15, 23, 42, 0.04);
 }
 
+/* Brand interno del card: SOLO visible en mobile/tablet (oculto en desktop) */
+.tm-auth__brand {
+  display: none;
+  justify-content: center;
+  margin: 0 0 20px;
+  padding: 12px;
+  border-radius: 16px;
+  background: rgba(248, 250, 252, 0.7);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.tm-auth__brand-logo {
+  width: auto;
+  max-width: 200px;
+  max-height: 72px;
+  object-fit: contain;
+}
+
 .tm-auth__header {
   margin-bottom: 28px;
 }
@@ -533,47 +551,34 @@
 
 @media (max-width: 1024px) {
   .tm-auth {
-    align-items: flex-start;
-    padding-top: max(12px, env(safe-area-inset-top));
-    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    align-items: center;
+    padding-top: max(16px, env(safe-area-inset-top));
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
   }
 
+  /* Ocultamos el showcase completo: el branding se traslada al card */
+  .tm-auth__showcase {
+    display: none;
+  }
+
+  /* Layout pasa a 1 columna y se vuelve un contenedor neutro */
   .tm-auth__layout {
     grid-template-columns: 1fr;
     min-height: auto;
     max-height: none;
-    border-radius: 28px;
-  }
-
-  .tm-auth__showcase {
-    min-height: auto;
-    padding: 28px 24px 24px;
-  }
-
-  .tm-auth__showcase-content {
-    max-width: 520px;
-    margin: 0 auto;
-  }
-
-  .tm-auth__copy {
-    text-align: center;
-  }
-
-  .tm-auth__copy h1 {
-    font-size: clamp(1.65rem, 5vw, 2.4rem);
-    margin-top: 14px;
-  }
-
-  .tm-auth__copy p {
-    margin: 0 auto;
-    max-width: 100%;
-    font-size: 0.95rem;
-    line-height: 1.6;
+    max-width: 480px;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    backdrop-filter: none;
+    border-radius: 0;
+    overflow: visible;
   }
 
   .tm-auth__panel {
-    padding: 24px 20px 32px;
+    padding: 0;
     align-items: stretch;
+    background: transparent;
   }
 
   .tm-auth__card {
@@ -581,8 +586,9 @@
     margin: 0 auto;
   }
 
-  .tm-auth__logo {
-    max-width: min(340px, 72vw);
+  /* Mostrar el brand (logo) dentro del card */
+  .tm-auth__brand {
+    display: flex;
   }
 }
 
@@ -594,39 +600,6 @@
     padding-right: max(10px, env(safe-area-inset-right));
   }
 
-  .tm-auth__layout {
-    border-radius: 22px;
-  }
-
-  .tm-auth__showcase {
-    padding: 20px 16px 16px;
-  }
-
-  .tm-auth__logo-wrap {
-    padding: 14px;
-  }
-
-  .tm-auth__logo {
-    max-width: min(280px, 80vw);
-  }
-
-  .tm-auth__copy {
-    margin-top: 16px;
-  }
-
-  .tm-auth__copy h1 {
-    font-size: 1.45rem;
-    margin-bottom: 8px;
-  }
-
-  .tm-auth__copy p {
-    font-size: 0.88rem;
-  }
-
-  .tm-auth__panel {
-    padding: 16px 14px 24px;
-  }
-
   .tm-auth__header {
     margin-bottom: 20px;
   }
@@ -635,44 +608,51 @@
     flex-wrap: wrap;
     gap: 6px;
   }
+
+  /* Reglas de fortaleza en 2 columnas para ahorrar alto */
+  .tm-auth__strength-rules {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px 12px;
+  }
+
+  .tm-auth__brand {
+    padding: 10px;
+    margin-bottom: 16px;
+  }
+
+  .tm-auth__brand-logo {
+    max-width: 180px;
+    max-height: 64px;
+  }
 }
 
 /* Móvil estándar */
 @media (max-width: 576px) {
-  .tm-auth__layout {
-    border-radius: 18px;
-    box-shadow:
-      0 12px 40px rgba(15, 23, 42, 0.07),
-      0 4px 14px rgba(15, 23, 42, 0.04);
-  }
-
-  .tm-auth__showcase {
-    padding: 16px 14px 12px;
-  }
-
-  .tm-auth__bg-shape--one,
-  .tm-auth__bg-shape--two {
-    opacity: 0.6;
-  }
-
-  .tm-auth__copy h1 {
-    font-size: 1.28rem;
-  }
-
-  .tm-auth__panel {
-    padding: 14px 12px 20px;
-  }
-
   .tm-auth__card {
     padding: 22px 16px;
-    border: none;
-    box-shadow: none;
-    background: transparent;
+    border: 1px solid rgba(226, 232, 240, 0.7);
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+    background: rgba(255, 255, 255, 0.95);
+  }
+
+  .tm-auth__brand {
+    padding: 8px;
+    margin-bottom: 14px;
+  }
+
+  .tm-auth__brand-logo {
+    max-width: 150px;
+    max-height: 56px;
   }
 
   .tm-auth__eyebrow {
     font-size: 0.72rem;
     margin-bottom: 8px;
+  }
+
+  .tm-auth__header {
+    margin-bottom: 16px;
   }
 
   .tm-auth__header p {
@@ -686,22 +666,23 @@
   }
 }
 
-/* Móvil pequeño */
+/* Móvil pequeño (iPhone SE, etc.) */
 @media (max-width: 400px) {
-  .tm-auth__showcase {
-    padding: 12px 10px 10px;
+  .tm-auth__brand-logo {
+    max-width: 130px;
+    max-height: 50px;
   }
 
-  .tm-auth__logo {
-    max-width: 220px;
+  .tm-auth__card {
+    padding: 16px 8px;
   }
 
-  .tm-auth__copy h1 {
-    font-size: 1.15rem;
+  .tm-auth__header {
+    margin-bottom: 14px;
   }
 
-  .tm-auth__copy p {
-    font-size: 0.82rem;
+  .tm-auth__header h2 {
+    font-size: 1.35rem;
   }
 
   .tm-auth__form {
@@ -711,54 +692,63 @@
   .tm-auth__hint {
     font-size: 0.82rem;
   }
+
+  .tm-auth__strength-rules {
+    grid-template-columns: 1fr;
+  }
 }
 
-/* Landscape en móvil: priorizar formulario */
+/* Pantallas ultra-pequeñas (320px y menos: feature phones / Galaxy Fold cerrado) */
+@media (max-width: 340px) {
+  .tm-auth {
+    padding: 6px;
+  }
+
+  .tm-auth__brand-logo {
+    max-width: 110px;
+    max-height: 44px;
+  }
+
+  .tm-auth__card {
+    padding: 12px 6px;
+  }
+
+  .tm-auth__header h2 {
+    font-size: 1.2rem;
+  }
+
+  .tm-auth__field input {
+    min-height: 44px;
+    height: 44px;
+    padding: 0 12px;
+  }
+
+  .tm-auth__button {
+    min-height: 44px;
+    height: 44px;
+    font-size: 0.92rem;
+  }
+}
+
+/* Landscape en móvil: priorizar formulario, reducir el brand */
 @media (max-height: 520px) and (orientation: landscape) {
   .tm-auth {
     align-items: flex-start;
     padding: 8px;
   }
 
-  .tm-auth__layout {
-    grid-template-columns: minmax(140px, 0.45fr) minmax(0, 1fr);
-    min-height: auto;
-  }
-
-  .tm-auth__showcase {
-    padding: 12px;
-    align-items: center;
-  }
-
-  .tm-auth__copy {
-    margin-top: 8px;
-    text-align: left;
-  }
-
-  .tm-auth__copy h1 {
-    font-size: 1rem;
-    margin: 8px 0 4px;
-  }
-
-  .tm-auth__copy p {
-    display: none;
-  }
-
-  .tm-auth__logo-wrap {
-    padding: 10px;
-  }
-
-  .tm-auth__logo {
-    max-width: 120px;
-  }
-
-  .tm-auth__panel {
-    padding: 12px 16px;
-    max-height: calc(100dvh - 16px);
-  }
-
   .tm-auth__card {
-    padding: 12px 0;
+    padding: 14px 18px;
+  }
+
+  .tm-auth__brand {
+    padding: 6px;
+    margin-bottom: 10px;
+  }
+
+  .tm-auth__brand-logo {
+    max-width: 110px;
+    max-height: 40px;
   }
 
   .tm-auth__header {
@@ -784,12 +774,6 @@
   }
 }
 
-@media (max-width: 1024px) and (max-height: 520px) and (orientation: landscape) {
-  .tm-auth__layout {
-    grid-template-columns: minmax(120px, 0.4fr) minmax(0, 1fr);
-  }
-}
-
 /* Pantallas muy altas: centrar verticalmente */
 @media (min-width: 1025px) and (min-height: 900px) {
   .tm-auth__layout {
@@ -808,4 +792,156 @@
 .tm-auth__powered span {
   font-weight: 700;
   color: #0f172a;
+}
+
+/* =========================================================
+   LOADER · "Iniciando costuras..."
+   ========================================================= */
+.tm-loader-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 30% 30%, #1e1b4b 0%, #0f172a 60%, #020617 100%);
+  animation: tm-loader-fade-in 0.4s ease-out;
+  overflow: hidden;
+}
+
+.tm-loader-overlay::before,
+.tm-loader-overlay::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.tm-loader-overlay::before {
+  width: 320px;
+  height: 320px;
+  background: #7c3aed;
+  top: 15%;
+  left: 15%;
+  animation: tm-loader-orb 6s ease-in-out infinite;
+}
+
+.tm-loader-overlay::after {
+  width: 280px;
+  height: 280px;
+  background: #2563eb;
+  bottom: 15%;
+  right: 15%;
+  animation: tm-loader-orb 7s ease-in-out infinite reverse;
+}
+
+@keyframes tm-loader-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes tm-loader-orb {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(20px, -30px) scale(1.1); }
+}
+
+.tm-loader-content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  color: #f8fafc;
+  padding: 32px;
+  max-width: 420px;
+}
+
+.tm-loader-svg {
+  width: min(320px, 92vw);
+  height: auto;
+  aspect-ratio: 320 / 140;
+  max-width: 100%;
+}
+
+/* Puntada en zigzag: stroke-dashoffset animado para que se "dibuje" */
+.tm-loader-stitches {
+  stroke-dasharray: 600;
+  stroke-dashoffset: 600;
+  animation: tm-loader-stitch 1.8s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+  filter: drop-shadow(0 0 8px rgba(167, 139, 250, 0.55));
+}
+
+@keyframes tm-loader-stitch {
+  to { stroke-dashoffset: 0; }
+}
+
+/* Aguja: se mueve a lo largo de la costura con sutiles "puntadas" verticales */
+.tm-loader-needle {
+  animation: tm-loader-needle-move 1.8s cubic-bezier(0.65, 0, 0.35, 1) forwards,
+             tm-loader-needle-bob 0.18s ease-in-out 1.8 alternate;
+}
+
+@keyframes tm-loader-needle-move {
+  0%   { transform: translate(30px, 95px); }
+  100% { transform: translate(285px, 80px); }
+}
+
+@keyframes tm-loader-needle-bob {
+  from { translate: 0 0; }
+  to   { translate: 0 -6px; }
+}
+
+/* Carrete de hilo girando */
+.tm-loader-spool {
+  transform-origin: 295px 0;
+  animation: tm-loader-spool-rotate 1.6s linear infinite;
+}
+
+@keyframes tm-loader-spool-rotate {
+  from { transform: translate(295px, 40px) rotate(0deg); }
+  to   { transform: translate(295px, 40px) rotate(360deg); }
+}
+
+.tm-loader-title {
+  margin: 24px 0 8px;
+  font-size: clamp(1.1rem, 4.5vw, 1.4rem);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #f1f5f9;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.tm-loader-dots {
+  display: inline-flex;
+  margin-left: 2px;
+}
+
+.tm-loader-dots span {
+  opacity: 0;
+  animation: tm-loader-dot 1.4s ease-in-out infinite;
+}
+
+.tm-loader-dots span:nth-child(1) { animation-delay: 0s; }
+.tm-loader-dots span:nth-child(2) { animation-delay: 0.2s; }
+.tm-loader-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes tm-loader-dot {
+  0%, 60%, 100% { opacity: 0; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(-3px); }
+}
+
+.tm-loader-subtitle {
+  margin: 0;
+  font-size: clamp(0.8rem, 3vw, 0.92rem);
+  color: #94a3b8;
+  opacity: 0;
+  animation: tm-loader-subtitle-fade 0.6s ease-out 0.4s forwards;
+  padding: 0 16px;
+}
+
+@keyframes tm-loader-subtitle-fade {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
 }

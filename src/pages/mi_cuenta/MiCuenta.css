@@ -1,0 +1,412 @@
+.tm-mi-cuenta {
+  width: 100%;
+  padding: 24px;
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.tm-mi-cuenta__header {
+  margin-bottom: 20px;
+}
+
+.tm-mi-cuenta__eyebrow {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #7c3aed;
+  background: rgba(124, 58, 237, 0.08);
+  padding: 3px 10px;
+  border-radius: 999px;
+  margin-bottom: 8px;
+}
+
+.tm-mi-cuenta__header h1 {
+  margin: 0 0 6px;
+  font-size: 28px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.tm-mi-cuenta__header p {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+.tm-mi-cuenta__state {
+  padding: 24px;
+  text-align: center;
+  color: #64748b;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+.tm-mi-cuenta__state--error {
+  color: #b91c1c;
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+/* Tarjeta resumen del usuario */
+.tm-mi-cuenta__user-card {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  padding: 20px 22px;
+  background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
+  color: #fff;
+  border-radius: 16px;
+  margin-bottom: 20px;
+  box-shadow: 0 10px 30px rgba(124, 58, 237, 0.18);
+}
+
+.tm-mi-cuenta__avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+}
+
+.tm-mi-cuenta__user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tm-mi-cuenta__user-info strong {
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.tm-mi-cuenta__user-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  opacity: 0.92;
+}
+
+/* Grid de tarjetas */
+.tm-mi-cuenta__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  gap: 20px;
+}
+
+.tm-mi-cuenta__card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 22px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+.tm-mi-cuenta__card-head {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #eef2f7;
+}
+
+.tm-mi-cuenta__card-head > svg {
+  color: #7c3aed;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.tm-mi-cuenta__card-head h2 {
+  margin: 0 0 4px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.tm-mi-cuenta__card-head p {
+  margin: 0;
+  font-size: 0.83rem;
+  color: #64748b;
+}
+
+/* Formulario */
+.tm-mi-cuenta__form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 16px;
+}
+
+.tm-mi-cuenta__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tm-mi-cuenta__field--wide {
+  grid-column: 1 / -1;
+}
+
+.tm-mi-cuenta__field label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.tm-mi-cuenta__field input {
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  background: #f8fafc;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+
+.tm-mi-cuenta__field input:focus {
+  outline: none;
+  border-color: #7c3aed;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
+}
+
+.tm-mc-required {
+  color: #dc2626;
+  font-weight: 700;
+}
+
+/* Password */
+.tm-mi-cuenta__password-wrap {
+  position: relative;
+}
+
+.tm-mi-cuenta__password-wrap input {
+  width: 100%;
+  padding-right: 42px;
+}
+
+.tm-mi-cuenta__password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  height: 30px;
+  width: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #64748b;
+  border-radius: 6px;
+}
+
+.tm-mi-cuenta__password-toggle:hover {
+  background: #e2e8f0;
+  color: #1f2937;
+}
+
+/* Mensajes */
+.tm-mi-cuenta__error,
+.tm-mi-cuenta__success {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 0.88rem;
+}
+
+.tm-mi-cuenta__error {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.tm-mi-cuenta__success {
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+/* Acciones */
+.tm-mi-cuenta__actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.tm-mc-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 18px;
+  border-radius: 10px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #1f2937;
+  transition: background 0.15s, border-color 0.15s, transform 0.05s;
+}
+
+.tm-mc-btn:hover:not(:disabled) {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.tm-mc-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.tm-mc-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.tm-mc-btn--primary {
+  background: #7c3aed;
+  border-color: #7c3aed;
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(124, 58, 237, 0.25);
+}
+
+.tm-mc-btn--primary:hover:not(:disabled) {
+  background: #6d28d9;
+  border-color: #6d28d9;
+}
+
+/* =========================================================
+   RESPONSIVE MOBILE / TABLET (≤ 900px)
+   ========================================================= */
+@media (max-width: 900px) {
+  .tm-mi-cuenta {
+    padding: 12px 0;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  /* Header compacto */
+  .tm-mi-cuenta__header {
+    margin-bottom: 16px;
+  }
+
+  .tm-mi-cuenta__header h1 {
+    font-size: 22px;
+  }
+
+  .tm-mi-cuenta__header p {
+    font-size: 0.85rem;
+  }
+
+  .tm-mi-cuenta__eyebrow {
+    font-size: 0.7rem;
+  }
+
+  /* User card: padding más chico, avatar proporcional */
+  .tm-mi-cuenta__user-card {
+    padding: 16px;
+    gap: 14px;
+    border-radius: 14px;
+    margin-bottom: 16px;
+  }
+
+  .tm-mi-cuenta__avatar {
+    width: 52px;
+    height: 52px;
+    font-size: 1.4rem;
+  }
+
+  .tm-mi-cuenta__user-info strong {
+    font-size: 1rem;
+  }
+
+  .tm-mi-cuenta__user-meta {
+    font-size: 0.78rem;
+  }
+
+  /* Grid: una sola columna */
+  .tm-mi-cuenta__grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  /* Cards */
+  .tm-mi-cuenta__card {
+    padding: 16px;
+    border-radius: 14px;
+  }
+
+  .tm-mi-cuenta__card-head {
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+  }
+
+  .tm-mi-cuenta__card-head h2 {
+    font-size: 1rem;
+  }
+
+  .tm-mi-cuenta__card-head p {
+    font-size: 0.78rem;
+  }
+
+  /* Form: 1 columna siempre */
+  .tm-mi-cuenta__form {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .tm-mi-cuenta__field--wide {
+    grid-column: 1;
+  }
+
+  .tm-mi-cuenta__field input {
+    height: 44px;
+    font-size: 15px;
+  }
+
+  /* Botones de acción full width en mobile */
+  .tm-mi-cuenta__actions {
+    justify-content: stretch;
+  }
+
+  .tm-mc-btn {
+    width: 100%;
+    justify-content: center;
+    height: 46px;
+  }
+}
+
+@media (max-width: 480px) {
+  .tm-mi-cuenta__user-card {
+    padding: 14px;
+  }
+
+  .tm-mi-cuenta__avatar {
+    width: 46px;
+    height: 46px;
+    font-size: 1.2rem;
+  }
+
+  .tm-mi-cuenta__user-meta {
+    /* Permite que se quiebren en mobile chico */
+    flex-wrap: wrap;
+    word-break: break-word;
+  }
+
+  .tm-mi-cuenta__card {
+    padding: 14px;
+  }
+}

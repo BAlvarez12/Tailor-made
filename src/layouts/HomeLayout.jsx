@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
+import MobileNav from '../components/MobileNav'
 import BusquedaGlobal from '../components/BusquedaGlobal'
 import useInactividad from '../hooks/useInactividad'
 import './HomeLayout.css'
@@ -10,7 +11,12 @@ function HomeLayout() {
 
   return (
     <div className="tm-layout">
+      {/* Desktop: sidebar lateral fijo */}
       <Sidebar />
+
+      {/* Mobile/Tablet: barra inferior con bottom sheet */}
+      <MobileNav />
+
       <BusquedaGlobal />
 
       <main className="tm-layout__content">

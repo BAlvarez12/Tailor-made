@@ -387,16 +387,41 @@
   border-color: var(--color-border-strong);
 }
 
-@media (max-width: 640px) {
+@media (max-width: 900px) {
+  /* Overlay con padding más chico y scroll vertical interno cuando el modal
+     es más alto que el viewport. El align-items: flex-start evita que
+     modales largos queden con el header fuera de pantalla. */
+  .tm-modal-overlay {
+    padding: 12px;
+    align-items: flex-start;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
   .tm-modal {
     max-width: 100%;
-    border-radius: 20px;
+    width: 100%;
+    margin: auto;
+    border-radius: 18px;
+    max-height: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .tm-modal-overlay {
+    padding: 8px;
+    padding-top: max(8px, env(safe-area-inset-top));
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+  }
+
+  .tm-modal {
+    border-radius: 16px;
   }
 
   .tm-modal__header,
   .tm-modal__form {
-    padding-left: 18px;
-    padding-right: 18px;
+    padding-left: 16px;
+    padding-right: 16px;
   }
 
   .tm-modal__grid {
@@ -404,7 +429,7 @@
   }
 
   .tm-modal__header h2 {
-    font-size: 24px;
+    font-size: 22px;
   }
 
   .tm-modal-form .tm-modal__actions,

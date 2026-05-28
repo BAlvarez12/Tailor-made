@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import "./PrendasPage.css";
 import { obtenerPrendas } from "../../services/prendasService";
 import { obtenerTiposPrendaActivosService } from "../../services/tipoPrendasService";
@@ -38,6 +38,8 @@ const resolverEstadoPrenda = (prenda) => {
 
 function PrendasPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const abrirCrearAplicado = useRef(false);
   const loadMoreRef = useRef(null);
   const [prendas, setPrendas] = useState([]);
   const [tiposPrenda, setTiposPrenda] = useState([]);
@@ -53,6 +55,18 @@ function PrendasPage() {
   const [imageIndexes, setImageIndexes] = useState({});
   const pausedIdsRef = useRef(new Set());
   const prendasVisiblesRef = useRef([]);
+
+  // Soporte para navegación con `state.abrirCrear` (desde el FAB del MobileNav)
+  useEffect(() => {
+    if (abrirCrearAplicado.current) return;
+    if (location.state?.abrirCrear) {
+      abrirCrearAplicado.current = true;
+      setModoFormulario("create");
+      setPrendaSeleccionadaId(null);
+      setMostrarFormulario(true);
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, [location.state, location.pathname, navigate]);
 
   const normalizarRespuesta = (response) => {
     if (Array.isArray(response)) return response;

@@ -13,3 +13,23 @@
   overflow-y: visible;
   margin-left: 270px;
 }
+
+/* =====================================
+   MOBILE / TABLET (≤ 900px)
+   El sidebar desktop está oculto; usamos MobileNav (barra inferior).
+   El padding-bottom evita que la barra tape contenido.
+   ===================================== */
+@media (max-width: 900px) {
+  .tm-layout__content {
+    margin-left: 0;
+    padding: 14px 12px;
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 480px) {
+  .tm-layout__content {
+    padding: 12px 10px;
+    padding-bottom: calc(78px + env(safe-area-inset-bottom));
+  }
+}
