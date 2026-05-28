@@ -10,7 +10,7 @@ const crearPrendas = require('../controller/prendas/crearPrendas')
 const { updatePrendas } = require('../controller/prendas/updatePrendas')
 const obtenerPrendaPorId = require('../controller/prendas/obtenerPrendaPorId')
 
-router.post('/imagen', upload.array('imagenes', 3), guardarImagenPrenda)
+router.post('/imagen', upload.arrayConErrores('imagenes', 3), guardarImagenPrenda)
 router.get('/:cliente_id/obtener', obtenerMedidasPorCliente)
 router.get('/obtener', obtenerPrendas)
 router.post('/crear', requierePermiso('crear_prendas'), crearPrendas)

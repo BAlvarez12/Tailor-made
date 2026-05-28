@@ -8,6 +8,16 @@ const { crearUsuario } = require('../controller/usuarios/crearusuario')
 const { actualizarUsuario } = require('../controller/usuarios/actualizarusuario')
 const { reenviarInvitacionUsuario } = require('../controller/usuarios/reenviarInvitacion')
 const { reiniciarPasswordUsuario } = require('../controller/usuarios/reiniciarPasswordUsuario')
+const {
+  obtenerMiCuenta,
+  actualizarMiPerfil,
+  cambiarMiPassword,
+} = require('../controller/usuarios/miCuenta')
+
+// Mi cuenta · cualquier usuario autenticado puede gestionar su propio perfil
+router.get('/me', obtenerMiCuenta)
+router.put('/me/perfil', actualizarMiPerfil)
+router.put('/me/password', cambiarMiPassword)
 
 router.get('/obtener', obtenerUsuarios)
 router.get('/obtener/:id', obtenerUsuarioPorId)
