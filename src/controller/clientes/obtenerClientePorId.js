@@ -27,10 +27,16 @@ const obtenerClientePorId = async (req, res) => {
 
     const cliente = clienteRows[0]
 
-    // Reutiliza el mismo SP que usa el modal de medidas para garantizar
+    // Misma consulta que usa el modal de medidas, para mantener
     // consistencia en el formato de los datos.
-    const [medidasRows] = await pool.query('CALL sp_obtenerMedidasCliente(?)', [id])
-    const medidas = Array.isArray(medidasRows[0]) ? medidasRows[0] : []
+    const [medidasRows] = await pool.query(
+      `SELECT m.cliente_medida_id, m.tipo_medida_id, t.nombre_tipo_medida, m.valor
+         FROM cliente_medidas m
+         INNER JOIN tipo_medidas t ON m.tipo_medida_id = t.tipo_medida_id
+        WHERE m.cliente_id = ?`,
+      [id]
+    )
+    const medidas = Array.isArray(medidasRows) ? medidasRows : []
 
     const [prendas] = await pool.query(
       `SELECT

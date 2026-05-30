@@ -59,15 +59,22 @@ const updateMaterial = async (req, res) => {
     }
 
     await db.query(
-      `CALL sp_update_material(?, ?, ?, ?, ?, ?, ?)`,
+      `UPDATE materiales SET
+          nombre_material = ?,
+          descripcion_material = ?,
+          categoria_id = ?,
+          precio_unitario = ?,
+          referencia_compra = ?,
+          stock = ?
+        WHERE material_id = ?`,
       [
-        id,
         nombre_material,
         descripcion_material,
         categoria_id,
         precio_unitario,
         referencia_compra,
-        stock
+        stock,
+        id
       ]
     )
 

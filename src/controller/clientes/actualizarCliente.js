@@ -48,14 +48,23 @@ exports.actualizarCliente = async (req, res) => {
       });
     }
 
-    await db.query("CALL sp_actualizarCliente(?, ?, ?, ?, ?, ?)", [
-      id,
-      nombre.trim(),
-      apellido.trim(),
-      telefonoNormalizado,
-      busqueda.normalizado,
-      estado,
-    ]);
+    await db.query(
+      `UPDATE clientes
+          SET nombre_cliente = ?,
+              apellido_cliente = ?,
+              telefono = ?,
+              dpi = ?,
+              estado = ?
+        WHERE cliente_id = ?`,
+      [
+        nombre.trim(),
+        apellido.trim(),
+        telefonoNormalizado,
+        busqueda.normalizado,
+        estado,
+        id,
+      ]
+    );
 
     const estadoNum = Number(estado);
     const accion =

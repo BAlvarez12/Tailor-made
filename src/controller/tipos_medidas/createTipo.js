@@ -27,8 +27,19 @@ const createTipo = async (req, res) => {
       return res.status(400).json({ error: 'La descripción no puede exceder 255 caracteres.' })
     }
 
+    const [existe] = await db.query(
+      'SELECT COUNT(*) AS total FROM tipo_medidas WHERE nombre_tipo_medida = ?',
+      [nombre]
+    )
+
+    if (existe[0].total > 0) {
+      return res.status(400).json({ error: 'El tipo ya existe' })
+    }
+
     await db.query(
-      'CALL sp_tipo_medidas_create(?, ?, ?)',
+      `INSERT INTO tipo_medidas
+         (nombre_tipo_medida, descripcion_tipo_medida, fecha_creado, usuario_creador, estado)
+       VALUES (?, ?, NOW(), ?, 1)`,
       [nombre, descripcion, usuario_creador]
     )
 
