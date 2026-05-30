@@ -6,7 +6,7 @@ const restoreTipo = async (req, res) => {
     const { id } = req.params
 
     await db.query(
-      'CALL sp_tipo_medidas_restore(?)',
+      'UPDATE tipo_medidas SET estado = 1 WHERE tipo_medida_id = ?',
       [id]
     )
 

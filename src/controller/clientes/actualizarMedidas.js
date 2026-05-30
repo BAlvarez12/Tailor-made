@@ -29,10 +29,30 @@ const actualizarMedidas = async (req, res) => {
         });
       }
 
-      await db.query(
-        "CALL sp_actualizarMedidasCliente(?, ?, ?, ?)",
-        [cliente_id, m.tipo_medida_id, valorNum, usuario]
+      // Upsert: si ya existe la medida (cliente + tipo) se actualiza el valor,
+      // de lo contrario se inserta con la unidad por defecto (2).
+      const [existentes] = await db.query(
+        `SELECT 1 FROM cliente_medidas
+          WHERE cliente_id = ? AND tipo_medida_id = ?
+          LIMIT 1`,
+        [cliente_id, m.tipo_medida_id]
       );
+
+      if (existentes.length > 0) {
+        await db.query(
+          `UPDATE cliente_medidas
+              SET valor = ?, fecha_actualizado = NOW()
+            WHERE cliente_id = ? AND tipo_medida_id = ?`,
+          [valorNum, cliente_id, m.tipo_medida_id]
+        );
+      } else {
+        await db.query(
+          `INSERT INTO cliente_medidas
+             (cliente_id, tipo_medida_id, unidad_id, valor, fecha_creado, fecha_actualizado, usuario_creado)
+           VALUES (?, ?, 2, ?, NOW(), NOW(), ?)`,
+          [cliente_id, m.tipo_medida_id, valorNum, usuario]
+        );
+      }
       actualizadas++;
     }
 

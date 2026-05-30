@@ -53,7 +53,9 @@ exports.crearCliente = async (req, res) => {
     }
 
     const [resultCliente] = await db.query(
-      "CALL sp_crearCliente(?, ?, ?, ?, ?)",
+      `INSERT INTO clientes
+         (nombre_cliente, apellido_cliente, telefono, dpi, estado, fecha_creado, usuario_creador)
+       VALUES (?, ?, ?, ?, 1, NOW(), ?)`,
       [
         nombre.trim(),
         apellido.trim(),
@@ -63,7 +65,7 @@ exports.crearCliente = async (req, res) => {
       ]
     );
 
-    const cliente_id = resultCliente[0][0].cliente_id;
+    const cliente_id = resultCliente.insertId;
 
     registrar({
       ...fromReq(req),

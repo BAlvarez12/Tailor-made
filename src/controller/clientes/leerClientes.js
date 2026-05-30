@@ -2,8 +2,11 @@ const db = require("../../config/db");
 
 exports.leerClientes = async (req, res) => {
   try {
-    const [rows] = await db.query("CALL sp_leerClientes()");
-    const clientes = Array.isArray(rows[0]) ? rows[0] : [];
+    const [rows] = await db.query(
+      `SELECT cliente_id, nombre_cliente, apellido_cliente, telefono, dpi, estado, fecha_creado
+         FROM clientes`
+    );
+    const clientes = Array.isArray(rows) ? rows : [];
 
     clientes.sort((a, b) => {
       const fechaA = new Date(a.fecha_creado || 0).getTime();

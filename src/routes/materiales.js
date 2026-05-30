@@ -33,7 +33,15 @@ const storage = multer.diskStorage({
     cb(null, carpetaMateriales)
   },
   filename: (req, file, cb) => {
-    cb(null, Date.now() + '-' + file.originalname)
+    // Limpiamos el nombre: sin espacios ni caracteres raros (comas, etc.) que
+    // rompan las URLs o el separado de la lista de imágenes.
+    const ext = path.extname(file.originalname).toLowerCase().slice(0, 6)
+    const base = path
+      .basename(file.originalname, ext)
+      .replace(/\s+/g, '_')
+      .replace(/[^a-zA-Z0-9_-]/g, '')
+      .slice(0, 40)
+    cb(null, `${Date.now()}-${base}${ext}`)
   }
 })
 

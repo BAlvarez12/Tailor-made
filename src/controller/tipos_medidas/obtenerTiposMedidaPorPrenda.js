@@ -9,11 +9,22 @@ const obtenerTiposMedidaPorPrenda = async (req, res) => {
     }
 
     const [rows] = await db.query(
-      'CALL sp_tipo_medidas_por_prenda(?)',
+      `SELECT DISTINCT
+          tm.tipo_medida_id,
+          tm.nombre_tipo_medida,
+          tm.descripcion_tipo_medida,
+          tm.fecha_creado,
+          tm.usuario_creador
+        FROM medidas_prenda mp
+        INNER JOIN tipo_medidas tm ON tm.tipo_medida_id = mp.tipo_medida_id
+        INNER JOIN tipo_prendas tp ON tp.tipo_prendas_id = mp.prenda_id
+        WHERE mp.prenda_id = ?
+          AND tp.estado = 1
+        ORDER BY tm.nombre_tipo_medida ASC`,
       [prendaId]
     )
 
-    res.json(rows[0])
+    res.json(rows)
 
   } catch (error) {
     console.error(error)

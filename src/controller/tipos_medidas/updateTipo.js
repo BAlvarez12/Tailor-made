@@ -24,8 +24,10 @@ const updateTipo = async (req, res) => {
     }
 
     await db.query(
-      'CALL sp_tipo_medidas_update(?, ?, ?)',
-      [id, nombre, descripcion]
+      `UPDATE tipo_medidas
+          SET nombre_tipo_medida = ?, descripcion_tipo_medida = ?
+        WHERE tipo_medida_id = ?`,
+      [nombre, descripcion, id]
     )
 
     registrar({

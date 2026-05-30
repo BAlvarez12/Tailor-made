@@ -33,13 +33,12 @@ exports.guardarMedidas = async (req, res) => {
         });
       }
 
-      await db.query("CALL sp_MedidasRegistroCliente(?, ?, ?, ?, ?)", [
-        cliente_id,
-        m.tipo_medida_id,
-        2,
-        valorNum,
-        usuario
-      ]);
+      await db.query(
+        `INSERT INTO cliente_medidas
+           (cliente_id, tipo_medida_id, unidad_id, valor, fecha_creado, fecha_actualizado, usuario_creado)
+         VALUES (?, ?, ?, ?, NOW(), NOW(), ?)`,
+        [cliente_id, m.tipo_medida_id, 2, valorNum, usuario]
+      );
       guardadas++;
     }
 

@@ -13,17 +13,26 @@ const updateUnidad = async (req, res) => {
       return res.status(400).json({ error: 'Nombre y símbolo son obligatorios.' })
     }
 
-    if (nombre.length > 50) {
-      return res.status(400).json({ error: 'El nombre no puede exceder 50 caracteres.' })
+    if (nombre.length > 20) {
+      return res.status(400).json({ error: 'El nombre no puede exceder 20 caracteres.' })
     }
 
     if (simbolo.length > 10) {
       return res.status(400).json({ error: 'El símbolo no puede exceder 10 caracteres.' })
     }
 
+    const [existe] = await db.query(
+      'SELECT COUNT(*) AS total FROM unidades_medida WHERE nombre_unidad = ? AND unidad_id <> ?',
+      [nombre, id]
+    )
+
+    if (existe[0].total > 0) {
+      return res.status(409).json({ error: 'La unidad ya existe' })
+    }
+
     await db.query(
-      'CALL sp_unidades_update(?, ?, ?)',
-      [id, nombre, simbolo]
+      'UPDATE unidades_medida SET nombre_unidad = ?, simbolo_unidad = ? WHERE unidad_id = ?',
+      [nombre, simbolo, id]
     )
 
     registrar({

@@ -30,20 +30,22 @@ const createMaterial = async (req, res) => {
 
     const usuario_creador = req.user.usuario_id
 
-    const [rows] = await db.query(
-  `CALL sp_create_material(?, ?, ?, ?, ?, ?, ?)`,
-  [
-    categoria_id,
-    nombre_material,
-    descripcion_material,
-    precio_unitario,
-    referencia_compra,
-    stock,
-    usuario_creador
-  ]
-)
+    const [result] = await db.query(
+      `INSERT INTO materiales
+         (categoria_id, nombre_material, descripcion_material, precio_unitario, referencia_compra, stock, usuario_creador)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        categoria_id,
+        nombre_material,
+        descripcion_material,
+        precio_unitario,
+        referencia_compra,
+        stock,
+        usuario_creador
+      ]
+    )
 
-const material_id = rows[0][0].material_id
+    const material_id = result.insertId
 
     // IMÁGENES
     if (req.files && req.files.length > 0) {

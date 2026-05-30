@@ -6,7 +6,7 @@ const restoreUnidad = async (req, res) => {
     const { id } = req.params
 
     await db.query(
-      'CALL sp_unidades_restore(?)',
+      'UPDATE unidades_medida SET estado = 1 WHERE unidad_id = ?',
       [id]
     )
 

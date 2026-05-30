@@ -6,7 +6,7 @@ const deleteMaterial = async (req, res) => {
     const { id } = req.params
 
     //  SOFT DELETE (desactivar)
-    await db.query(`CALL sp_delete_material(?)`, [id])
+    await db.query(`UPDATE materiales SET estado = 0 WHERE material_id = ?`, [id])
 
     registrar({
       ...fromReq(req),

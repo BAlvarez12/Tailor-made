@@ -6,7 +6,7 @@ const archiveUnidad = async (req, res) => {
     const { id } = req.params
 
     await db.query(
-      'CALL sp_unidades_archive(?)',
+      'UPDATE unidades_medida SET estado = 0 WHERE unidad_id = ?',
       [id]
     )
 
