@@ -368,6 +368,32 @@
 }
 
 /* =========================================================
+   DESKTOP: cuando se elige "Asignar contraseña manualmente", aparecen
+   el campo de contraseña + el panel de fortaleza (con reglas). Esto
+   hace que el modal crezca y, como está centrado vertical (align-items:
+   center), el contenido se va para ARRIBA y el header desaparece del
+   viewport. Solución: limitamos el alto del modal y hacemos que el form
+   scrollee internamente. Aplicado solo en >640px (mobile ya tiene full-
+   screen con overlay scroll). */
+@media (min-width: 641px) {
+  .formularioUsuarios .tm-modal {
+    max-height: calc(100vh - 48px);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .formularioUsuarios .tm-modal__header {
+    flex-shrink: 0;
+  }
+
+  .formularioUsuarios .tm-modal__form {
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+  }
+}
+
+/* =========================================================
    MOBILE: botones full-width apilados (Guardar arriba, Cancelar abajo)
    ========================================================= */
 @media (max-width: 640px) {
