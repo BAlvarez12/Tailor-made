@@ -1,0 +1,111 @@
+/* =========================================================
+   TOASTS (react-toastify) alineados al diseño de la app.
+   Usa los tokens de theme.css, así que funciona en claro y
+   oscuro automáticamente. Debe importarse DESPUÉS del CSS de
+   react-toastify para sobreescribir sus estilos por defecto.
+   ========================================================= */
+
+.Toastify__toast-container {
+  width: clamp(300px, 30vw, 384px);
+  padding: 0;
+}
+
+.Toastify__toast {
+  position: relative;
+  border-radius: 14px;
+  padding: 13px 14px;
+  min-height: 56px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-modal);
+  overflow: hidden;
+}
+
+/* Franja de color a la izquierda según el tipo de toast */
+.Toastify__toast::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  background: var(--color-primary);
+}
+
+.Toastify__toast--success::before { background: var(--color-success); }
+.Toastify__toast--error::before   { background: var(--color-danger); }
+.Toastify__toast--warning::before { background: var(--color-warning); }
+.Toastify__toast--info::before    { background: var(--color-primary); }
+
+.Toastify__toast-body {
+  padding: 0;
+  margin: 0;
+  padding-left: 6px;
+  align-items: center;
+  color: inherit;
+}
+
+/* Icono coloreado según el tipo */
+.Toastify__toast-icon {
+  width: 22px;
+  margin-inline-end: 12px;
+}
+
+.Toastify__toast--success .Toastify__toast-icon svg { fill: var(--color-success); }
+.Toastify__toast--error   .Toastify__toast-icon svg { fill: var(--color-danger); }
+.Toastify__toast--warning .Toastify__toast-icon svg { fill: var(--color-warning); }
+.Toastify__toast--info    .Toastify__toast-icon svg { fill: var(--color-primary); }
+
+/* Botón de cerrar discreto */
+.Toastify__close-button {
+  color: var(--color-text-muted);
+  opacity: 0.6;
+  align-self: center;
+  transition: opacity 0.15s ease, color 0.15s ease;
+}
+
+.Toastify__close-button:hover {
+  opacity: 1;
+  color: var(--color-text);
+}
+
+/* Barra de progreso con los colores de la marca/estado */
+.Toastify__progress-bar {
+  height: 3px;
+  opacity: 0.9;
+}
+
+.Toastify__progress-bar--success { background: var(--color-success); }
+.Toastify__progress-bar--error   { background: var(--color-danger); }
+.Toastify__progress-bar--warning { background: var(--color-warning); }
+.Toastify__progress-bar--info,
+.Toastify__progress-bar--default {
+  background: linear-gradient(90deg, #7c3aed 0%, #9333ea 100%);
+}
+
+/* =========================================================
+   MÓVIL: mover los toasts ARRIBA y centrados (full-width con
+   márgenes) para no chocar con la barra inferior MobileNav.
+   ========================================================= */
+@media (max-width: 600px) {
+  .Toastify__toast-container {
+    width: 100% !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: 0 !important;
+    bottom: auto !important;
+    transform: none !important;
+    padding: 8px;
+    padding-top: calc(8px + env(safe-area-inset-top));
+  }
+
+  .Toastify__toast {
+    border-radius: 12px;
+    margin-bottom: 8px;
+  }
+}

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "react-toastify";
 import "./PrendaFormulario.css";
 import { obtenerClientesActivosService } from "../../services/clienteService";
 import { obtenerTiposPrendaActivosService } from "../../services/tipoPrendasService";
@@ -905,6 +906,8 @@ function PrendaFormulario({
       const response = isEdit
         ? await updatePrendas(prendaId, payload)
         : await crearPrendas(payload);
+
+      toast.success(isEdit ? "Prenda actualizada" : "Prenda creada");
 
       if (onSuccess) {
         await onSuccess(response);

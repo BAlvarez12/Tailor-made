@@ -14,6 +14,7 @@ export default function TipoMedidasModal({
   tipoSeleccionado,
   formData,
   setFormData,
+  errorModal,
   onClose,
   onGuardar,
   onArchivar,
@@ -112,6 +113,12 @@ export default function TipoMedidasModal({
               <p className="tm-required-note">
                 <span className="tm-required">*</span> Campos obligatorios
               </p>
+
+              {errorModal && (
+                <p className="tm-modal__error" role="alert">
+                  {errorModal}
+                </p>
+              )}
             </div>
 
             <div className="tm-modal-form__footer tm-modal__actions">

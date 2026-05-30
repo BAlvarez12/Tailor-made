@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { toast } from "react-toastify";
 import api from "../../utils/api";
 import "../../styles/tmModalShared.css";
 import "./MaterialesModales.css";
@@ -313,6 +314,7 @@ function MaterialFormModal({ open, materialId, onClose }) {
         });
       }
 
+      toast.success(esEdicion ? "Material actualizado" : "Material creado");
       handleCerrar();
     } catch (err) {
       console.error(err);

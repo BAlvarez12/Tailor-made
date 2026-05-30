@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { toast } from "react-toastify";
 import {
   getTipos,
   createTipo,
@@ -6,6 +7,9 @@ import {
   archiveTipo,
   restoreTipo
 } from "../../services/tipoMedidasService";
+
+const mensajeError = (error, fallback) =>
+  error?.response?.data?.error || error?.response?.data?.message || fallback;
 import TipoMedidasHeader from "./tipoMedidasHeader";
 import TipoMedidasTable from "./tipoMedidasTable";
 import TipoMedidasModal from "./tipoMedidasModal";
@@ -23,6 +27,7 @@ export default function TipoMedidas() {
   const [tipoSeleccionado, setTipoSeleccionado] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [modoCrear, setModoCrear] = useState(false);
+  const [errorModal, setErrorModal] = useState("");
 
   const [formData, setFormData] = useState({
     nombre_tipo_medida: "",
@@ -95,9 +100,11 @@ export default function TipoMedidas() {
     try {
       await restoreTipo(tipoSeleccionado.tipo_medida_id);
       setShowModal(false);
+      toast.success("Tipo de medida restaurado");
       cargarTipos();
     } catch (error) {
       console.error("Error restaurando:", error);
+      toast.error(mensajeError(error, "No se pudo restaurar el tipo de medida."));
     }
   };
 
@@ -105,9 +112,11 @@ export default function TipoMedidas() {
     try {
       await archiveTipo(tipoSeleccionado.tipo_medida_id);
       setShowModal(false);
+      toast.success("Tipo de medida archivado");
       cargarTipos();
     } catch (error) {
       console.error("Error archivando:", error);
+      toast.error(mensajeError(error, "No se pudo archivar el tipo de medida."));
     }
   };
 
@@ -119,16 +128,20 @@ export default function TipoMedidas() {
         await updateTipo(tipoSeleccionado.tipo_medida_id, formData);
       }
 
+      setErrorModal("");
       setShowModal(false);
+      toast.success(modoCrear ? "Tipo de medida creado" : "Tipo de medida actualizado");
       cargarTipos();
 
     } catch (error) {
       console.error("Error guardando:", error);
-      alert(error.response?.data?.error || "Error al guardar");
+      // Error de validación → se muestra dentro del modal (sigue abierto)
+      setErrorModal(mensajeError(error, "No se pudo guardar el tipo de medida."));
     }
   };
 
   const handleModalOpen = (tipo = null) => {
+    setErrorModal("");
     if (tipo) {
       setTipoSeleccionado(tipo);
       setModoCrear(false);
@@ -149,6 +162,7 @@ export default function TipoMedidas() {
 
   const handleModalClose = () => {
     setShowModal(false);
+    setErrorModal("");
   };
 
 
@@ -240,6 +254,7 @@ export default function TipoMedidas() {
           tipoSeleccionado={tipoSeleccionado}
           formData={formData}
           setFormData={setFormData}
+          errorModal={errorModal}
           onClose={handleModalClose}
           onGuardar={handleGuardar}
           onArchivar={handleArchivarIndividual}

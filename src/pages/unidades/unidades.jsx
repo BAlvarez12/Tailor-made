@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { toast } from "react-toastify";
 import {
   getUnidades,
   createUnidad,
@@ -6,6 +7,9 @@ import {
   archiveUnidad,
   restoreUnidad
 } from "../../services/unidadesService";
+
+const mensajeError = (error, fallback) =>
+  error?.response?.data?.error || error?.response?.data?.message || fallback;
 import UnidadesHeader from "./unidadesHeader";
 import UnidadesTable from "./unidadesTable";
 import UnidadesModal from "./unidadesModal";
@@ -23,6 +27,7 @@ export default function Unidades() {
   const [unidadSeleccionada, setUnidadSeleccionada] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [modoCrear, setModoCrear] = useState(false);
+  const [errorModal, setErrorModal] = useState("");
 
   const [formData, setFormData] = useState({
     nombre_unidad: "",
@@ -97,9 +102,11 @@ export default function Unidades() {
     try {
       await restoreUnidad(unidadSeleccionada.unidad_id);
       setShowModal(false);
+      toast.success("Unidad restaurada");
       cargarUnidades();
     } catch (error) {
       console.error("Error restaurando:", error);
+      toast.error(mensajeError(error, "No se pudo restaurar la unidad."));
     }
   };
 
@@ -107,9 +114,11 @@ export default function Unidades() {
     try {
       await archiveUnidad(unidadSeleccionada.unidad_id);
       setShowModal(false);
+      toast.success("Unidad archivada");
       cargarUnidades();
     } catch (error) {
       console.error("Error archivando:", error);
+      toast.error(mensajeError(error, "No se pudo archivar la unidad."));
     }
   };
 
@@ -121,14 +130,19 @@ export default function Unidades() {
         await updateUnidad(unidadSeleccionada.unidad_id, formData);
       }
 
+      setErrorModal("");
       setShowModal(false);
+      toast.success(modoCrear ? "Unidad creada" : "Unidad actualizada");
       cargarUnidades();
     } catch (error) {
       console.error("Error guardando unidad:", error);
+      // Error de validación → se muestra dentro del modal (sigue abierto)
+      setErrorModal(mensajeError(error, "No se pudo guardar la unidad."));
     }
   };
 
   const handleModalOpen = (unidad = null) => {
+    setErrorModal("");
     if (unidad) {
       setUnidadSeleccionada(unidad);
       setModoCrear(false);
@@ -238,6 +252,7 @@ export default function Unidades() {
           unidadSeleccionada={unidadSeleccionada}
           formData={formData}
           setFormData={setFormData}
+          errorModal={errorModal}
           onClose={handleModalClose}
           onGuardar={handleGuardar}
           onArchivar={handleArchivarIndividual}
