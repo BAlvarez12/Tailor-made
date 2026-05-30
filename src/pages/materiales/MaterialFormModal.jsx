@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 
 const getApiUploadsMateriales = () =>
-  `${import.meta.env.VITE_BACKEND_URL}/uploads/materiales`;
+  `${import.meta.env.VITE_BACKEND_URL || ""}/uploads/materiales`;
 
 const MAX_IMAGENES = 3;
 const MAX_TAMANIO_BYTES = 5 * 1024 * 1024; // 5MB

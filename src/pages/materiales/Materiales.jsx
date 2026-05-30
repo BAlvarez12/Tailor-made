@@ -10,7 +10,10 @@ import ConfirmacionModal from "../../components/ConfirmacionModal";
 import { Layers } from "lucide-react";
 import { toast } from "react-toastify";
 
-const API_BASE = import.meta.env.VITE_BACKEND_URL;
+// Si VITE_BACKEND_URL no está definido (p. ej. en el build del servidor),
+// usamos ruta relativa a la raíz ("") para que el proxy resuelva /uploads.
+// Sin el "|| ''" quedaría "undefined/uploads/..." → ruta rota.
+const API_BASE = import.meta.env.VITE_BACKEND_URL || "";
 
 const urlImagenMaterial = (nombreArchivo) =>
   `${API_BASE}/uploads/materiales/${encodeURIComponent(nombreArchivo)}`;
