@@ -9,12 +9,18 @@ const {
 } = require('../controller/login/passwordReset.js');
 const { activarCuenta } = require('../controller/login/activarCuenta.js');
 const { verificarBloqueoLogin } = require('../middleware/loginAttempts');
+const { tiempoRespuestaMinimo } = require('../middleware/tiempoRespuestaMinimo');
 
-router.post('/login', verificarBloqueoLogin, login);
-router.post('/olvide-contrasena/solicitar', solicitarRecuperacion);
-router.post('/olvide-contrasena/reenviar', reenviarRecuperacion);
-router.post('/olvide-contrasena/verificar-codigo', verificarCodigo);
-router.post('/olvide-contrasena/restablecer', restablecerConCodigo);
+// Defensa contra timing attacks: forzamos 1.5s mínimo en login y recuperación
+// para que un atacante no pueda inferir si un usuario/email existe por la
+// diferencia de tiempo entre respuestas.
+const minimoAuth = tiempoRespuestaMinimo(1500);
+
+router.post('/login', minimoAuth, verificarBloqueoLogin, login);
+router.post('/olvide-contrasena/solicitar', minimoAuth, solicitarRecuperacion);
+router.post('/olvide-contrasena/reenviar', minimoAuth, reenviarRecuperacion);
+router.post('/olvide-contrasena/verificar-codigo', minimoAuth, verificarCodigo);
+router.post('/olvide-contrasena/restablecer', minimoAuth, restablecerConCodigo);
 router.post('/activar-cuenta', activarCuenta);
 
 module.exports = router;

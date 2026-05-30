@@ -1,5 +1,7 @@
 const express = require('express')
 const multer = require('multer')
+const fs = require('fs')
+const path = require('path')
 const { createMaterial } = require('../controller/materiales/CreateMaterial')
 const { getCategorias } = require('../controller/materiales/getCategorias')
 const { createCategoriaMaterial } = require('../controller/materiales/createCategoriaMaterial')
@@ -16,8 +18,20 @@ const router = express.Router()
 // CONFIGURACIÓN DE MULTER (solo imágenes, máx 5MB, hasta 3 archivos)
 const TIPOS_PERMITIDOS = /jpeg|jpg|png|webp/
 
+// Carpeta SIEMPRE en minúscula y con ruta absoluta. El frontend (web y app)
+// pide las imágenes en /uploads/materiales, así que el destino en disco debe
+// coincidir exactamente. En Linux el sistema distingue mayúsculas, por lo que
+// "Materiales" y "materiales" serían carpetas distintas y las imágenes darían 404.
+const carpetaMateriales = path.join(__dirname, '../../uploads/materiales')
+
+if (!fs.existsSync(carpetaMateriales)) {
+  fs.mkdirSync(carpetaMateriales, { recursive: true })
+}
+
 const storage = multer.diskStorage({
-  destination: 'uploads/materiales/',
+  destination: (req, file, cb) => {
+    cb(null, carpetaMateriales)
+  },
   filename: (req, file, cb) => {
     cb(null, Date.now() + '-' + file.originalname)
   }
@@ -63,7 +77,7 @@ router.post('/categorias', requierePermiso('crear_categoria_materiales'), create
 router.put('/categorias/:id', requierePermiso('editar_categoria_materiales'), updateCategoriaMaterial)
 router.get('/', getMateriales)
 router.delete('/:id', requierePermiso('editar_materiales'), deleteMaterial)
-router.put('/:id', requierePermiso('editar_materiales'), updateMaterial)
+router.put('/:id', requierePermiso('editar_materiales'), subirImagenes, updateMaterial)
 router.get('/activos', obtenerMaterialesActivos)
 router.post('/movimientos-existencias', requierePermiso('existencias-materiales'), createMovimientoExistencias)
 
