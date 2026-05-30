@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { toast } from "react-toastify";
 import {
   getTipoPrendas,
   createTipoPrenda,
@@ -95,6 +96,7 @@ export default function TipoPrendas() {
     try {
       await archiveTipoPrenda(seleccionado.tipo_prendas_id);
       setShowModal(false);
+      toast.success("Tipo de prenda archivado");
       cargarTiposPrenda();
     } catch (error) {
       console.error("Error archivando:", error);
@@ -108,6 +110,7 @@ export default function TipoPrendas() {
     try {
       await restoreTipoPrenda(seleccionado.tipo_prendas_id);
       setShowModal(false);
+      toast.success("Tipo de prenda restaurado");
       cargarTiposPrenda();
     } catch (error) {
       console.error("Error restaurando:", error);
@@ -126,6 +129,7 @@ export default function TipoPrendas() {
         await updateTipoPrenda(seleccionado.tipo_prendas_id, formData);
       }
       setShowModal(false);
+      toast.success(modoCrear ? "Tipo de prenda creado" : "Tipo de prenda actualizado");
       cargarTiposPrenda();
     } catch (error) {
       console.error("Error guardando tipo de prenda:", error);

@@ -14,6 +14,7 @@ export default function UnidadesModal({
   unidadSeleccionada,
   formData,
   setFormData,
+  errorModal,
   onClose,
   onGuardar,
   onArchivar,
@@ -84,7 +85,7 @@ export default function UnidadesModal({
                       }
                       placeholder="Ej. Centímetro"
                       required
-                      maxLength={50}
+                      maxLength={20}
                     />
                   </div>
                 </div>
@@ -116,6 +117,12 @@ export default function UnidadesModal({
               <p className="tm-required-note">
                 <span className="tm-required">*</span> Campos obligatorios
               </p>
+
+              {errorModal && (
+                <p className="tm-modal__error" role="alert">
+                  {errorModal}
+                </p>
+              )}
             </div>
 
             <div className="tm-modal-form__footer tm-modal__actions">

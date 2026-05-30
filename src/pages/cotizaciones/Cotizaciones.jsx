@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import "./Cotizaciones.css";
 import { obtenerClientesActivosService } from "../../services/clienteService";
 import { obtenerPrendas, obtenerPrendaPorId } from "../../services/prendasService";
@@ -568,6 +569,9 @@ function Cotizaciones() {
       setErrorDetalle("");
       setMensajeExito(
         `Cotización ${resultado.codigo_cotizacion || ""} guardada correctamente.`
+      );
+      toast.success(
+        `Cotización ${resultado.codigo_cotizacion || ""} guardada correctamente`
       );
     } catch (err) {
       console.error("Error al guardar cotización:", err);
