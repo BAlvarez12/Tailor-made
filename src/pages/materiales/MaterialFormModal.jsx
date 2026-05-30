@@ -42,8 +42,11 @@ const Obligatorio = () => (
 function MaterialFormModal({ open, materialId, onClose }) {
   const esEdicion = Boolean(materialId);
   const [form, setForm] = useState(FORM_VACIO);
-  const [imagenes, setImagenes] = useState([]); // [{ file, url }]
-  const [imagenesExistentes, setImagenesExistentes] = useState([]);
+  const [imagenes, setImagenes] = useState([]); // [{ file, url }] — nuevas
+  const [imagenesExistentes, setImagenesExistentes] = useState([]); // filenames del server
+  // Filenames de las imágenes existentes que el usuario marcó para eliminar.
+  // Se aplican al guardar; mientras tanto solo se ocultan de la UI.
+  const [imagenesAEliminar, setImagenesAEliminar] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [cargando, setCargando] = useState(false);
   const [guardando, setGuardando] = useState(false);
@@ -106,10 +109,12 @@ function MaterialFormModal({ open, materialId, onClose }) {
     if (esEdicion) {
       cargarMaterial();
       limpiarImagenes();
+      setImagenesAEliminar([]);
     } else {
       setForm(FORM_VACIO);
       limpiarImagenes();
       setImagenesExistentes([]);
+      setImagenesAEliminar([]);
       setCargando(false);
     }
   }, [open, esEdicion, materialId, cargarCategorias, cargarMaterial, limpiarImagenes]);
@@ -149,11 +154,16 @@ function MaterialFormModal({ open, materialId, onClose }) {
     }
 
     setImagenes((prev) => {
-      const espacioDisponible = Math.max(0, MAX_IMAGENES - prev.length);
+      // El límite considera tanto las imágenes ya guardadas en el server
+      // como las nuevas que el usuario acaba de agregar en esta sesión.
+      const totalActual = prev.length + imagenesExistentes.length;
+      const espacioDisponible = Math.max(0, MAX_IMAGENES - totalActual);
       const aAgregar = validos.slice(0, espacioDisponible);
 
       if (validos.length > espacioDisponible) {
-        errores.push(`Solo puedes subir ${MAX_IMAGENES} imágenes por material.`);
+        errores.push(
+          `Solo puedes tener ${MAX_IMAGENES} imágenes por material (este ya tiene ${imagenesExistentes.length + prev.length}).`
+        );
       }
 
       if (errores.length) setError(errores.join(" "));
@@ -180,6 +190,14 @@ function MaterialFormModal({ open, materialId, onClose }) {
       if (eliminada) URL.revokeObjectURL(eliminada.url);
       return prev.filter((_, i) => i !== index);
     });
+  };
+
+  // Marca una imagen YA guardada en el server para eliminación. La quita de
+  // la UI inmediatamente y la agrega a la lista que se enviará al backend
+  // al guardar. Si el usuario cancela el modal, no se aplica el cambio.
+  const quitarImagenExistente = (nombre) => {
+    setImagenesExistentes((prev) => prev.filter((n) => n !== nombre));
+    setImagenesAEliminar((prev) => (prev.includes(nombre) ? prev : [...prev, nombre]));
   };
 
   const handleDragOver = (e) => {
@@ -242,15 +260,45 @@ function MaterialFormModal({ open, materialId, onClose }) {
       setGuardando(true);
 
       if (esEdicion) {
-        await api.put(`/materiales/${materialId}`, {
-          nombre_material: form.nombre_material.trim(),
-          descripcion_material: form.descripcion_material.trim(),
-          categoria_id: form.categoria_id,
-          precio_unitario:
-            form.precio_unitario === "" ? 0 : form.precio_unitario,
-          referencia_compra: form.referencia_compra.trim(),
-          stock: form.stock,
-        });
+        // Si hay imágenes nuevas o imágenes existentes marcadas para eliminar,
+        // mandamos multipart (multer en el backend acepta form-data con o
+        // sin archivos). Si no hay cambios de imágenes, JSON simple.
+        const hayCambiosImagenes =
+          imagenes.length > 0 || imagenesAEliminar.length > 0;
+
+        if (hayCambiosImagenes) {
+          const data = new FormData();
+          data.append("nombre_material", form.nombre_material.trim());
+          data.append("descripcion_material", form.descripcion_material.trim());
+          data.append("categoria_id", form.categoria_id);
+          data.append(
+            "precio_unitario",
+            form.precio_unitario === "" ? "0" : form.precio_unitario
+          );
+          data.append("referencia_compra", form.referencia_compra.trim());
+          data.append("stock", form.stock);
+          imagenes.forEach((img) => data.append("imagenes", img.file));
+          if (imagenesAEliminar.length > 0) {
+            data.append(
+              "imagenes_eliminar",
+              JSON.stringify(imagenesAEliminar)
+            );
+          }
+
+          await api.put(`/materiales/${materialId}`, data, {
+            headers: { "Content-Type": "multipart/form-data" },
+          });
+        } else {
+          await api.put(`/materiales/${materialId}`, {
+            nombre_material: form.nombre_material.trim(),
+            descripcion_material: form.descripcion_material.trim(),
+            categoria_id: form.categoria_id,
+            precio_unitario:
+              form.precio_unitario === "" ? 0 : form.precio_unitario,
+            referencia_compra: form.referencia_compra.trim(),
+            stock: form.stock,
+          });
+        }
       } else {
         const data = new FormData();
         Object.entries(form).forEach(([key, value]) => {
@@ -470,60 +518,16 @@ function MaterialFormModal({ open, materialId, onClose }) {
                     <p className="tm-modal__section-title">
                       <ImagePlus size={16} />
                       Imágenes
+                      {esEdicion && (
+                        <span className="mat-modal__img-counter">
+                          {imagenesExistentes.length + imagenes.length}/{MAX_IMAGENES}
+                        </span>
+                      )}
                     </p>
 
-                    {!esEdicion ? (
-                      <>
-                        <label
-                          htmlFor="material-imagenes"
-                          className={`mat-modal__dropzone${arrastrando ? " mat-modal__dropzone--active" : ""}`}
-                          onDragOver={handleDragOver}
-                          onDragEnter={handleDragOver}
-                          onDragLeave={handleDragLeave}
-                          onDrop={handleDrop}
-                        >
-                          <UploadCloud size={36} />
-                          <strong>
-                            {arrastrando
-                              ? "Suelta las imágenes aquí"
-                              : "Arrastra imágenes o haz clic"}
-                          </strong>
-                          <span>PNG, JPG, JPEG o WEBP — máx. 3 imágenes, 5MB c/u</span>
-                          <input
-                            id="material-imagenes"
-                            type="file"
-                            accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
-                            multiple
-                            hidden
-                            onChange={handleFiles}
-                          />
-                        </label>
-
-                        {imagenes.length > 0 && (
-                          <div className="mat-modal__thumb-grid">
-                            {imagenes.map((img, idx) => (
-                              <div
-                                key={`${img.file.name}-${idx}`}
-                                className="mat-modal__thumb"
-                              >
-                                <img src={img.url} alt={img.file.name} />
-                                <button
-                                  type="button"
-                                  className="mat-modal__thumb-remove"
-                                  onClick={() => quitarImagenNueva(idx)}
-                                  aria-label="Quitar imagen"
-                                >
-                                  <X size={14} />
-                                </button>
-                                <span className="mat-modal__thumb-name">
-                                  {img.file.name}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </>
-                    ) : imagenesExistentes.length > 0 ? (
+                    {/* En modo edición: imágenes ya guardadas en el server,
+                        con botón X para marcarlas para eliminación */}
+                    {esEdicion && imagenesExistentes.length > 0 && (
                       <div className="mat-modal__thumb-grid">
                         {imagenesExistentes.map((nombre) => (
                           <div key={nombre} className="mat-modal__thumb">
@@ -534,14 +538,102 @@ function MaterialFormModal({ open, materialId, onClose }) {
                                 e.currentTarget.style.display = "none";
                               }}
                             />
+                            <button
+                              type="button"
+                              className="mat-modal__thumb-remove"
+                              onClick={() => quitarImagenExistente(nombre)}
+                              aria-label="Eliminar imagen"
+                              title="Eliminar imagen"
+                            >
+                              <X size={14} />
+                            </button>
                           </div>
                         ))}
                       </div>
-                    ) : (
-                      <p className="mat-modal__empty-imgs">
-                        Este material no tiene imágenes guardadas.
-                      </p>
                     )}
+
+                    {/* Dropzone (en crear siempre; en editar solo si hay espacio).
+                        En edit con imágenes existentes usamos el modifier
+                        compacto para no eclipsar las miniaturas. */}
+                    {(!esEdicion ||
+                      imagenesExistentes.length + imagenes.length < MAX_IMAGENES) && (
+                      <label
+                        htmlFor="material-imagenes"
+                        className={[
+                          "mat-modal__dropzone",
+                          arrastrando ? "mat-modal__dropzone--active" : "",
+                          esEdicion && (imagenesExistentes.length > 0 || imagenes.length > 0)
+                            ? "mat-modal__dropzone--compact"
+                            : "",
+                        ]
+                          .filter(Boolean)
+                          .join(" ")}
+                        onDragOver={handleDragOver}
+                        onDragEnter={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
+                      >
+                        <UploadCloud
+                          size={
+                            esEdicion && (imagenesExistentes.length > 0 || imagenes.length > 0)
+                              ? 22
+                              : 36
+                          }
+                        />
+                        <strong>
+                          {arrastrando
+                            ? "Suelta las imágenes aquí"
+                            : esEdicion
+                              ? "Agregar imágenes"
+                              : "Arrastra imágenes o haz clic"}
+                        </strong>
+                        <span>
+                          PNG, JPG, JPEG o WEBP — máx. {MAX_IMAGENES} imágenes, 5MB c/u
+                        </span>
+                        <input
+                          id="material-imagenes"
+                          type="file"
+                          accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                          multiple
+                          hidden
+                          onChange={handleFiles}
+                        />
+                      </label>
+                    )}
+
+                    {/* Previews de las imágenes nuevas que el usuario está
+                        agregando (tanto en crear como en editar) */}
+                    {imagenes.length > 0 && (
+                      <div className="mat-modal__thumb-grid">
+                        {imagenes.map((img, idx) => (
+                          <div
+                            key={`${img.file.name}-${idx}`}
+                            className="mat-modal__thumb mat-modal__thumb--nueva"
+                          >
+                            <img src={img.url} alt={img.file.name} />
+                            <button
+                              type="button"
+                              className="mat-modal__thumb-remove"
+                              onClick={() => quitarImagenNueva(idx)}
+                              aria-label="Quitar imagen"
+                            >
+                              <X size={14} />
+                            </button>
+                            <span className="mat-modal__thumb-name">
+                              {img.file.name}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {esEdicion &&
+                      imagenesExistentes.length === 0 &&
+                      imagenes.length === 0 && (
+                        <p className="mat-modal__empty-imgs">
+                          Este material aún no tiene imágenes. Agrega hasta {MAX_IMAGENES}.
+                        </p>
+                      )}
                   </div>
                 </div>
               </div>

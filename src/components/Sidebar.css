@@ -6,22 +6,25 @@
   color: #ffffff;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   border-right: 1px solid rgba(255, 255, 255, 0.06);
   padding: 20px 16px;
   box-sizing: border-box;
 
   position: fixed;  /*lui*/
-  top: 0;        
+  top: 0;
   left: 0;
 
   z-index: 100;
 }
 
+/* Ocupa el alto disponible entre el header y el footer. min-height:0 es clave
+   para que el hijo con scroll (la nav) pueda encogerse en lugar de desbordar. */
 .tm-sidebar__menu {
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 18px;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .tm-sidebar__brand {
@@ -39,7 +42,32 @@
 .tm-sidebar__nav {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  /* Espacio para que el scrollbar no tape el texto de los ítems */
+  padding-right: 4px;
+  margin-right: -4px;
+}
+
+/* Scrollbar discreto acorde al tema oscuro */
+.tm-sidebar__nav::-webkit-scrollbar {
+  width: 6px;
+}
+
+.tm-sidebar__nav::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+}
+
+.tm-sidebar__nav::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+
+.tm-sidebar__nav {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.14) transparent;
 }
 
 .tm-sidebar__item {
@@ -49,13 +77,14 @@
   background: transparent;
   color: #d7d7d7;
   text-align: left;
-  padding: 13px 14px;
+  padding: 11px 14px;
   border-radius: 12px;
   font-size: 0.95rem;
   font-weight: 500;
   text-decoration: none;
   cursor: pointer;
   transition: 0.25s ease;
+  flex-shrink: 0;
 }
 
 .tm-sidebar__item:hover {
@@ -105,12 +134,13 @@
   background: transparent;
   color: #bfbfbf;
   text-align: left;
-  padding: 10px 12px;
+  padding: 9px 12px;
   border-radius: 10px;
   font-size: 0.9rem;
   text-decoration: none;
   cursor: pointer;
   transition: 0.25s ease;
+  flex-shrink: 0;
 }
 
 .tm-sidebar__subitem:hover {
@@ -125,6 +155,8 @@
 }
 
 .tm-sidebar__footer {
+  flex-shrink: 0;
+  margin-top: 14px;
   padding-top: 18px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
@@ -259,7 +291,8 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  margin: 0 0 18px;
+  margin: 0;
+  flex-shrink: 0;
   padding: 10px 12px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.05);
