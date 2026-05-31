@@ -41,9 +41,11 @@ const crearTokenInvitacion = async (usuarioDB) => {
     /\/$/,
     ''
   );
-  const enlaceActivacion = `${frontendUrl}/?activar=1&usuario=${encodeURIComponent(
-    usuario
-  )}&tokenId=${tokenId}`;
+  const enlaceActivacion =
+    `${frontendUrl}/?activar=1` +
+    `&usuario=${encodeURIComponent(usuario)}` +
+    `&tokenId=${tokenId}` +
+    `&token=${secreto}`;
 
   await enviarCorreoInvitacion({
     email,

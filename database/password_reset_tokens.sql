@@ -1,4 +1,5 @@
--- Tokens de recuperación de contraseña (código de un solo uso, 5 minutos)
+-- Tokens de recuperación de contraseña (enlace de un solo uso, 30 minutos).
+-- codigo_hash guarda el hash bcrypt del secreto que viaja dentro del enlace.
 CREATE TABLE IF NOT EXISTS `password_reset_tokens` (
   `token_id` INT NOT NULL AUTO_INCREMENT,
   `usuario` VARCHAR(100) NOT NULL,

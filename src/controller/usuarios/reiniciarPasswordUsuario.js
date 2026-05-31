@@ -1,16 +1,16 @@
 const pool = require('../../config/db.js')
 const { ESTADO_USUARIO } = require('../../utils/estadosUsuario')
 const {
-  crearYEnviarCodigo,
+  crearYEnviarEnlace,
   MINUTOS_VALIDEZ,
 } = require('../../services/passwordResetService')
 
 /**
  * Reinicio de contraseña iniciado por un admin desde el listado de usuarios.
  * - Solo aplica a usuarios en estado Activo con correo registrado.
- * - Genera un código de un solo uso (mismo flujo que "Olvidé mi contraseña")
+ * - Genera un enlace de un solo uso (mismo flujo que "Olvidé mi contraseña")
  *   y lo envía al correo del usuario.
- * - El usuario debe completar el reset desde la pantalla de login.
+ * - El usuario completa el reset abriendo el enlace en la pantalla de login.
  */
 const reiniciarPasswordUsuario = async (req, res) => {
   try {
@@ -52,7 +52,7 @@ const reiniciarPasswordUsuario = async (req, res) => {
       })
     }
 
-    const resultado = await crearYEnviarCodigo(usuarioDB)
+    const resultado = await crearYEnviarEnlace(usuarioDB)
 
     if (!resultado?.enviado) {
       return res.status(500).json({
@@ -62,7 +62,7 @@ const reiniciarPasswordUsuario = async (req, res) => {
     }
 
     return res.status(200).json({
-      message: `Correo de reinicio enviado a ${email}. El código es válido por ${MINUTOS_VALIDEZ} minutos.`,
+      message: `Correo de reinicio enviado a ${email}. El enlace es válido por ${MINUTOS_VALIDEZ} minutos.`,
       correoEnviado: true,
       minutosValidez: MINUTOS_VALIDEZ,
     })

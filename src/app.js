@@ -72,7 +72,8 @@ app.get('/', (req, res) => {
 app.use('/api/auth/login', loginLimiter)
 app.use('/api/auth/olvide-contrasena/solicitar', recuperacionLimiter)
 app.use('/api/auth/olvide-contrasena/reenviar', recuperacionLimiter)
-app.use('/api/auth/olvide-contrasena/verificar-codigo', loginLimiter)
+app.use('/api/auth/olvide-contrasena/verificar-enlace', loginLimiter)
+app.use('/api/auth/olvide-contrasena/restablecer', loginLimiter)
 app.use('/api/auth', require('./routes/auth'))
 
 // Protección global: todas las rutas /api/* registradas debajo requieren JWT válido
