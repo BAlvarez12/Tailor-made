@@ -1,14 +1,17 @@
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const pool = require('../config/db');
-const { enviarCorreoRecuperacion } = require('./mailService');
+const {
+  enviarCorreoRecuperacion,
+  enviarCorreoCambioPassword,
+} = require('./mailService');
 
-const MINUTOS_VALIDEZ = 5;
-const LONGITUD_CODIGO = 8;
-const CARACTERES_CODIGO = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const MINUTOS_VALIDEZ = 30;
+// Bytes de entropía del secreto que viaja en el enlace de recuperación.
+const LONGITUD_TOKEN_ENLACE = 32;
 
 const MENSAJE_GENERICO =
-  'Si la cuenta está registrada, enviamos un código al correo electrónico asociado.';
+  'Si la cuenta está registrada, enviamos un enlace para restablecer la contraseña al correo electrónico asociado.';
 
 const normalizarUsuario = (usuario) => String(usuario || '').trim();
 
@@ -30,13 +33,21 @@ const expiraEnDesdeAhora = () => {
   return fecha;
 };
 
-const generarCodigoRecuperacion = () => {
-  let codigo = '';
-  const bytes = crypto.randomBytes(LONGITUD_CODIGO);
-  for (let i = 0; i < LONGITUD_CODIGO; i += 1) {
-    codigo += CARACTERES_CODIGO[bytes[i] % CARACTERES_CODIGO.length];
-  }
-  return codigo;
+/** Secreto de un solo uso que viaja dentro del enlace de recuperación. */
+const generarTokenEnlace = () =>
+  crypto.randomBytes(LONGITUD_TOKEN_ENLACE).toString('hex');
+
+const construirEnlaceRecuperacion = ({ usuario, tokenId, token }) => {
+  const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(
+    /\/$/,
+    ''
+  );
+  return (
+    `${frontendUrl}/?recuperar=1` +
+    `&usuario=${encodeURIComponent(usuario)}` +
+    `&tokenId=${tokenId}` +
+    `&token=${token}`
+  );
 };
 
 const invalidarTokensPendientes = async (usuario) => {
@@ -45,18 +56,6 @@ const invalidarTokensPendientes = async (usuario) => {
      SET invalidado = 1
      WHERE usuario = ? AND usado = 0`,
     [usuario]
-  );
-};
-
-/** Solo puede existir un token activo: invalida los demás pendientes del usuario. */
-const invalidarTokensExcepto = async (usuario, tokenIdActivo) => {
-  await pool.query(
-    `UPDATE password_reset_tokens
-     SET invalidado = 1
-     WHERE usuario = ?
-       AND usado = 0
-       AND token_id <> ?`,
-    [usuario, tokenIdActivo]
   );
 };
 
@@ -147,7 +146,7 @@ const resolverCuentaInvitacionPendiente = async (identificadorInput) => {
   return usuarioDB;
 };
 
-const crearYEnviarCodigo = async (usuarioDB) => {
+const crearYEnviarEnlace = async (usuarioDB) => {
   const usuario = usuarioDB.usuario;
   const email = String(usuarioDB.email || '').trim();
 
@@ -155,26 +154,35 @@ const crearYEnviarCodigo = async (usuarioDB) => {
     return { enviado: false };
   }
 
+  // Solo puede existir un enlace activo: invalidamos los pendientes anteriores
+  // para que el último enviado sea el único válido (uso único).
   await invalidarTokensPendientes(usuario);
 
-  const codigoPlano = generarCodigoRecuperacion();
-  const codigoHash = await bcrypt.hash(codigoPlano, 10);
+  const tokenPlano = generarTokenEnlace();
+  const codigoHash = await bcrypt.hash(tokenPlano, 10);
   const expiraEn = expiraEnDesdeAhora();
 
-  await pool.query(
+  const [result] = await pool.query(
     `INSERT INTO password_reset_tokens (
       usuario, usuario_id, codigo_hash, expira_en, usado, invalidado
     ) VALUES (?, ?, ?, ?, 0, 0)`,
     [usuario, usuarioDB.usuario_id, codigoHash, expiraEn]
   );
 
+  const tokenId = result.insertId;
+  const enlaceRecuperacion = construirEnlaceRecuperacion({
+    usuario,
+    tokenId,
+    token: tokenPlano,
+  });
+
   await enviarCorreoRecuperacion({
     email,
-    codigo: codigoPlano,
+    enlaceRecuperacion,
     minutosValidez: MINUTOS_VALIDEZ,
   });
 
-  return { enviado: true, expiraEn };
+  return { enviado: true, tokenId, expiraEn, enlaceRecuperacion };
 };
 
 const respuestaSolicitud = (expiraEnReferencia = null) => {
@@ -207,7 +215,7 @@ const solicitarCodigoRecuperacion = async (identificadorInput) => {
     let expiraReferencia = null;
 
     if (usuarioDB && Number(usuarioDB.estado) === 1) {
-      const resultado = await crearYEnviarCodigo(usuarioDB);
+      const resultado = await crearYEnviarEnlace(usuarioDB);
       if (resultado?.expiraEn) {
         expiraReferencia = resultado.expiraEn;
       }
@@ -276,72 +284,72 @@ const validarReglasPassword = (password) => {
   return null;
 };
 
-const verificarCodigoRecuperacion = async (identificadorInput, codigoInput) => {
-  const identificador = normalizarIdentificador(identificadorInput);
-  const codigoLimpio = String(codigoInput || '').trim().toUpperCase();
+const respuestaEnlaceInvalido = (message) => ({
+  status: 400,
+  body: {
+    ok: false,
+    message:
+      message ||
+      'El enlace no es válido, ya venció o fue reemplazado. Solicita uno nuevo.',
+    enlaceInvalido: true,
+  },
+});
 
-  if (!identificador || codigoLimpio.length < LONGITUD_CODIGO) {
-    return {
-      status: 400,
-      body: {
-        ok: false,
-        message:
-          'Usuario o correo y código de 8 caracteres son obligatorios.',
-      },
-    };
+/**
+ * Resuelve y valida el enlace de recuperación (cuenta + token).
+ * Comprueba que el token exista, no esté usado/invalidado/vencido, que sea el
+ * único activo del usuario y que el secreto del enlace coincida con el hash.
+ */
+const resolverEnlaceRecuperacion = async ({ identificador, tokenId, token }) => {
+  const id = normalizarIdentificador(identificador);
+  const tokenIdNum = Number(tokenId);
+  const secreto = String(token || '').trim();
+
+  if (!id || !tokenIdNum || !secreto) {
+    return { error: respuestaEnlaceInvalido('El enlace está incompleto o es inválido.') };
   }
 
-  const cuenta = await resolverCuentaRecuperacion(identificador);
-
+  const cuenta = await resolverCuentaRecuperacion(id);
   if (!cuenta) {
-    return {
-      status: 400,
-      body: {
-        ok: false,
-        message: 'El código no es válido o ya venció. Solicita uno nuevo.',
-        codigoInvalido: true,
-      },
-    };
+    return { error: respuestaEnlaceInvalido() };
   }
 
   const usuario = cuenta.usuario;
-
-  const token = await obtenerTokenActivoUnico(usuario);
-
-  if (!token) {
-    return {
-      status: 400,
-      body: {
-        ok: false,
-        message: 'El código no es válido o ya venció. Solicita uno nuevo.',
-        codigoInvalido: true,
-      },
-    };
+  const tokenRow = await obtenerTokenPorId(usuario, tokenIdNum);
+  if (!tokenRow) {
+    return { error: respuestaEnlaceInvalido() };
   }
 
-  await invalidarTokensExcepto(usuario, token.token_id);
+  // Solo el último enlace enviado puede usarse.
+  const tokenActivo = await obtenerTokenActivoUnico(usuario);
+  if (!tokenActivo || Number(tokenActivo.token_id) !== tokenIdNum) {
+    return { error: respuestaEnlaceInvalido('Este enlace ya no está vigente. Usa el último que enviamos a tu correo.') };
+  }
 
-  const codigoValido = await bcrypt.compare(codigoLimpio, token.codigo_hash);
+  const secretoValido = await bcrypt.compare(secreto, tokenRow.codigo_hash);
+  if (!secretoValido) {
+    return { error: respuestaEnlaceInvalido() };
+  }
 
-  if (!codigoValido) {
-    return {
-      status: 400,
-      body: {
-        ok: false,
-        message: 'El código ingresado no es correcto o ya no está vigente.',
-        codigoInvalido: true,
-      },
-    };
+  return { cuenta, token: tokenRow };
+};
+
+/** Valida el enlace al abrir la pantalla, sin consumirlo todavía. */
+const verificarEnlaceRecuperacion = async ({ identificador, tokenId, token }) => {
+  const resultado = await resolverEnlaceRecuperacion({ identificador, tokenId, token });
+
+  if (resultado.error) {
+    return resultado.error;
   }
 
   return {
     status: 200,
     body: {
       ok: true,
-      message: 'Código verificado correctamente.',
-      usuario: cuenta.usuario,
-      tokenId: token.token_id,
-      expiresAt: new Date(token.expira_en).toISOString(),
+      message: 'Enlace válido. Crea tu nueva contraseña.',
+      usuario: resultado.cuenta.usuario,
+      tokenId: resultado.token.token_id,
+      expiresAt: new Date(resultado.token.expira_en).toISOString(),
     },
   };
 };
@@ -349,41 +357,12 @@ const verificarCodigoRecuperacion = async (identificadorInput, codigoInput) => {
 const restablecerPassword = async ({
   usuario: usuarioInput,
   identificador: identificadorInput,
-  codigo,
+  token,
   tokenId,
   password,
   passwordConfirm,
 }) => {
-  const identificador = normalizarIdentificador(
-    identificadorInput ?? usuarioInput
-  );
-  const codigoLimpio = String(codigo || '').trim().toUpperCase();
-
-  if (!identificador || !codigoLimpio) {
-    return {
-      status: 400,
-      body: {
-        ok: false,
-        message: 'Usuario o correo y código son obligatorios.',
-      },
-    };
-  }
-
-  const cuenta = await resolverCuentaRecuperacion(identificador);
-
-  if (!cuenta) {
-    return {
-      status: 400,
-      body: {
-        ok: false,
-        message:
-          'El código ya no es válido (venció o fue reemplazado). Solicita uno nuevo.',
-        codigoInvalido: true,
-      },
-    };
-  }
-
-  const usuario = cuenta.usuario;
+  const identificador = identificadorInput ?? usuarioInput;
 
   if (!password || !passwordConfirm) {
     return {
@@ -404,59 +383,14 @@ const restablecerPassword = async ({
     return { status: 400, body: { ok: false, message: errorPassword } };
   }
 
-  const tokenIdNum = Number(tokenId);
+  const resultado = await resolverEnlaceRecuperacion({ identificador, tokenId, token });
 
-  if (!tokenIdNum) {
-    return {
-      status: 400,
-      body: {
-        ok: false,
-        message: 'Sesión de recuperación inválida. Verifica el código nuevamente.',
-        codigoInvalido: true,
-      },
-    };
+  if (resultado.error) {
+    return resultado.error;
   }
 
-  const token = await obtenerTokenPorId(usuario, tokenIdNum);
-
-  if (!token) {
-    return {
-      status: 400,
-      body: {
-        ok: false,
-        message:
-          'El código ya no es válido (venció o fue reemplazado). Solicita uno nuevo.',
-        codigoInvalido: true,
-      },
-    };
-  }
-
-  const tokenActivo = await obtenerTokenActivoUnico(usuario);
-
-  if (!tokenActivo || Number(tokenActivo.token_id) !== tokenIdNum) {
-    return {
-      status: 400,
-      body: {
-        ok: false,
-        message:
-          'Este código ya no está vigente. Usa el último código enviado a tu correo.',
-        codigoInvalido: true,
-      },
-    };
-  }
-
-  const codigoValido = await bcrypt.compare(codigoLimpio, token.codigo_hash);
-
-  if (!codigoValido) {
-    return {
-      status: 400,
-      body: {
-        ok: false,
-        message: 'El código ingresado no es correcto.',
-        codigoInvalido: true,
-      },
-    };
-  }
+  const { cuenta, token: tokenRow } = resultado;
+  const usuario = cuenta.usuario;
 
   const passwordHash = await bcrypt.hash(String(password).trim(), 10);
 
@@ -465,17 +399,29 @@ const restablecerPassword = async ({
     cuenta.usuario_id,
   ]);
 
+  // Uso único: el enlace queda marcado como usado e invalidado.
   await pool.query(
     'UPDATE password_reset_tokens SET usado = 1, invalidado = 1 WHERE token_id = ?',
-    [token.token_id]
+    [tokenRow.token_id]
   );
 
   await pool.query(
     `UPDATE password_reset_tokens
      SET invalidado = 1
      WHERE usuario = ? AND token_id <> ?`,
-    [usuario, token.token_id]
+    [usuario, tokenRow.token_id]
   );
+
+  // Aviso de seguridad: notificamos que la contraseña cambió. Si falla el
+  // correo NO revertimos el cambio, solo lo registramos.
+  const correoCambio = String(cuenta.email || '').trim();
+  if (correoCambio) {
+    try {
+      await enviarCorreoCambioPassword({ email: correoCambio });
+    } catch (errorCorreo) {
+      console.error('No se pudo enviar el aviso de cambio de contraseña:', errorCorreo);
+    }
+  }
 
   return {
     status: 200,
@@ -489,10 +435,12 @@ const restablecerPassword = async ({
 const activarCuentaInvitacion = async ({
   usuario: usuarioInput,
   tokenId,
+  token,
   password,
   passwordConfirm,
 }) => {
   const identificador = normalizarIdentificador(usuarioInput);
+  const secreto = String(token || '').trim();
 
   if (!identificador) {
     return {
@@ -536,16 +484,16 @@ const activarCuentaInvitacion = async ({
 
   const tokenIdNum = Number(tokenId);
 
-  if (!tokenIdNum) {
+  if (!tokenIdNum || !secreto) {
     return {
       status: 400,
       body: { ok: false, message: 'Enlace de invitación inválido.' },
     };
   }
 
-  const token = await obtenerTokenPorId(usuario, tokenIdNum);
+  const tokenRow = await obtenerTokenPorId(usuario, tokenIdNum);
 
-  if (!token) {
+  if (!tokenRow) {
     return {
       status: 400,
       body: {
@@ -567,6 +515,19 @@ const activarCuentaInvitacion = async ({
     };
   }
 
+  // Validamos el secreto del enlace contra el hash almacenado: impide activar
+  // cuentas adivinando el tokenId (que es secuencial).
+  const secretoValido = await bcrypt.compare(secreto, tokenRow.codigo_hash);
+  if (!secretoValido) {
+    return {
+      status: 400,
+      body: {
+        ok: false,
+        message: 'Enlace de invitación inválido o ya utilizado. Solicita uno nuevo al administrador.',
+      },
+    };
+  }
+
   const passwordHash = await bcrypt.hash(String(password).trim(), 10);
 
   await pool.query('UPDATE usuarios SET password = ?, estado = 1 WHERE usuario_id = ?', [
@@ -576,7 +537,7 @@ const activarCuentaInvitacion = async ({
 
   await pool.query(
     'UPDATE password_reset_tokens SET usado = 1, invalidado = 1 WHERE token_id = ?',
-    [token.token_id]
+    [tokenRow.token_id]
   );
 
   return {
@@ -594,9 +555,9 @@ module.exports = {
   normalizarUsuario,
   solicitarCodigoRecuperacion,
   reenviarCodigoRecuperacion,
-  verificarCodigoRecuperacion,
+  verificarEnlaceRecuperacion,
   restablecerPassword,
   activarCuentaInvitacion,
   validarReglasPassword,
-  crearYEnviarCodigo,
+  crearYEnviarEnlace,
 };

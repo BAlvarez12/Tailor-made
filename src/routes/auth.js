@@ -4,8 +4,8 @@ const { login } = require('../controller/login/auth.js');
 const {
   solicitarRecuperacion,
   reenviarRecuperacion,
-  verificarCodigo,
-  restablecerConCodigo,
+  verificarEnlace,
+  restablecerConEnlace,
 } = require('../controller/login/passwordReset.js');
 const { activarCuenta } = require('../controller/login/activarCuenta.js');
 const { verificarBloqueoLogin } = require('../middleware/loginAttempts');
@@ -19,8 +19,8 @@ const minimoAuth = tiempoRespuestaMinimo(1500);
 router.post('/login', minimoAuth, verificarBloqueoLogin, login);
 router.post('/olvide-contrasena/solicitar', minimoAuth, solicitarRecuperacion);
 router.post('/olvide-contrasena/reenviar', minimoAuth, reenviarRecuperacion);
-router.post('/olvide-contrasena/verificar-codigo', minimoAuth, verificarCodigo);
-router.post('/olvide-contrasena/restablecer', minimoAuth, restablecerConCodigo);
+router.post('/olvide-contrasena/verificar-enlace', minimoAuth, verificarEnlace);
+router.post('/olvide-contrasena/restablecer', minimoAuth, restablecerConEnlace);
 router.post('/activar-cuenta', activarCuenta);
 
 module.exports = router;

@@ -5,6 +5,7 @@ const {
   validarReglasPassword,
 } = require('../../utils/validarCredenciales');
 const { registrar, fromReq } = require('../../services/logOperaciones');
+const { enviarCorreoCambioPassword } = require('../../services/mailService');
 
 /**
  * GET /api/usuarios/me
@@ -163,7 +164,8 @@ const cambiarMiPassword = async (req, res) => {
     }
 
     const [rows] = await pool.query(
-      'SELECT password FROM usuarios WHERE usuario_id = ? LIMIT 1',
+      `SELECT password, email, nombre_usuario, apellido_usuario
+         FROM usuarios WHERE usuario_id = ? LIMIT 1`,
       [usuarioId]
     );
 
@@ -190,6 +192,20 @@ const cambiarMiPassword = async (req, res) => {
       entidadId: usuarioId,
       descripcion: `El usuario #${usuarioId} cambió su contraseña`,
     });
+
+    // Aviso de seguridad: notificamos el cambio. Si falla el correo NO
+    // revertimos el cambio, solo lo registramos.
+    const correoCambio = String(rows[0].email || '').trim();
+    if (correoCambio) {
+      try {
+        await enviarCorreoCambioPassword({
+          email: correoCambio,
+          nombreCompleto: `${rows[0].nombre_usuario || ''} ${rows[0].apellido_usuario || ''}`.trim(),
+        });
+      } catch (errorCorreo) {
+        console.error('No se pudo enviar el aviso de cambio de contraseña:', errorCorreo);
+      }
+    }
 
     return res.json({ message: 'Contraseña actualizada correctamente.' });
   } catch (error) {

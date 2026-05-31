@@ -18,7 +18,11 @@ const crearTransporte = () => {
   });
 };
 
-const enviarCorreoRecuperacion = async ({ email, codigo, minutosValidez = 5 }) => {
+const enviarCorreoRecuperacion = async ({
+  email,
+  enlaceRecuperacion,
+  minutosValidez = 30,
+}) => {
   const transport = crearTransporte();
   const fromName = process.env.MAIL_FROM_NAME || 'Tailor';
   const fromEmail = process.env.MAIL_FROM_EMAIL || process.env.MAIL_USER;
@@ -27,8 +31,16 @@ const enviarCorreoRecuperacion = async ({ email, codigo, minutosValidez = 5 }) =
     <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto;">
       <h2 style="color: #111827;">Recuperación de contraseña</h2>
       <p>Recibimos una solicitud para restablecer la contraseña de tu cuenta en Tailor-Made.</p>
-      <p style="font-size: 28px; font-weight: bold; letter-spacing: 4px; color: #111827;">${codigo}</p>
-      <p>Este código es válido por <strong>${minutosValidez} minutos</strong> y solo puede usarse una vez.</p>
+      <p>Haz clic en el botón para crear una nueva contraseña:</p>
+      <p style="text-align: center; margin: 28px 0;">
+        <a href="${enlaceRecuperacion}"
+           style="display: inline-block; padding: 14px 24px; background: #111827; color: #fff;
+                  text-decoration: none; border-radius: 10px; font-weight: bold;">
+          Cambiar mi contraseña
+        </a>
+      </p>
+      <p>Este enlace es válido por <strong>${minutosValidez} minutos</strong> y solo puede usarse una vez.</p>
+      <p style="font-size: 12px; color: #94a3b8; word-break: break-all;">${enlaceRecuperacion}</p>
       <p style="color: #64748b; font-size: 14px;">Si no solicitaste este cambio, ignora este correo.</p>
     </div>
   `;
@@ -36,9 +48,9 @@ const enviarCorreoRecuperacion = async ({ email, codigo, minutosValidez = 5 }) =
   await transport.sendMail({
     from: `"${fromName}" <${fromEmail}>`,
     to: email,
-    subject: `${fromName} - Código de recuperación de contraseña`,
+    subject: `${fromName} - Enlace para restablecer tu contraseña`,
     html,
-    text: `Tu código de recuperación es: ${codigo}. Válido por ${minutosValidez} minutos. Uso único.`,
+    text: `Para restablecer tu contraseña abre este enlace: ${enlaceRecuperacion} (válido por ${minutosValidez} minutos, uso único). Si no lo solicitaste, ignora este correo.`,
   });
 };
 
@@ -81,8 +93,40 @@ const enviarCorreoInvitacion = async ({
   });
 };
 
+const enviarCorreoCambioPassword = async ({ email, nombreCompleto, fecha }) => {
+  const transport = crearTransporte();
+  const fromName = process.env.MAIL_FROM_NAME || 'Tailor';
+  const fromEmail = process.env.MAIL_FROM_EMAIL || process.env.MAIL_USER;
+
+  const cuando = (fecha || new Date()).toLocaleString('es-SV', {
+    dateStyle: 'long',
+    timeStyle: 'short',
+  });
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto;">
+      <h2 style="color: #111827;">Tu contraseña fue cambiada</h2>
+      <p>Hola${nombreCompleto ? ` <strong>${nombreCompleto}</strong>` : ''},</p>
+      <p>Te confirmamos que la contraseña de tu cuenta en Tailor-Made se cambió correctamente el <strong>${cuando}</strong>.</p>
+      <p style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:14px 16px;color:#991b1b;">
+        Si <strong>no</strong> fuiste tú, contacta de inmediato al administrador: tu cuenta podría estar comprometida.
+      </p>
+      <p style="color: #64748b; font-size: 14px;">Este es un mensaje automático de seguridad, no es necesario responderlo.</p>
+    </div>
+  `;
+
+  await transport.sendMail({
+    from: `"${fromName}" <${fromEmail}>`,
+    to: email,
+    subject: `${fromName} - Tu contraseña fue cambiada`,
+    html,
+    text: `La contraseña de tu cuenta en ${fromName} se cambió el ${cuando}. Si no fuiste tú, contacta de inmediato al administrador.`,
+  });
+};
+
 module.exports = {
   enviarCorreoRecuperacion,
   enviarCorreoInvitacion,
+  enviarCorreoCambioPassword,
   crearTransporte,
 };

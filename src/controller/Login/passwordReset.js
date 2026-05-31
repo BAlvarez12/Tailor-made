@@ -1,7 +1,7 @@
 const {
   solicitarCodigoRecuperacion,
   reenviarCodigoRecuperacion,
-  verificarCodigoRecuperacion,
+  verificarEnlaceRecuperacion,
   restablecerPassword,
 } = require('../../services/passwordResetService');
 
@@ -22,20 +22,21 @@ const reenviarRecuperacion = async (req, res) => {
   return res.status(resultado.status).json(resultado.body);
 };
 
-const verificarCodigo = async (req, res) => {
-  const resultado = await verificarCodigoRecuperacion(
-    obtenerIdentificadorBody(req.body),
-    req.body?.codigo
-  );
+const verificarEnlace = async (req, res) => {
+  const resultado = await verificarEnlaceRecuperacion({
+    identificador: obtenerIdentificadorBody(req.body),
+    tokenId: req.body?.tokenId,
+    token: req.body?.token,
+  });
   return res.status(resultado.status).json(resultado.body);
 };
 
-const restablecerConCodigo = async (req, res) => {
+const restablecerConEnlace = async (req, res) => {
   const identificador = obtenerIdentificadorBody(req.body);
   const resultado = await restablecerPassword({
     identificador,
     usuario: req.body?.usuario,
-    codigo: req.body?.codigo,
+    token: req.body?.token,
     tokenId: req.body?.tokenId,
     password: req.body?.password,
     passwordConfirm: req.body?.passwordConfirm,
@@ -46,6 +47,6 @@ const restablecerConCodigo = async (req, res) => {
 module.exports = {
   solicitarRecuperacion,
   reenviarRecuperacion,
-  verificarCodigo,
-  restablecerConCodigo,
+  verificarEnlace,
+  restablecerConEnlace,
 };
