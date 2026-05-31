@@ -25,10 +25,15 @@ export const reenviarRecuperacionService = async (identificador) => {
   return response.data
 }
 
-export const verificarCodigoRecuperacionService = async (identificador, codigo) => {
-  const response = await api.post('/auth/olvide-contrasena/verificar-codigo', {
+export const verificarEnlaceRecuperacionService = async ({
+  identificador,
+  tokenId,
+  token,
+}) => {
+  const response = await api.post('/auth/olvide-contrasena/verificar-enlace', {
     ...bodyIdentificador(identificador),
-    codigo,
+    tokenId,
+    token,
   })
   return response.data
 }
@@ -37,7 +42,7 @@ export const restablecerPasswordService = async (data) => {
   const response = await api.post('/auth/olvide-contrasena/restablecer', {
     identificador: data.identificador ?? data.usuario,
     usuario: data.usuario,
-    codigo: data.codigo,
+    token: data.token,
     tokenId: data.tokenId,
     password: data.password,
     passwordConfirm: data.passwordConfirm,
@@ -49,6 +54,7 @@ export const activarCuentaService = async (data) => {
   const response = await api.post('/auth/activar-cuenta', {
     usuario: data.usuario,
     tokenId: data.tokenId,
+    token: data.token,
     password: data.password,
     passwordConfirm: data.passwordConfirm,
   })

@@ -368,15 +368,23 @@ function Pagos() {
     }
 
     const valor = Number(valorACobrar);
-    const anticipo = Number(valorAnticipo) || 0;
 
     if (!valor || valor <= 0) {
       setError("Ingresa un valor a cobrar válido.");
       return;
     }
 
+    // En un solo pago el cliente paga directo: el "anticipo" es el total.
+    // En planes con cuotas, el anticipo es el monto inicial capturado.
+    const esPagoUnico = Number(cantidadPagos) === 1;
+    const anticipo = esPagoUnico
+      ? registrarAnticipo
+        ? valor
+        : 0
+      : Number(valorAnticipo) || 0;
+
     if (registrarAnticipo && anticipo > 0 && !numeroTransferencia.trim()) {
-      setError("Ingresa el número de transferencia del anticipo.");
+      setError("Ingresa el número de transferencia del pago.");
       return;
     }
 
@@ -469,6 +477,9 @@ function Pagos() {
   const cotizacionSeleccionada = cotizaciones.find(
     (c) => String(c.cotizacion_id) === String(cotizacionId)
   );
+
+  // Un solo pago = el cliente paga directo el total; no aplica anticipo.
+  const esPagoUnico = Number(cantidadPagos) === 1;
 
   return (
     <div className="tm-users pagos-page">
@@ -653,25 +664,32 @@ function Pagos() {
                     min="1"
                     step="1"
                     value={cantidadPagos}
-                    onChange={(e) => setCantidadPagos(e.target.value)}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setCantidadPagos(v);
+                      // Al volver a un solo pago, el anticipo deja de aplicar.
+                      if (Number(v) === 1) setValorAnticipo("");
+                    }}
                     required
                   />
                 </div>
 
-                <div className="pagos-field">
-                  <label htmlFor="valor-anticipo">Valor del anticipo</label>
-                  <div className="pagos-input-icon">
-                    <span className="pagos-currency">Q</span>
-                    <input
-                      id="valor-anticipo"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={valorAnticipo}
-                      onChange={(e) => setValorAnticipo(e.target.value)}
-                    />
+                {!esPagoUnico && (
+                  <div className="pagos-field">
+                    <label htmlFor="valor-anticipo">Valor del anticipo</label>
+                    <div className="pagos-input-icon">
+                      <span className="pagos-currency">Q</span>
+                      <input
+                        id="valor-anticipo"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={valorAnticipo}
+                        onChange={(e) => setValorAnticipo(e.target.value)}
+                      />
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div className="pagos-field">
                   <label>
@@ -681,11 +699,13 @@ function Pagos() {
                       onChange={(e) => setRegistrarAnticipo(e.target.checked)}
                       style={{ marginRight: 8 }}
                     />
-                    Registrar anticipo y generar recibo PDF
+                    {esPagoUnico
+                      ? "Registrar el pago y generar recibo PDF"
+                      : "Registrar anticipo y generar recibo PDF"}
                   </label>
                 </div>
 
-                {registrarAnticipo && Number(valorAnticipo) > 0 && (
+                {registrarAnticipo && (esPagoUnico || Number(valorAnticipo) > 0) && (
                   <>
                     <div className="pagos-field">
                       <label htmlFor="fecha-pago-anticipo">
@@ -725,13 +745,23 @@ function Pagos() {
                 </div>
 
                 <div className="pagos-resumen">
-                  <p>
-                    Saldo después del anticipo: <strong>{formatearMoneda(saldoEstimado)}</strong>
-                  </p>
-                  <p>
-                    Cuota referencial (plan de {cantidadPagos} pago(s)):{" "}
-                    <strong>{formatearMoneda(cuotaReferencial)}</strong>
-                  </p>
+                  {esPagoUnico ? (
+                    <p>
+                      El cliente paga el total en un solo pago:{" "}
+                      <strong>{formatearMoneda(valorACobrar)}</strong>
+                    </p>
+                  ) : (
+                    <>
+                      <p>
+                        Saldo después del anticipo:{" "}
+                        <strong>{formatearMoneda(saldoEstimado)}</strong>
+                      </p>
+                      <p>
+                        Cuota referencial (plan de {cantidadPagos} pago(s)):{" "}
+                        <strong>{formatearMoneda(cuotaReferencial)}</strong>
+                      </p>
+                    </>
+                  )}
                 </div>
 
                 <p className="tm-required-note">

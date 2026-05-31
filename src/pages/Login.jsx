@@ -7,7 +7,7 @@ import {
   loginService,
   solicitarRecuperacionService,
   reenviarRecuperacionService,
-  verificarCodigoRecuperacionService,
+  verificarEnlaceRecuperacionService,
   restablecerPasswordService,
   activarCuentaService,
   validarPasswordRecuperacion,
@@ -18,15 +18,8 @@ const VISTAS = {
   LOGIN: 'login',
   ACTIVAR_CUENTA: 'activar-cuenta',
   RECUPERAR_USUARIO: 'recuperar-usuario',
-  RECUPERAR_CODIGO: 'recuperar-codigo',
+  RECUPERAR_ENVIADO: 'recuperar-enviado',
   RECUPERAR_PASSWORD: 'recuperar-password',
-}
-
-const formatearTiempo = (segundos) => {
-  const total = Math.max(0, segundos)
-  const min = Math.floor(total / 60)
-  const sec = total % 60
-  return `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
 }
 
 const REGLAS_PASSWORD_LABELS = [
@@ -120,14 +113,17 @@ function Login() {
   const [form, setForm] = useState({ usuario: '', password: '' })
   const [recuperacion, setRecuperacion] = useState({
     usuario: '',
-    codigo: '',
+    token: '',
     tokenId: null,
     password: '',
     passwordConfirm: '',
   })
+  const [verificandoEnlace, setVerificandoEnlace] = useState(false)
+  const [enlaceInvalido, setEnlaceInvalido] = useState(false)
   const [activacion, setActivacion] = useState({
     usuario: '',
     tokenId: null,
+    token: '',
     password: '',
     passwordConfirm: '',
   })
@@ -138,27 +134,24 @@ function Login() {
     activarNueva: false,
     activarConfirmar: false,
   })
-  const [expiresAt, setExpiresAt] = useState(null)
-  const [segundosRestantes, setSegundosRestantes] = useState(0)
-
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [info, setInfo] = useState('')
   const [bloqueado, setBloqueado] = useState(false)
   const [iniciandoSesion, setIniciandoSesion] = useState(false)
 
-  const codigoVencido = segundosRestantes <= 0 && Boolean(expiresAt)
-
   useEffect(() => {
     if (searchParams.get('activar') !== '1') return
 
     const usuario = searchParams.get('usuario') || ''
     const tokenId = searchParams.get('tokenId')
+    const token = searchParams.get('token') || ''
 
     if (usuario && tokenId) {
       setActivacion({
         usuario,
         tokenId: Number(tokenId) || tokenId,
+        token,
         password: '',
         passwordConfirm: '',
       })
@@ -167,20 +160,49 @@ function Login() {
   }, [searchParams])
 
   useEffect(() => {
-    if (!expiresAt) {
-      setSegundosRestantes(0)
-      return undefined
-    }
+    if (searchParams.get('recuperar') !== '1') return
 
-    const actualizar = () => {
-      const diff = Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000)
-      setSegundosRestantes(diff > 0 ? diff : 0)
-    }
+    const usuario = searchParams.get('usuario') || ''
+    const tokenId = searchParams.get('tokenId')
+    const token = searchParams.get('token')
 
-    actualizar()
-    const intervalo = setInterval(actualizar, 1000)
-    return () => clearInterval(intervalo)
-  }, [expiresAt])
+    if (!usuario || !tokenId || !token) return
+
+    setRecuperacion({
+      usuario,
+      token,
+      tokenId: Number(tokenId) || tokenId,
+      password: '',
+      passwordConfirm: '',
+    })
+    setVista(VISTAS.RECUPERAR_PASSWORD)
+    setEnlaceInvalido(false)
+    setVerificandoEnlace(true)
+    setError('')
+    setInfo('')
+
+    verificarEnlaceRecuperacionService({
+      identificador: usuario,
+      tokenId,
+      token,
+    })
+      .then((data) => {
+        setRecuperacion((prev) => ({
+          ...prev,
+          usuario: data?.usuario || prev.usuario,
+        }))
+      })
+      .catch((err) => {
+        setEnlaceInvalido(true)
+        setError(
+          err.response?.data?.message ||
+            'El enlace no es válido, ya venció o fue utilizado. Solicita uno nuevo.'
+        )
+      })
+      .finally(() => {
+        setVerificandoEnlace(false)
+      })
+  }, [searchParams])
 
   const limpiarMensajes = () => {
     setError('')
@@ -191,7 +213,7 @@ function Login() {
     setVista(VISTAS.LOGIN)
     setRecuperacion({
       usuario: '',
-      codigo: '',
+      token: '',
       tokenId: null,
       password: '',
       passwordConfirm: '',
@@ -199,6 +221,7 @@ function Login() {
     setActivacion({
       usuario: '',
       tokenId: null,
+      token: '',
       password: '',
       passwordConfirm: '',
     })
@@ -209,8 +232,9 @@ function Login() {
       activarNueva: false,
       activarConfirmar: false,
     })
-    setExpiresAt(null)
-    if (searchParams.get('activar')) {
+    setEnlaceInvalido(false)
+    setVerificandoEnlace(false)
+    if (searchParams.get('activar') || searchParams.get('recuperar')) {
       setSearchParams({}, { replace: true })
     }
     limpiarMensajes()
@@ -225,13 +249,7 @@ function Login() {
 
   const handleRecuperacionChange = (e) => {
     const { name, value } = e.target
-    let valor = value
-
-    if (name === 'codigo') {
-      valor = value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8)
-    }
-
-    setRecuperacion((prev) => ({ ...prev, [name]: valor }))
+    setRecuperacion((prev) => ({ ...prev, [name]: value }))
     limpiarMensajes()
   }
 
@@ -262,6 +280,7 @@ function Login() {
       const data = await activarCuentaService({
         usuario: activacion.usuario,
         tokenId: activacion.tokenId,
+        token: activacion.token,
         password: activacion.password,
         passwordConfirm: activacion.passwordConfirm,
       })
@@ -283,13 +302,10 @@ function Login() {
     }
   }
 
-  const aplicarRespuestaCodigo = (data) => {
-    if (data?.expiresAt) {
-      setExpiresAt(data.expiresAt)
-    }
+  const aplicarRespuestaEnlace = (data) => {
     setInfo(
       data?.message ||
-        'Si el usuario está registrado, enviamos un código a la dirección de correo asociada.'
+        'Si el usuario está registrado, enviamos un enlace para restablecer la contraseña al correo asociado.'
     )
   }
 
@@ -316,7 +332,7 @@ function Login() {
     }
   }
 
-  const handleSolicitarCodigo = async (e) => {
+  const handleSolicitarEnlace = async (e) => {
     e.preventDefault()
     limpiarMensajes()
     setLoading(true)
@@ -329,14 +345,14 @@ function Login() {
       }
 
       const data = await solicitarRecuperacionService(identificador)
-      aplicarRespuestaCodigo(data)
+      aplicarRespuestaEnlace(data)
       setRecuperacion((prev) => ({
         ...prev,
         usuario: identificador,
-        codigo: '',
+        token: '',
         tokenId: null,
       }))
-      setVista(VISTAS.RECUPERAR_CODIGO)
+      setVista(VISTAS.RECUPERAR_ENVIADO)
     } catch (err) {
       setError(err.response?.data?.message || 'No se pudo procesar la solicitud.')
     } finally {
@@ -344,62 +360,15 @@ function Login() {
     }
   }
 
-  const handleReenviarCodigo = async () => {
+  const handleReenviarEnlace = async () => {
     limpiarMensajes()
     setLoading(true)
 
     try {
       const data = await reenviarRecuperacionService(recuperacion.usuario.trim())
-      aplicarRespuestaCodigo(data)
-      setRecuperacion((prev) => ({ ...prev, codigo: '', tokenId: null }))
-      setInfo(
-        (data?.message || 'Código reenviado.')
-      )
+      aplicarRespuestaEnlace(data)
     } catch (err) {
-      setError(err.response?.data?.message || 'No se pudo reenviar el código.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleValidarCodigo = async (e) => {
-    e.preventDefault()
-    limpiarMensajes()
-
-    if (codigoVencido) {
-      setError('El código venció. Solicita uno nuevo con «Reenviar código».')
-      return
-    }
-
-    const codigo = recuperacion.codigo.trim()
-    if (codigo.length < 8) {
-      setError('Ingresa el código alfanumérico de 8 caracteres.')
-      return
-    }
-
-    setLoading(true)
-
-    try {
-      const data = await verificarCodigoRecuperacionService(
-        recuperacion.usuario.trim(),
-        codigo
-      )
-
-      if (data?.expiresAt) {
-        setExpiresAt(data.expiresAt)
-      }
-
-      setRecuperacion((prev) => ({
-        ...prev,
-        usuario: data.usuario || prev.usuario,
-        tokenId: data.tokenId,
-      }))
-      setVista(VISTAS.RECUPERAR_PASSWORD)
-    } catch (err) {
-      setError(
-        err.response?.data?.message ||
-          'El código no es válido o ya no está vigente.'
-      )
+      setError(err.response?.data?.message || 'No se pudo reenviar el enlace.')
     } finally {
       setLoading(false)
     }
@@ -409,14 +378,8 @@ function Login() {
     e.preventDefault()
     limpiarMensajes()
 
-    if (codigoVencido) {
-      setError('El código venció. Solicita uno nuevo con «Reenviar código».')
-      return
-    }
-
-    if (!recuperacion.tokenId) {
-      setError('Debes verificar el código antes de continuar.')
-      setVista(VISTAS.RECUPERAR_CODIGO)
+    if (enlaceInvalido || !recuperacion.tokenId || !recuperacion.token) {
+      setError('El enlace no es válido o ya venció. Solicita uno nuevo.')
       return
     }
 
@@ -437,7 +400,7 @@ function Login() {
       const data = await restablecerPasswordService({
         identificador: recuperacion.usuario.trim(),
         usuario: recuperacion.usuario.trim(),
-        codigo: recuperacion.codigo.trim(),
+        token: recuperacion.token,
         tokenId: recuperacion.tokenId,
         password: recuperacion.password,
         passwordConfirm: recuperacion.passwordConfirm,
@@ -454,11 +417,10 @@ function Login() {
       const data = err.response?.data
       setError(
         data?.message ||
-          'No se pudo restablecer la contraseña. Verifica el código e intenta de nuevo.'
+          'No se pudo restablecer la contraseña. El enlace puede haber vencido.'
       )
-      if (data?.codigoInvalido) {
-        setRecuperacion((prev) => ({ ...prev, tokenId: null, codigo: '' }))
-        setVista(VISTAS.RECUPERAR_CODIGO)
+      if (data?.enlaceInvalido) {
+        setEnlaceInvalido(true)
       }
     } finally {
       setLoading(false)
@@ -471,8 +433,8 @@ function Login() {
         return 'Activar cuenta'
       case VISTAS.RECUPERAR_USUARIO:
         return 'Recuperar acceso'
-      case VISTAS.RECUPERAR_CODIGO:
-        return 'Verificar código'
+      case VISTAS.RECUPERAR_ENVIADO:
+        return 'Revisa tu correo'
       case VISTAS.RECUPERAR_PASSWORD:
         return 'Nueva contraseña'
       default:
@@ -485,9 +447,9 @@ function Login() {
       case VISTAS.ACTIVAR_CUENTA:
         return 'Configura tu contraseña para acceder a Tailor-Made.'
       case VISTAS.RECUPERAR_USUARIO:
-        return 'Ingresa tu usuario o correo electrónico. Si la cuenta existe, enviaremos un código.'
-      case VISTAS.RECUPERAR_CODIGO:
-        return 'Revisa tu bandeja de entrada e ingresa el código.'
+        return 'Ingresa tu usuario o correo electrónico. Si la cuenta existe, enviaremos un enlace.'
+      case VISTAS.RECUPERAR_ENVIADO:
+        return 'Te enviamos un enlace para crear una nueva contraseña.'
       case VISTAS.RECUPERAR_PASSWORD:
         return 'Crea una contraseña segura y confírmala para finalizar.'
       default:
@@ -771,7 +733,7 @@ function Login() {
             )}
 
             {vista === VISTAS.RECUPERAR_USUARIO && (
-              <form className="tm-auth__form" onSubmit={handleSolicitarCodigo}>
+              <form className="tm-auth__form" onSubmit={handleSolicitarEnlace}>
                 <div className="tm-auth__field">
                   <label htmlFor="rec-usuario">Usuario o correo electrónico</label>
                   <input
@@ -788,7 +750,8 @@ function Login() {
 
                 <p className="tm-auth__hint">
                   Puedes usar tu nombre de usuario o el correo registrado en la
-                  cuenta. Si existe, recibirás el código en ese correo.
+                  cuenta. Si existe, recibirás un enlace en ese correo para
+                  crear una nueva contraseña.
                 </p>
 
                 {error && <div className="tm-auth__error">{error}</div>}
@@ -799,7 +762,7 @@ function Login() {
                   className="tm-auth__button"
                   disabled={loading}
                 >
-                  {loading ? 'Enviando...' : 'Enviar código'}
+                  {loading ? 'Enviando...' : 'Enviar enlace'}
                 </button>
 
                 <button
@@ -813,127 +776,30 @@ function Login() {
               </form>
             )}
 
-            {vista === VISTAS.RECUPERAR_CODIGO && (
-              <form className="tm-auth__form" onSubmit={handleValidarCodigo}>
-                <div className="tm-auth__timer">
-                  <span>Tiempo restante del código</span>
-                  <strong className={codigoVencido ? 'is-expired' : ''}>
-                    {formatearTiempo(segundosRestantes)}
-                  </strong>
-                  {codigoVencido && (
-                    <p className="tm-auth__timer-warning">
-                      El código venció. Usa «Reenviar código» para obtener uno nuevo.
-                    </p>
-                  )}
-                </div>
+            {vista === VISTAS.RECUPERAR_ENVIADO && (
+              <div className="tm-auth__form">
+                <p className="tm-auth__hint">
+                  Si la cuenta existe, enviamos un enlace para restablecer la
+                  contraseña al correo asociado. Ábrelo desde el mismo
+                  dispositivo y crea tu nueva contraseña. El enlace es válido por
+                  <strong> 30 minutos</strong> y solo puede usarse una vez.
+                </p>
 
-                <div className="tm-auth__field">
-                  <label htmlFor="rec-codigo">Código de verificación</label>
-                  <input
-                    id="rec-codigo"
-                    type="text"
-                    name="codigo"
-                    value={recuperacion.codigo}
-                    onChange={handleRecuperacionChange}
-                    placeholder="Ingresa el código"
-                    maxLength={8}
-                    autoComplete="one-time-code"
-                    disabled={loading}
-                  />
-                </div>
+                <p className="tm-auth__hint">
+                  ¿No te llegó? Revisa la carpeta de spam o solicita un nuevo
+                  enlace.
+                </p>
 
                 {error && <div className="tm-auth__error">{error}</div>}
                 {info && <div className="tm-auth__info">{info}</div>}
-
-                <button
-                  type="submit"
-                  className="tm-auth__button"
-                  disabled={loading || codigoVencido}
-                >
-                  {loading ? 'Verificando...' : 'Continuar'}
-                </button>
 
                 <button
                   type="button"
                   className="tm-auth__button tm-auth__button--secondary"
-                  onClick={handleReenviarCodigo}
+                  onClick={handleReenviarEnlace}
                   disabled={loading}
                 >
-                  {loading ? 'Reenviando...' : 'Reenviar código'}
-                </button>
-
-                <button
-                  type="button"
-                  className="tm-auth__link-button"
-                  onClick={() => {
-                    limpiarMensajes()
-                    setVista(VISTAS.RECUPERAR_USUARIO)
-                  }}
-                  disabled={loading}
-                >
-                  Cambiar usuario o correo
-                </button>
-              </form>
-            )}
-
-            {vista === VISTAS.RECUPERAR_PASSWORD && (
-              <form className="tm-auth__form" onSubmit={handleRestablecerPassword}>
-                <div className="tm-auth__timer">
-                  <span>Tiempo restante del código</span>
-                  <strong className={codigoVencido ? 'is-expired' : ''}>
-                    {formatearTiempo(segundosRestantes)}
-                  </strong>
-                </div>
-
-                <CampoPassword
-                  id="rec-password"
-                  name="password"
-                  label="Nueva contraseña"
-                  value={recuperacion.password}
-                  onChange={handleRecuperacionChange}
-                  placeholder="Mín. 8 caracteres"
-                  autoComplete="new-password"
-                  disabled={loading || codigoVencido}
-                  visible={mostrarPassword.nueva}
-                  onToggleVisible={() =>
-                    setMostrarPassword((prev) => ({ ...prev, nueva: !prev.nueva }))
-                  }
-                />
-
-                <PanelFortalezaPassword password={recuperacion.password} />
-
-                <CampoPassword
-                  id="rec-password-confirm"
-                  name="passwordConfirm"
-                  label="Confirmar contraseña"
-                  value={recuperacion.passwordConfirm}
-                  onChange={handleRecuperacionChange}
-                  placeholder="Repite la contraseña"
-                  autoComplete="new-password"
-                  disabled={loading || codigoVencido}
-                  visible={mostrarPassword.confirmar}
-                  onToggleVisible={() =>
-                    setMostrarPassword((prev) => ({
-                      ...prev,
-                      confirmar: !prev.confirmar,
-                    }))
-                  }
-                />
-
-                {recuperacion.passwordConfirm &&
-                  recuperacion.password !== recuperacion.passwordConfirm && (
-                    <p className="tm-auth__match-error">Las contraseñas no coinciden.</p>
-                  )}
-
-                {error && <div className="tm-auth__error">{error}</div>}
-                {info && <div className="tm-auth__info">{info}</div>}
-
-                <button
-                  type="submit"
-                  className="tm-auth__button"
-                  disabled={loading || codigoVencido}
-                >
-                  {loading ? 'Guardando...' : 'Restablecer contraseña'}
+                  {loading ? 'Reenviando...' : 'Reenviar enlace'}
                 </button>
 
                 <button
@@ -944,6 +810,102 @@ function Login() {
                 >
                   Volver al inicio de sesión
                 </button>
+              </div>
+            )}
+
+            {vista === VISTAS.RECUPERAR_PASSWORD && (
+              <form className="tm-auth__form" onSubmit={handleRestablecerPassword}>
+                {verificandoEnlace && (
+                  <p className="tm-auth__hint">Validando el enlace…</p>
+                )}
+
+                {enlaceInvalido ? (
+                  <>
+                    {error && <div className="tm-auth__error">{error}</div>}
+                    <button
+                      type="button"
+                      className="tm-auth__button"
+                      onClick={() => {
+                        limpiarMensajes()
+                        setEnlaceInvalido(false)
+                        setVista(VISTAS.RECUPERAR_USUARIO)
+                      }}
+                      disabled={loading}
+                    >
+                      Solicitar un nuevo enlace
+                    </button>
+                    <button
+                      type="button"
+                      className="tm-auth__link-button"
+                      onClick={volverAlLogin}
+                      disabled={loading}
+                    >
+                      Volver al inicio de sesión
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <CampoPassword
+                      id="rec-password"
+                      name="password"
+                      label="Nueva contraseña"
+                      value={recuperacion.password}
+                      onChange={handleRecuperacionChange}
+                      placeholder="Mín. 8 caracteres"
+                      autoComplete="new-password"
+                      disabled={loading || verificandoEnlace}
+                      visible={mostrarPassword.nueva}
+                      onToggleVisible={() =>
+                        setMostrarPassword((prev) => ({ ...prev, nueva: !prev.nueva }))
+                      }
+                    />
+
+                    <PanelFortalezaPassword password={recuperacion.password} />
+
+                    <CampoPassword
+                      id="rec-password-confirm"
+                      name="passwordConfirm"
+                      label="Confirmar contraseña"
+                      value={recuperacion.passwordConfirm}
+                      onChange={handleRecuperacionChange}
+                      placeholder="Repite la contraseña"
+                      autoComplete="new-password"
+                      disabled={loading || verificandoEnlace}
+                      visible={mostrarPassword.confirmar}
+                      onToggleVisible={() =>
+                        setMostrarPassword((prev) => ({
+                          ...prev,
+                          confirmar: !prev.confirmar,
+                        }))
+                      }
+                    />
+
+                    {recuperacion.passwordConfirm &&
+                      recuperacion.password !== recuperacion.passwordConfirm && (
+                        <p className="tm-auth__match-error">Las contraseñas no coinciden.</p>
+                      )}
+
+                    {error && <div className="tm-auth__error">{error}</div>}
+                    {info && <div className="tm-auth__info">{info}</div>}
+
+                    <button
+                      type="submit"
+                      className="tm-auth__button"
+                      disabled={loading || verificandoEnlace}
+                    >
+                      {loading ? 'Guardando...' : 'Restablecer contraseña'}
+                    </button>
+
+                    <button
+                      type="button"
+                      className="tm-auth__link-button"
+                      onClick={volverAlLogin}
+                      disabled={loading}
+                    >
+                      Volver al inicio de sesión
+                    </button>
+                  </>
+                )}
               </form>
             )}
 
